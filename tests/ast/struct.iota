@@ -1,0 +1,22 @@
+// topLevel
+// // [builtin_Number]
+// Number = builtin_Number
+// // [Number, builtin_Number]
+// Test = struct {
+// 	a Number,
+// 	b Number
+// }
+// // [Number, builtin_Number, Test]
+// Test_new = @a(Number) @b(Number)
+// 	&Test {
+// 		a = a,
+// 		b = b
+// 	}
+
+Number = builtin_Number
+Test = struct { a(Number), b(Number) }
+Test_new = @a(Number) @b(Number)
+	&Test {
+		a = a,
+		b = b
+	}

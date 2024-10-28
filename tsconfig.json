@@ -1,0 +1,18 @@
+{
+	"compilerOptions": {
+		"target": "esnext",
+		"module": "nodenext",
+		"moduleResolution": "NodeNext",
+		"outDir": "./out",
+		"sourceMap": false,
+		
+		"strict": true,
+		"removeComments": true,
+		"noImplicitAny": true,
+		"pretty": true,
+		"noFallthroughCasesInSwitch": true,
+		"noUncheckedIndexedAccess": false,
+		"incremental": true,
+	},
+	"include": ["ts/**/*"],
+}

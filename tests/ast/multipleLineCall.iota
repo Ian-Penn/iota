@@ -1,0 +1,10 @@
+// compOut
+// line:7 -> 6
+
+Number = builtin_Number
+sum = @x(Number) @y(Number) @z(Number) x + y + z
+
+sum
+	1
+	2
+	3

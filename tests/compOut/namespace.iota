@@ -1,0 +1,13 @@
+// compOut
+// line:10 -> 1
+// line:11 -> 2
+// line:12 -> 3
+
+a = 1
+a_b = 2
+>cd ~a
+b_c = 3
+a
+b
+b_c
+>cd ~test

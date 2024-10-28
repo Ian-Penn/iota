@@ -1,0 +1,4 @@
+// compOut
+// line:4 -> "4"
+
+builtin_numberToString 4

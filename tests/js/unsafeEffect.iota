@@ -1,0 +1,14 @@
+// codegen_js
+// function g0(l1) {
+// 	return () => {console.log(l1)};
+// }
+// var main = g0("testing js codegen");
+
+Number = builtin_Number
+String = builtin_String
+Void = builtin_Void
+
+log = @string(String)
+	unsafeEffect "console.log(%%0%%)" [string] Void
+
+main = log "testing js codegen"

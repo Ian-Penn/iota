@@ -1,0 +1,15 @@
+// compOut
+// line:13 -> @f(\(struct builtin:String{}) -> \(struct builtin:String{}) -> struct builtin:String{}) ((f "hello") "world")
+// line:14 -> "hello"
+// line:15 -> "world"
+
+Type = builtin_Type
+String = builtin_String
+
+pair = @T(Type) @x(T) @y(T) @f(\(T) -> \(T) -> T) f x y
+first = @T(Type) @x(T) @y(T) x
+second = @T(Type) @x(T) @y(T) y
+a = pair String "hello" "world"
+a
+a (first String)
+a (second String)

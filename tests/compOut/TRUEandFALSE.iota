@@ -1,0 +1,8 @@
+// compOut
+// line:7 -> 1
+// line:8 -> 2
+
+TRUE = @x(builtin_Number) @y(builtin_Number) x
+FALSE = @x(builtin_Number) @y(builtin_Number) y
+TRUE 1 2
+FALSE 1 2

@@ -1,0 +1,10 @@
+// compOut
+// line:10 -> 3
+
+test = @x(builtin_Number)
+	a = x
+	@y(builtin_Number)
+		b = y
+		a + b
+
+test 1 2

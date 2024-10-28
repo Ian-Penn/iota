@@ -1,0 +1,28 @@
+// compOut
+// line:19 -> 1
+// line:20 -> 1
+// line:21 -> 2
+// line:22 -> 3
+// line:23 -> 5
+// line:24 -> 8
+// line:25 -> 13
+// line:26 -> 21
+// line:27 -> 34
+// line:28 -> 55
+
+fib = @n(builtin_Number)
+	if n <= 1 then
+		n
+	else
+		(fib n - 1) + (fib n - 2)
+
+fib 1
+fib 2
+fib 3
+fib 4
+fib 5
+fib 6
+fib 7
+fib 8
+fib 9
+fib 10

@@ -1,0 +1,37 @@
+// >cd ~builtin
+// >module_import builtin
+// >cd ~
+// I = @x(builtin_Number) x
+
+// >module_import builtin
+// I = @x(Number) x
+
+>includeFile test/test.iota
+
+a
+
+// I 100
+
+>debug
+
+// User = enum {
+// 	Regular struct {
+// 		name String,
+// 		age Number
+// 	},
+// 	Visitor struct {
+// 		name String
+// 	}
+// }
+
+// User.Regular
+// &{
+// 	name = "none",
+// 	age = -10000
+// }
+
+// User.Regular = @name(String) @age(Number)
+// 	&struct { name String, age Number } {
+// 		name = name,
+// 		age = age
+// 	}

@@ -1,0 +1,11 @@
+// codegen_js
+// function main(l0) {
+// 	return l0;
+// }
+
+Type = builtin_Type
+String = builtin_String
+
+makeIdentity = @T(Type) @x(T) x
+
+main = makeIdentity String

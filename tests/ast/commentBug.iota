@@ -1,0 +1,11 @@
+// topLevel
+// // [builtin_Number]
+// a = @x(builtin_Number) (1 + 1)
+// // [builtin_Number]
+// b = @x(builtin_Number) (1 + 1)
+
+a = @x(builtin_Number)
+	1 + 1 // test
+
+b = @x(builtin_Number)
+	1 + 1

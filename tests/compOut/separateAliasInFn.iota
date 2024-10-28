@@ -1,0 +1,12 @@
+// compOut
+// line:12 -> 3
+
+I = @x(builtin_Number)
+	a = x + 1
+	a
+
+test = @x(builtin_Number)
+	a = I x
+	a
+
+test 2

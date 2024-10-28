@@ -1,0 +1,21 @@
+// codegen_js
+// function main(l0) {
+// 	return (l1) => {
+// 		return {
+// 			x: (l0.x + l1.x),
+// 			y: (l0.y + l1.y),
+// 		};
+// 	};
+// }
+
+Number = builtin_Number
+Vec2 = struct {
+	x Number,
+	y Number
+}
+
+main = @v1(Vec2) @v2(Vec2)
+	&Vec2{
+		x = v1.x + v2.x,
+		y = v1.y + v2.y
+	}

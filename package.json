@@ -1,0 +1,13 @@
+{
+	"name": "iota",
+	"version": "1.0.0",
+	"description": "",
+	"main": "ts/main.ts",
+	"type": "module",
+	"scripts": {
+		"debug": "tsc -p ./tsconfig.json --sourceMap true"
+	},
+	"dependencies": {
+		"@types/node": "^20.11.30"
+	}
+}

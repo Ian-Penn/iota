@@ -1,0 +1,13 @@
+// compError
+// error: alias 'String' does not exist
+// line:9 -> here
+// error: expected type struct builtin:Type{}, but got type struct builtin:String{}
+// line:11 -> here
+// error: expected type struct builtin:Type{}, but got type struct builtin:Number{}
+// line:13 -> here
+
+\(String) -> String
+
+\("") -> 2
+
+\(builtin_Number) -> 2

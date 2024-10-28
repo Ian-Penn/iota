@@ -1,0 +1,12 @@
+// compOut
+// line:8 -> @bool(struct builtin:Bool{})
+// 	if bool then
+// 		1
+// 	else
+// 		0
+
+@bool(builtin_Bool)
+	if bool then
+		1
+	else
+		0

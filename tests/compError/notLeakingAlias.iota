@@ -1,0 +1,9 @@
+// compError
+// error: alias 'x' does not exist
+// line:6 -> here
+
+b = @y(builtin_Number)
+	x
+
+a = @x(builtin_Number)
+	b 1

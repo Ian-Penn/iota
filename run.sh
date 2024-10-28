@@ -1,0 +1,1 @@
+tsc -p ./tsconfig.json && node out/main.js runFile ./test/main ./test/main.iota

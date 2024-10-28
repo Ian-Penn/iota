@@ -1,0 +1,14 @@
+// compOut
+// line:13 -> "Hello!"
+// line:14 -> "World!"
+
+Bool = builtin_Bool
+
+test = @bool(Bool)
+	if bool then
+		"Hello!"
+	else
+		"World!"
+
+test true
+test false

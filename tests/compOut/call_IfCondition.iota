@@ -1,0 +1,10 @@
+// compOut
+// line:7 -> "World!"
+
+Number = builtin_Number
+getBool = @x(Number) x > 4
+
+if getBool 1 then
+	"Hello!"
+else
+	"World!"

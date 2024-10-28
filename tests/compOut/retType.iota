@@ -1,0 +1,9 @@
+// compOut
+// line:8 -> struct builtin:String{}
+// line:9 -> "Hello, World"
+
+getType = @T(builtin_Type) T
+test = @x(getType builtin_String) x
+
+(getType builtin_String)
+test "Hello, World"
