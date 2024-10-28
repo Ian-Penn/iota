@@ -1,2 +1,2 @@
-// []
-a = 1
+// [builtin_Number]
+I = @x(builtin_Number) x

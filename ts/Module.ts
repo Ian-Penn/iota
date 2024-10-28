@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import path from "path";
 
 import * as utilities from "./utilities.js";
 import logger, { LogType } from "./logger.js";
@@ -15,7 +16,6 @@ import { codegen_js, CodeGenContext, CodegenJsSettings } from "./codegen.js";
 import { lex } from "./lexer.js";
 import { parse, ParserMode } from "./parser.js";
 import { pathSeparator } from "./const.js";
-import path from "path";
 
 type Hash = string;
 function hashString(text: string): Hash {
@@ -46,6 +46,16 @@ export type CompilerOptions = {
 	
 	outputPath?: string,
 	ideOptions?: IdeOptions,
+};
+
+export type MetaObjectImport = {
+	rootPath: string,
+	// fsPath: string,
+	name: string,
+};
+
+export type MetaObject = {
+	imports: MetaObjectImport[],
 };
 
 export type TopLevelDef = {
@@ -87,10 +97,10 @@ export class Module {
 	 * adds this to moduleList
 	 */
 	constructor(
-		public basePath: string | null = null,
+		public fsBasePath: string | null = null,
 		public name: string,
 	) {
-		logger.log(LogType.module, `made new Module ${basePath} ${name}`);
+		logger.log(LogType.module, `made new Module ${fsBasePath} ${name}`);
 		this.moduleIndex = moduleList.push(this)-1;
 	}
 	
@@ -114,21 +124,30 @@ export class Module {
 	}
 	
 	getDefsPath(): string {
-		if (this.basePath == null) {
+		if (this.fsBasePath == null) {
 			utilities.unreachable();
 		}
 		
-		return path.join(this.basePath, this.name, "defs.iota");
+		return path.join(this.fsBasePath, this.name, "defs.iota");
+	}
+	
+	getMetaPath(): string {
+		if (this.fsBasePath == null) {
+			utilities.unreachable();
+		}
+		
+		return path.join(this.fsBasePath, this.name, "meta.json");
 	}
 	
 	saveToFileSystem() {
 		logger.log(LogType.module, "saveToFileSystem");
-		if (this.basePath == null) {
+		if (this.fsBasePath == null) {
 			utilities.unreachable();
 		}
 		
-		utilities.makeDir(this.basePath);
+		utilities.makeDir(this.fsBasePath);
 		utilities.writeFile(this.getDefsPath(), this.printDefs());
+		utilities.writeFile(this.getMetaPath(), JSON.stringify(this.getMetaObj(), null, "\t"));
 	}
 	
 	readFromFileSystem(basePath: string) {
@@ -174,6 +193,24 @@ export class Module {
 			}
 		}
 		return null;
+	}
+	
+	getMetaObj(): MetaObject {
+		return {
+			imports: this.imports.map((value) => {
+				const module = moduleList[value.moduleIndex];
+				// const fsPathList = [];
+				// if (module.fsBasePath != null) {
+				// 	fsPathList.push(module.fsBasePath);
+				// }
+				// fsPathList.push(module.name);
+				const metaImport: MetaObjectImport = {
+					rootPath: value.rootPath,
+					name: module.name,
+				};
+				return metaImport;
+			}),
+		};
 	}
 	
 	printDefs(extraLines?: boolean): string {
@@ -324,7 +361,7 @@ export class Module {
 	
 	dumpDebug() {
 		console.log(`name: ${this.name}`);
-		console.log(`basePath: ${this.basePath}`);
+		console.log(`basePath: ${this.fsBasePath}`);
 		console.log(`currentDirectory: ${this.currentDirectory}`);
 		console.log(`printDefs:\n${this.printDefs()}`);
 	}

@@ -1,7 +1,7 @@
-// >cd ~builtin
-// >module_import builtin
-// >cd ~
-// I = @x(builtin_Number) x
+>cd ~builtin
+>module_import builtin
+>cd ~
+I = @x(builtin_Number) x
 
 // >module_import builtin
 // I = @x(Number) x
