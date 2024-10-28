@@ -6,13 +6,7 @@
 // >module_import builtin
 // I = @x(Number) x
 
->includeFile test/test.iota
-
-a
-
-// I 100
-
->debug
+// >debug
 
 // User = enum {
 // 	Regular struct {
