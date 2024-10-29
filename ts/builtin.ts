@@ -61,6 +61,14 @@ export function makeEffectType(T: ASTnodeType): ASTnodeType {
 	);
 }
 
+export function task_getArg(context: BuilderContext, name: string): ASTnode {
+	const alias = context.getAlias(name);
+	if (alias == null) {
+		utilities.unreachable();
+	}
+	return alias.value;
+}
+
 export function setUpBuiltins() {
 	builtinTypes = [
 		makeBuiltinType("Type"),
@@ -110,20 +118,12 @@ export function setUpBuiltins() {
 		});
 	}
 	
-	function getArg(context: BuilderContext, name: string): ASTnode {
-		const alias = context.getAlias(name);
-		if (alias == null) {
-			utilities.unreachable();
-		}
-		return alias.value;
-	}
-	
 	{
 		const task = new ASTnode_builtinTask("", (context): ASTnodeType | ASTnode_error => {
 			return getBuiltinType("Type");
 		}, (context): ASTnode => {
 			return withResolve(context, () => {
-				const T = getArg(context, "T");
+				const T = task_getArg(context, "T");
 				if (!(T instanceof ASTnodeType) || T instanceof ASTnodeType_selfType) {
 					return task;
 				}
@@ -173,7 +173,7 @@ export function setUpBuiltins() {
 			return getBuiltinType("Type");
 		}, (context): ASTnode => {
 			return withResolve(context, () => {
-				const T = getArg(context, "T");
+				const T = task_getArg(context, "T");
 				if (!(T instanceof ASTnodeType) || T instanceof ASTnodeType_selfType) {
 					return task;
 				}
@@ -188,7 +188,7 @@ export function setUpBuiltins() {
 			return getBuiltinType("String");
 		}, (context): ASTnode => {
 			return withResolve(context, () => {
-				const number = getArg(context, "number");
+				const number = task_getArg(context, "number");
 				if (!(number instanceof ASTnode_number)) {
 					return task;
 				}

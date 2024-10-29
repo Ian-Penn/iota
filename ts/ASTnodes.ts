@@ -2,7 +2,7 @@ import * as utilities from "./utilities.js";
 import logger, { LogType } from "./logger.js";
 import { Module, TopLevelDef } from "./Module.js";
 import { CompileError } from "./report.js";
-import { getBuiltinType, isBuiltinType, makeListType, makeEffectType } from "./builtin.js";
+import { getBuiltinType, isBuiltinType, makeListType, makeEffectType, task_getArg } from "./builtin.js";
 import { CodeGenContext } from "./codegen.js";
 
 export type SourceLocation = "builtin" | {
@@ -387,24 +387,43 @@ export class ASTnodeType_enum extends ASTnodeType {
 	constructor(
 		location: SourceLocation,
 		id: string,
-		public fields: ASTnode_argument[],
+		public cases: ASTnode_argument[],
 	) {
 		super(location, id);
 	}
 	
+	getCase(name: string): ASTnode_argument | null {
+		for (let i = 0; i < this.cases.length; i++) {
+			const currentCase = this.cases[i];
+			if (currentCase.name == name) {
+				return currentCase;
+			}
+		}
+		return null;
+	}
+	
+	getCaseIndex(name: string): number | null {
+		for (let i = 0; i < this.cases.length; i++) {
+			const currentCase = this.cases[i];
+			if (currentCase.name == name) {
+				return i;
+			}
+		}
+		return null;
+	}
+	
 	_print(context = new CodeGenContext()): string {
-		let argText = printAST(context, this.fields).join(", ");
+		let argText = printAST(context, this.cases).join(", ");
 		if (argText.length > context.softLineMax) {
-			argText = indent("\n" + printAST(context, this.fields).join(",\n")) + "\n";
+			argText = indent("\n" + printAST(context, this.cases).join(",\n")) + "\n";
 		}
 		return `enum ${this.id}{${argText}}`;
 	}
 	
 	getType(context: BuilderContext): ASTnodeType | ASTnode_error {
-		for (let i = 0; i < this.fields.length; i++) {
-			const node = this.fields[i];
+		for (let i = 0; i < this.cases.length; i++) {
+			const node = this.cases[i];
 			const fieldType = node.type.getType(context);
-			debugger;
 			if (fieldType instanceof ASTnode_error) {
 				return fieldType;
 			}
@@ -415,8 +434,8 @@ export class ASTnodeType_enum extends ASTnodeType {
 	
 	evaluate(context: BuilderContext): ASTnode {
 		const fields: ASTnode_argument[] = [];
-		for (let i = 0; i < this.fields.length; i++) {
-			const node = this.fields[i];
+		for (let i = 0; i < this.cases.length; i++) {
+			const node = this.cases[i];
 			fields.push(node.evaluate(context));
 		}
 		
@@ -972,7 +991,10 @@ export class ASTnode_operator extends ASTnode {
 		}
 		
 		else if (op == ".") {
-			debugger;
+			if (!(this.right instanceof ASTnode_identifier)) {
+				utilities.TODO_addError();
+			}
+			const name = this.right.name;
 			
 			const leftType = this.left.getType(context);
 			if (leftType instanceof ASTnode_error) {
@@ -980,22 +1002,36 @@ export class ASTnode_operator extends ASTnode {
 			}
 			
 			if (leftType instanceof ASTnodeType_struct) {
-				if (!(this.right instanceof ASTnode_identifier)) {
-					utilities.TODO_addError();
+				if (isBuiltinType(leftType, "Type")) {
+					const left = this.left.evaluate(context);
+					if (left instanceof ASTnodeType_enum) {
+						const enumCase = left.getCase(name);
+						if (enumCase == null) {
+							utilities.TODO_addError();
+						}
+						return new ASTnodeType_functionType(
+							this.location,
+							"",
+							enumCase.type,
+							left,
+						);
+						// return getBuiltinType("Type");
+					} else {
+						utilities.TODO_addError();
+					}
+				} else {
+					const field = leftType.getField(name);
+					if (field == null) {
+						utilities.TODO_addError();
+					}
+					
+					const type = field.type.evaluate(context);
+					if (!(type instanceof ASTnodeType)) {
+						utilities.unreachable();
+					}
+					
+					return type;
 				}
-				const name = this.right.name;
-				
-				const field = leftType.getField(name);
-				if (field == null) {
-					utilities.TODO_addError();
-				}
-				
-				const type = field.type.evaluate(context);
-				if (!(type instanceof ASTnodeType)) {
-					utilities.unreachable();
-				}
-				
-				return type;
 			} else {
 				utilities.TODO_addError();
 			}
@@ -1061,7 +1097,8 @@ export class ASTnode_operator extends ASTnode {
 			return output;
 		} else if (op == ".") {
 			const left = this.left.evaluate(context);
-			if (!(left instanceof ASTnode_instance)) {
+			debugger;
+			if (left.deadEnd) {
 				const output = new ASTnode_operator(fromNode(this), this.operatorText, left, this.right);
 				if (context.doResolve()) {
 					output.deadEnd = true;
@@ -1074,12 +1111,46 @@ export class ASTnode_operator extends ASTnode {
 			}
 			const name = this.right.name;
 			
-			const alias = getAliasFromList(left.codeBlock, name);
-			if (!alias) {
+			if (left instanceof ASTnode_instance) {
+				const alias = getAliasFromList(left.codeBlock, name);
+				if (!alias) {
+					utilities.unreachable();
+				}
+				
+				return alias.value;
+			} else if (left instanceof ASTnodeType_enum) {
+				const enumCase = left.getCase(name);
+				if (enumCase == null) {
+					utilities.unreachable();
+				}
+				const task = new ASTnode_builtinTask("", (context): ASTnodeType | ASTnode_error => {
+					return left;
+				}, (context): ASTnode => {
+					return withResolve(context, () => {
+						const input = task_getArg(context, "input");
+						if (!(input instanceof ASTnode_instance)) {
+							return task;
+						}
+						const instance = new ASTnode_instance(this.location, left, input.codeBlock);
+						// instance.caseName = left.getCaseIndex(name);
+						// if (instance.caseName == null) {
+						// 	utilities.unreachable();
+						// }
+						instance.caseName = name;
+						return instance;
+					});
+				});
+				const enumConstructor = new ASTnode_function(
+					this.location,
+					new ASTnode_argument(this.location, "input", enumCase.type),
+					[
+						task
+					],
+				);
+				return enumConstructor;
+			} else {
 				utilities.unreachable();
 			}
-			
-			return alias.value;
 		} else {
 			utilities.TODO();
 		}
@@ -1222,6 +1293,8 @@ export class ASTnode_codeBlock extends ASTnode {
 };
 
 export class ASTnode_instance extends ASTnode {
+	caseName: string | null = null;
+	
 	constructor(
 		location: SourceLocation,
 		public template: ASTnode | null,
@@ -1231,32 +1304,41 @@ export class ASTnode_instance extends ASTnode {
 	}
 	
 	_print(context = new CodeGenContext()): string {
-		let template = "";
-		if (this.template != null) {
-			template = this.template.print(context) + " ";
+		let template = "&";
+		if (this.caseName == null) {
+			if (this.template != null) {
+				template += this.template.print(context) + " ";
+			}
+		} else {
+			if (!(this.template instanceof ASTnodeType_enum)) {
+				utilities.unreachable();
+			}
+			template = `${this.template.print(context)}.${this.caseName} &`;
 		}
 		const codeBlock = indent("\n" + printAST(context, this.codeBlock).join(",\n"));
-		return `&${template}{${codeBlock}\n}`;
+		return `${template}{${codeBlock}\n}`;
 	}
 	
 	getType(context: BuilderContext): ASTnodeType | ASTnode_error {
-		let template: ASTnodeType_struct | null = null;
+		let template: ASTnodeType_struct | ASTnodeType_enum | null = null;
 		if (this.template != null) {
 			const _template = withResolve(context, () => this.template!.evaluate(context));
 			
-			if (!(_template instanceof ASTnodeType_struct)) {
+			if (_template instanceof ASTnodeType_struct) {
+				if (_template.fields.length > this.codeBlock.length) {
+					utilities.TODO_addError();
+				}
+				
+				if (_template.fields.length < this.codeBlock.length) {
+					utilities.TODO_addError();
+				}
+				
+				template = _template;
+			} else if (_template instanceof ASTnodeType_enum) {
+				template = _template;
+			} else {
 				utilities.TODO_addError();
 			}
-			
-			if (_template.fields.length > this.codeBlock.length) {
-				utilities.TODO_addError();
-			}
-			
-			if (_template.fields.length < this.codeBlock.length) {
-				utilities.TODO_addError();
-			}
-			
-			template = _template;
 		} else {
 			template = new ASTnodeType_struct(this.location, "", []);
 		}
@@ -1276,6 +1358,11 @@ export class ASTnode_instance extends ASTnode {
 			const aliasType = alias.value.getType(context);
 			if (aliasType instanceof ASTnode_error) {
 				return aliasType;
+			}
+			
+			if (template instanceof ASTnodeType_enum) {
+				// TODO: more for errors
+				continue;
 			}
 			
 			if (this.template != null) {

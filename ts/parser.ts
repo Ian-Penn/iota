@@ -591,9 +591,12 @@ export function parse(context: ParserContext, mode: ParserMode, indentation: num
 						body
 					));
 				} else if (token.text == "&") {
-					const template = parse(context, ParserMode.single, nextIndentation, null)[0];
-					if (!template) {
-						utilities.TODO_addError();
+					let template = null;
+					if (getNext(context).kind != TokenKind.separator || getNext(context).text != "{") {
+						template = parse(context, ParserMode.single, nextIndentation, null)[0];
+						if (!template) {
+							utilities.TODO_addError();
+						}
 					}
 					
 					const codeBlock = parseFieldsEquals(context);

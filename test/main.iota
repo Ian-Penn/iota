@@ -2,33 +2,29 @@
 >module_import builtin
 >cd ~
 
->debug
-
-I = @x(builtin_Number) x
-
-I 10
+Number = builtin_Number
+String = builtin_String
 
 // >module_import builtin
 // I = @x(Number) x
 
-// User = enum {
-// 	Regular struct {
-// 		name String,
-// 		age Number
-// 	},
-// 	Visitor struct {
-// 		name String
-// 	}
-// }
-
-// User.Regular
-// &{
-// 	name = "none",
-// 	age = -10000
-// }
+User = enum {
+	Regular struct {
+		name String,
+		age Number
+	},
+	Visitor struct {
+		name String
+	}
+}
 
 // User.Regular = @name(String) @age(Number)
 // 	&struct { name String, age Number } {
 // 		name = name,
 // 		age = age
 // 	}
+
+User.Regular &{
+	name = "none",
+	age = -10000
+}
