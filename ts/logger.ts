@@ -23,6 +23,8 @@ export enum LogType {
 	resolve,
 }
 
+let printAllLogs = false;
+
 export default {
 	readFile(data: ReadFile) {
 		// console.log("readFile", data);
@@ -41,9 +43,15 @@ export default {
 		times[name] += time;
 	},
 	
+	enableLogs() {
+		printAllLogs = true;
+	},
+	
 	log(type: LogType, ...args: any[]) {
 		// if (LogType[type] != "DB") return;
-		// console.log(`[${LogType[type]}]`, ...args);
+		if (printAllLogs) {
+			console.log(`[${LogType[type]}]`, ...args);
+		}
 		// globals.push(args);
 	},
 	

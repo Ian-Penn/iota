@@ -24,34 +24,16 @@ function nextArg(): string {
 	return process.argv[i++];
 }
 
+while (process.argv[i].startsWith("-")) {
+	const flag = nextArg();
+	if (flag == "-log") {
+		logger.enableLogs();
+	} else {
+		utilities.TODO_addError();
+	}
+}
+
 const mode = nextArg();
-
-// const options: CompilerOptions = {
-// 	filePath: nextArg(),
-// 	fancyErrors: true,
-// 	includeLogs: [], // TODO
-// };
-
-// while (i < process.argv.length) {
-// 	const arg = nextArg();
-// 	if (arg == "-o") {
-// 		options.outputPath = nextArg();
-// 	} else if (arg == "-ide") {
-// 		const mode = nextArg();
-// 		if (mode == "compileFile") {
-// 			options.ideOptions = {
-// 				mode: mode,
-// 			};
-// 		} else {
-// 			utilities.TODO();
-// 		}
-// 	} else if (arg == "-noFancyErrors") {
-// 		options.fancyErrors = false;
-// 	} else {
-// 		utilities.TODO();
-// 	}
-// }
-// console.log("options:", options);
 
 switch (mode) {
 	case "init": {
@@ -85,6 +67,7 @@ switch (mode) {
 		const name = path.basename(arg);
 		
 		const module = new Module(basePath, name);
+		module.loadFromFileSystem();
 		startREPL(module);
 		break;
 	}
@@ -98,9 +81,24 @@ function startREPL(module: Module) {
 	const cursorForward = "\x9B";
 	const prompt = "(*)";
 	
+	function printErrorsAndEvaluations() {
+		module.runEvalQueue();
+		for (let i = 0; i < module.errors.length; i++) {
+			const error = module.errors[i];
+			stdout.write(error.msg + "\n");
+		}
+		for (let i = 0; i < module.topLevelEvaluations.length; i++) {
+			const output = module.topLevelEvaluations[i];
+			stdout.write(output.msg + "\n");
+		}
+		module.errors = [];
+		module.topLevelEvaluations = [];
+	}
+	
+	printErrorsAndEvaluations();
+	
 	readline.emitKeypressEvents(process.stdin);
 	process.stdin.setRawMode(true);
-	
 	let currentLine = prompt;
 	stdout.write(currentLine);
 	
@@ -124,21 +122,10 @@ function startREPL(module: Module) {
 		if (char == "\n") {
 			const input = currentLine.slice(prompt.length);
 			currentLine = prompt;
+			
 			stdout.write("\n");
-			
 			module.addText("REPL", input);
-			module.runEvalQueue();
-			for (let i = 0; i < module.errors.length; i++) {
-				const error = module.errors[i];
-				stdout.write(error.msg + "\n");
-			}
-			for (let i = 0; i < module.topLevelEvaluations.length; i++) {
-				const output = module.topLevelEvaluations[i];
-				stdout.write(output.msg + "\n");
-			}
-			module.errors = [];
-			module.topLevelEvaluations = [];
-			
+			printErrorsAndEvaluations();
 			stdout.write(currentLine);
 		} else if (key.name == "backspace") {
 			if (currentLine.length > prompt.length) {

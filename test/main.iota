@@ -1,12 +1,15 @@
 >cd ~builtin
 >module_import builtin
 >cd ~
+
+>debug
+
 I = @x(builtin_Number) x
+
+I 10
 
 // >module_import builtin
 // I = @x(Number) x
-
-// >debug
 
 // User = enum {
 // 	Regular struct {

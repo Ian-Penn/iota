@@ -53,9 +53,7 @@ function testFile(filePath: string) {
 	};
 	
 	const module = new Module(null, "main");
-	module.currentDirectory = "builtin";
-	module.importModule("builtin");
-	module.currentDirectory = "";
+	module.importModule("builtin", "builtin");
 	
 	try {
 		const text = utilities.readFile(options.filePath);

@@ -49,12 +49,16 @@ export type CompilerOptions = {
 };
 
 export type MetaObjectImport = {
+	/**
+	 * Inside the module.
+	 */
 	rootPath: string,
 	// fsPath: string,
 	name: string,
 };
 
 export type MetaObject = {
+	// version: number,
 	imports: MetaObjectImport[],
 };
 
@@ -67,6 +71,9 @@ export type TopLevelDef = {
 };
 
 export type Import = {
+	/**
+	 * Inside the module.
+	 */
 	rootPath: string,
 	moduleIndex: number,
 };
@@ -104,9 +111,11 @@ export class Module {
 		this.moduleIndex = moduleList.push(this)-1;
 	}
 	
-	importModule(modulePath: string) {
-		const basePath = path.dirname(modulePath);
-		const name = path.basename(modulePath);
+	importModule(rootPath: string, fullFsPath: string) {
+		logger.log(LogType.module, `importModule ${fullFsPath}`);
+		
+		const basePath = path.dirname(fullFsPath);
+		const name = path.basename(fullFsPath);
 		
 		const existingModule = getFromModuleList(name);
 		
@@ -115,7 +124,7 @@ export class Module {
 				utilities.unreachable();
 			}
 			this.imports.push({
-				rootPath: this.currentDirectory,
+				rootPath: rootPath,
 				moduleIndex: existingModule.moduleIndex,
 			})
 		} else {
@@ -150,9 +159,20 @@ export class Module {
 		utilities.writeFile(this.getMetaPath(), JSON.stringify(this.getMetaObj(), null, "\t"));
 	}
 	
-	readFromFileSystem(basePath: string) {
-		utilities.TODO();
-		const defsText = utilities.readFile(path.join(basePath, "defs.iota"));
+	loadFromFileSystem() {
+		const metaPath = this.getMetaPath();
+		const defsPath = this.getDefsPath();
+		
+		logger.log(LogType.module, `loadFromFileSystem ${defsPath} ${metaPath}`);
+		
+		const metaObject: MetaObject = JSON.parse(utilities.readFile(metaPath));
+		for (let i = 0; i < metaObject.imports.length; i++) {
+			const module = metaObject.imports[i];
+			this.importModule(module.rootPath, module.name);
+		}
+		
+		const defsText = utilities.readFile(this.getDefsPath());
+		this.addText(defsPath, defsText);
 	}
 	
 	setDef(name: string, newDef: TopLevelDef) {
@@ -362,6 +382,7 @@ export class Module {
 		console.log(`basePath: ${this.fsBasePath}`);
 		console.log(`currentDirectory: ${this.currentDirectory}`);
 		console.log(`printDefs:\n${this.printDefs()}`);
+		console.log(`getMetaObj:`, this.getMetaObj());
 	}
 }
 
@@ -388,7 +409,7 @@ function runCommand(module: Module, args: string[]) {
 		case "module_import": {
 			const modulePath = nextArg();
 			
-			module.importModule(modulePath);
+			module.importModule(module.currentDirectory, modulePath);
 			
 			return;
 		}
