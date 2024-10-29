@@ -2,13 +2,5 @@
 Number = builtin_Number
 // [builtin_String]
 String = builtin_String
-// [String, builtin_String, Number, builtin_Number]
-User = enum {
-	Regular struct {
-		name String,
-		age Number
-	},
-	Visitor struct {
-		name String
-	}
-}
+// [a]
+a = a

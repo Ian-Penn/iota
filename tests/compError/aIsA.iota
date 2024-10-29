@@ -1,0 +1,5 @@
+// compError
+// error: recursive definition!
+// line:5 -> here
+
+a = a

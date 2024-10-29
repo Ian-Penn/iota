@@ -62,7 +62,8 @@ export class BuilderContext {
 	 */
 	resolve: ResolveMode = "all";
 	
-	callStack: ASTnode_function[] = [];
+	evalStack: ASTnode[] = [];
+	// fnStack: ASTnode_function[] = [];
 	
 	currentDef: TopLevelDef | null = null;
 	
@@ -70,18 +71,31 @@ export class BuilderContext {
 		public module: Module,
 	) {}
 	
-	startCall(fn: ASTnode_function) {
-		this.callStack.push(fn);
+	pushEvalStack(fn: ASTnode) {
+		this.evalStack.push(fn);
 	}
 	
-	endCall() {
-		this.callStack.pop();
+	popEvalStack() {
+		this.evalStack.pop();
 	}
 	
-	isOnStack(fn: ASTnode_function): boolean {
-		for (let i = 0; i < this.callStack.length; i++) {
-			const onStack = this.callStack[i];
-			if (SourceLocation_same(fn.location, onStack.location)) {
+	isOnEvalStackOnlyIdentifiers(node: ASTnode): boolean {
+		for (let i = 0; i < this.evalStack.length; i++) {
+			const onStack = this.evalStack[i];
+			if (!(onStack instanceof ASTnode_identifier)) {
+				return false;
+			}
+			if (SourceLocation_same(node.location, onStack.location)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	isOnEvalStack(node: ASTnode): boolean {
+		for (let i = 0; i < this.evalStack.length; i++) {
+			const onStack = this.evalStack[i];
+			if (SourceLocation_same(node.location, onStack.location)) {
 				return true;
 			}
 		}
@@ -543,7 +557,7 @@ export class ASTnode_function extends ASTnode {
 	}
 	
 	getType(context: BuilderContext): ASTnodeType | ASTnode_error {
-		if (context.isOnStack(this)) {
+		if (context.isOnEvalStack(this)) {
 			return new ASTnode_void(fromNode(this));
 		}
 		
@@ -558,9 +572,9 @@ export class ASTnode_function extends ASTnode {
 			argumentType = getBuiltinType("Any");
 		}
 		context.aliases.push(makeAliasWithType(arg.location, arg.name, argumentType as ASTnodeType));
-		context.startCall(this);
+		context.pushEvalStack(this);
 		const actualResultType = getTypeFromList(context, this.body);
-		context.endCall();
+		context.popEvalStack();
 		context.aliases.pop();
 		if (actualResultType instanceof ASTnode_error) {
 			return actualResultType;
@@ -581,13 +595,13 @@ export class ASTnode_function extends ASTnode {
 		
 		let body = this.body;
 		
-		if (!context.isOnStack(this)) {
+		if (!context.isOnEvalStack(this)) {
 			context.aliases.push(new ASTnode_alias(arg.location, new ASTnode_identifier(arg.location, arg.name), argValue));
 			const oldSetUnalias = context.setUnalias;
 			context.setUnalias = false;
-			context.startCall(this);
+			context.pushEvalStack(this);
 			body = evaluateList(context, this.body);
-			context.endCall();
+			context.popEvalStack();
 			context.setUnalias = oldSetUnalias;
 			context.aliases.pop();
 		}
@@ -690,6 +704,17 @@ export class ASTnode_identifier extends ASTnode {
 	}
 	
 	getType(context: BuilderContext): ASTnodeType | ASTnode_error {
+		debugger;
+		if (context.isOnEvalStackOnlyIdentifiers(this)) {
+			// TODO: This is better than the compiler stack overflowing.
+			// But this is still not a very good error message.
+			return new ASTnode_error(
+				this.location,
+				new CompileError("recursive definition!")
+					.indicator(this.location, "here")
+			);
+		}
+		
 		let value: ASTnode;
 		{
 			const alias = context.getAlias(this.name);
@@ -713,7 +738,9 @@ export class ASTnode_identifier extends ASTnode {
 		
 		const oldAliases = context.aliases;
 		context.aliases = [];
+		context.pushEvalStack(this);
 		const output = value.getType(context);
+		context.popEvalStack();
 		context.aliases = oldAliases;
 		
 		return output;
@@ -864,7 +891,7 @@ export class ASTnode_call extends ASTnode {
 		if (
 			!hasDeadEnd &&
 			functionToCall instanceof ASTnode_function &&
-			!context.isOnStack(functionToCall)
+			!context.isOnEvalStack(functionToCall)
 		) {
 			const oldSetUnalias = context.setUnalias;
 			context.setUnalias = true;
@@ -872,10 +899,10 @@ export class ASTnode_call extends ASTnode {
 			const newAlias = new ASTnode_alias(arg.location, new ASTnode_identifier(arg.location, arg.name), argValue);
 			newAlias.unalias = true;
 			context.aliases.push(newAlias);
-			if (!resolve) context.startCall(functionToCall);
+			if (!resolve) context.pushEvalStack(functionToCall);
 			const resultList = evaluateList(context, functionToCall.body);
 			let result = resultList[resultList.length-1];
-			if (!resolve) context.endCall();
+			if (!resolve) context.popEvalStack();
 			context.aliases.pop();
 			context.setUnalias = oldSetUnalias;
 			

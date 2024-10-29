@@ -13,6 +13,7 @@ export function startREPL(module: Module) {
 	let currentLineAfterCursor = "";
 	let historyI = 0;
 	let history: string[] = [];
+	let evalCount = 0;
 	
 	function writeCurrentLine() {
 		stdout.write("\r" + eraseLine + prompt + currentLine + currentLineAfterCursor + cursorBack.repeat(currentLineAfterCursor.length));
@@ -94,7 +95,7 @@ export function startREPL(module: Module) {
 			}
 			
 			stdout.write("\n");
-			module.addText("__REPL__", currentLine);
+			module.addText(`__REPL__:${evalCount++}`, currentLine);
 			printErrorsAndEvaluations();
 			currentLine = "";
 			writeCurrentLine();
