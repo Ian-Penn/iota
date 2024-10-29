@@ -13,10 +13,6 @@ export function startREPL(module: Module) {
 	let historyI = 0;
 	let history: string[] = [];
 	
-	// function writeEraseCurrentLine() {
-	// 	stdout.write("\r" + eraseInLine);
-	// }
-	
 	function writeCurrentLine() {
 		stdout.write("\r" + eraseLine + prompt + currentLine + currentLineAfterCursor + cursorBack.repeat(currentLineAfterCursor.length));
 	}
