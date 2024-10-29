@@ -309,9 +309,7 @@ export class Module {
 		}
 	}
 	
-	addFile(filePath: string) {
-		const text = utilities.readFile(filePath);
-
+	addText(filePath: string, text: string) {
 		let tokens;
 		let AST;
 		try {
@@ -325,7 +323,7 @@ export class Module {
 				i: 0,
 			}, ParserMode.normal, 0, null);
 			logger.addTime("parsing", Date.now() - parseStart);
-			console.log(`AST:\n${printAST(new CodeGenContext(), AST).join("\n")}\n`);
+			// console.log(`AST:\n${printAST(new CodeGenContext(), AST).join("\n")}\n`);
 			
 			this.addAST(AST);
 		} catch (error) {
@@ -412,7 +410,7 @@ function runCommand(module: Module, args: string[]) {
 			const filePath = nextArg();
 			
 			const oldDir = module.currentDirectory;
-			module.addFile(filePath);
+			module.addText(filePath, utilities.readFile(filePath));
 			module.currentDirectory = oldDir;
 			return;
 		}

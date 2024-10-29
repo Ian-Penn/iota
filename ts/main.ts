@@ -1,9 +1,11 @@
 import * as utilities from "./utilities.js";
+import logger from "./logger.js";
 import { CompilerOptions, Module } from "./Module.js";
 import { getIndicatorText, removeDuplicateErrors } from "./report.js";
 import { setUpBuiltins } from "./builtin.js";
 import path from "path";
-import logger from "./logger.js";
+import readline from 'readline';
+import { stdout } from "process";
 
 // function readDB(): DB {
 // 	const DBtextPath = path.join(path.dirname(options.filePath), "db.json");
@@ -70,24 +72,82 @@ switch (mode) {
 		const filePath = nextArg();
 		
 		const module = new Module(basePath, name);
-		module.addFile(filePath);
+		module.addText(filePath, utilities.readFile(filePath));
 		module.runEvalQueue();
 		module.outputErrorsAndEvaluations(true);
 		module.saveToFileSystem();
 		break;
 	}
 	
-	// case "start": {
-	// 	const arg = nextArg();
-	// 	const basePath = path.dirname(arg);
-	// 	const name = path.basename(arg);
+	case "start": {
+		const arg = nextArg();
+		const basePath = path.dirname(arg);
+		const name = path.basename(arg);
 		
-	// 	break;
-	// }
+		const module = new Module(basePath, name);
+		startREPL(module);
+		break;
+	}
 
 	default: {
 		utilities.TODO_addError();
 	}
+}
+
+function startREPL(module: Module) {
+	const cursorForward = "\x9B";
+	const prompt = "(*)";
+	
+	readline.emitKeypressEvents(process.stdin);
+	process.stdin.setRawMode(true);
+	
+	let currentLine = prompt;
+	stdout.write(currentLine);
+	
+	process.stdin.on("keypress", (chunk, key) => {
+		// console.log(key);
+		
+		if (key.name == "escape" || key.sequence == "\x04") {
+			stdout.write("\n");
+			process.exit();
+		}
+		if (key.name == "up" || key.name == "down") {
+			return;
+		}
+		if (key.name == "left" || key.name == "right") {
+			// stdout.write(key.sequence);
+			return;
+		}
+		let char: string = key.sequence;
+		if (char == "\r") char = "\n";
+		
+		if (char == "\n") {
+			const input = currentLine.slice(prompt.length);
+			currentLine = prompt;
+			stdout.write("\n");
+			
+			module.addText("REPL", input);
+			module.runEvalQueue();
+			for (let i = 0; i < module.errors.length; i++) {
+				const error = module.errors[i];
+				stdout.write(error.msg + "\n");
+			}
+			for (let i = 0; i < module.topLevelEvaluations.length; i++) {
+				const output = module.topLevelEvaluations[i];
+				stdout.write(output.msg + "\n");
+			}
+			module.errors = [];
+			module.topLevelEvaluations = [];
+			
+			stdout.write(currentLine);
+		} else if (key.name == "backspace") {
+			currentLine = currentLine.slice(0, currentLine.length-1);
+			stdout.write("\x08 \x08");
+		} else {
+			currentLine += char;
+			stdout.write("\r" + currentLine);
+		}
+	});
 }
 
 // logger.printFileAccessLogs();
