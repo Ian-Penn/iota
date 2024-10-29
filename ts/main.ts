@@ -141,8 +141,10 @@ function startREPL(module: Module) {
 			
 			stdout.write(currentLine);
 		} else if (key.name == "backspace") {
-			currentLine = currentLine.slice(0, currentLine.length-1);
-			stdout.write("\x08 \x08");
+			if (currentLine.length > prompt.length) {
+				currentLine = currentLine.slice(0, currentLine.length-1);
+				stdout.write("\x08 \x08");
+			}
 		} else {
 			currentLine += char;
 			stdout.write("\r" + currentLine);

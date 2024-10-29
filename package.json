@@ -5,9 +5,10 @@
 	"main": "ts/main.ts",
 	"type": "module",
 	"scripts": {
-		"debug": "tsc -p ./tsconfig.json --sourceMap true"
+		"debug": "node_modules/.bin/tsc -p ./tsconfig.json --sourceMap true"
 	},
 	"dependencies": {
-		"@types/node": "^20.11.30"
+		"@types/node": "^22.8.2",
+		"typescript": "^5.6.3"
 	}
 }

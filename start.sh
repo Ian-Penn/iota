@@ -1,1 +1,1 @@
-tsc -p ./tsconfig.json && node out/main.js start ./test/main
+node_modules/.bin/tsc -p ./tsconfig.json && node out/main.js start ./test/main
