@@ -4,6 +4,7 @@ import { stdout } from "process";
 import { Module } from "./Module.js";
 
 export function startREPL(module: Module) {
+	// https://en.wikipedia.org/wiki/ANSI_escape_code
 	const eraseLine = "\x1B[2K";
 	const cursorBack = "\x1B[D";
 	const prompt = "(*)";

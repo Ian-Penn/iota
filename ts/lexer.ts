@@ -163,7 +163,7 @@ export function lex(filePath: string, text: string): Token[] {
 				i++;
 			}
 			for (; i < text.length; i++) {
-				if (base10Number(text, i)) {
+				if (base10Number(text, i) || text[i] == '.') {
 					str += text[i];	
 				} else {
 					break;
