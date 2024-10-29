@@ -79,9 +79,11 @@ switch (mode) {
 
 function startREPL(module: Module) {
 	const eraseLine = "\x1B[2K";
+	const cursorBack = "\x1B[D";
 	const prompt = "(*)";
 	
 	let currentLine = "";
+	let currentLineAfterCursor = "";
 	let historyI = 0;
 	let history: string[] = [];
 	
@@ -90,7 +92,7 @@ function startREPL(module: Module) {
 	// }
 	
 	function writeCurrentLine() {
-		stdout.write("\r" + eraseLine + prompt + currentLine);
+		stdout.write("\r" + eraseLine + prompt + currentLine + currentLineAfterCursor + cursorBack.repeat(currentLineAfterCursor.length));
 	}
 	
 	function printErrorsAndEvaluations() {
@@ -139,8 +141,20 @@ function startREPL(module: Module) {
 			}
 			writeCurrentLine();
 			return;
-		} else if (key.name == "left" || key.name == "right") {
-			console.log(history + "\n");
+		} else if (key.name == "left") {
+			if (currentLine == "") {
+				return;
+			}
+			currentLineAfterCursor = currentLine[currentLine.length-1] + currentLineAfterCursor;
+			currentLine = currentLine.slice(0, currentLine.length-1);
+			writeCurrentLine();
+			return;
+		} else if (key.name == "right") {
+			if (currentLineAfterCursor == "") {
+				return;
+			}
+			currentLine = currentLine + currentLineAfterCursor[0];
+			currentLineAfterCursor = currentLineAfterCursor.slice(1);
 			writeCurrentLine();
 			return;
 		}
@@ -149,6 +163,8 @@ function startREPL(module: Module) {
 		if (char == "\r") char = "\n";
 		
 		if (char == "\n") {
+			currentLine += currentLineAfterCursor;
+			currentLineAfterCursor = "";
 			if (currentLine.length != 0) {
 				history.push(currentLine);
 				historyI = history.length;
@@ -162,7 +178,8 @@ function startREPL(module: Module) {
 		} else if (key.name == "backspace") {
 			if (currentLine.length > 0) {
 				currentLine = currentLine.slice(0, currentLine.length-1);
-				stdout.write("\x08 \x08");
+				// stdout.write("\x08 \x08");
+				writeCurrentLine();
 			}
 		} else {
 			currentLine += char;
