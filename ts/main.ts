@@ -78,8 +78,20 @@ switch (mode) {
 }
 
 function startREPL(module: Module) {
-	const cursorForward = "\x9B";
+	const eraseLine = "\x1B[2K";
 	const prompt = "(*)";
+	
+	let currentLine = "";
+	let historyI = 0;
+	let history: string[] = [];
+	
+	// function writeEraseCurrentLine() {
+	// 	stdout.write("\r" + eraseInLine);
+	// }
+	
+	function writeCurrentLine() {
+		stdout.write("\r" + eraseLine + prompt + currentLine);
+	}
 	
 	function printErrorsAndEvaluations() {
 		module.runEvalQueue();
@@ -96,11 +108,9 @@ function startREPL(module: Module) {
 	}
 	
 	printErrorsAndEvaluations();
-	
 	readline.emitKeypressEvents(process.stdin);
 	process.stdin.setRawMode(true);
-	let currentLine = prompt;
-	stdout.write(currentLine);
+	writeCurrentLine();
 	
 	process.stdin.on("keypress", (chunk, key) => {
 		// console.log(key);
@@ -108,33 +118,55 @@ function startREPL(module: Module) {
 		if (key.name == "escape" || key.sequence == "\x04") {
 			stdout.write("\n");
 			process.exit();
-		}
-		if (key.name == "up" || key.name == "down") {
+		} else if (key.sequence == "\x03") { // ^C
+			currentLine = "";
+			stdout.write("\n");
+			writeCurrentLine();
+			return;
+		} else if (key.name == "up") {
+			historyI = Math.max(0, historyI-1);
+			let past = history[historyI];
+			if (past != undefined) {
+				currentLine = past;
+			}
+			writeCurrentLine();
+			return;
+		} else if (key.name == "down") {
+			historyI = Math.min(historyI+1, history.length);
+			let past = history[historyI];
+			if (past != undefined) {
+				currentLine = past;
+			}
+			writeCurrentLine();
+			return;
+		} else if (key.name == "left" || key.name == "right") {
+			console.log(history + "\n");
+			writeCurrentLine();
 			return;
 		}
-		if (key.name == "left" || key.name == "right") {
-			// stdout.write(key.sequence);
-			return;
-		}
+		
 		let char: string = key.sequence;
 		if (char == "\r") char = "\n";
 		
 		if (char == "\n") {
-			const input = currentLine.slice(prompt.length);
-			currentLine = prompt;
+			if (currentLine.length != 0) {
+				history.push(currentLine);
+				historyI = history.length;
+			}
 			
 			stdout.write("\n");
-			module.addText("REPL", input);
+			module.addText("REPL", currentLine);
 			printErrorsAndEvaluations();
-			stdout.write(currentLine);
+			currentLine = "";
+			writeCurrentLine();
 		} else if (key.name == "backspace") {
-			if (currentLine.length > prompt.length) {
+			if (currentLine.length > 0) {
 				currentLine = currentLine.slice(0, currentLine.length-1);
 				stdout.write("\x08 \x08");
 			}
 		} else {
 			currentLine += char;
-			stdout.write("\r" + currentLine);
+			writeCurrentLine();
 		}
 	});
 }
