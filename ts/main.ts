@@ -61,7 +61,9 @@ function main() {
 			const filePath = nextArg();
 			
 			const module = new Module(basePath, name);
-			module.addText(filePath, utilities.readFile(filePath));
+			const text = utilities.readFile(filePath);
+			if (text == null) utilities.TODO_addError();
+			module.addText(filePath, text);
 			module.runEvalQueue();
 			module.outputErrorsAndEvaluations(true);
 			module.saveToFileSystem();
@@ -74,7 +76,6 @@ function main() {
 			const name = path.basename(modulePath);
 			
 			const module = new Module(basePath, name);
-			module.loadFromFileSystem();
 			startREPL(module);
 			break;
 		}

@@ -33,7 +33,7 @@ export function byteSize(str: string): number {
 	return new Blob([str]).size;
 }
 
-export function readFile(filePath: string): string {
+export function readFile(filePath: string): string | null {
 	try {
 		const text = fs.readFileSync(filePath, { encoding: 'utf8' });
 		logger.readFile({
@@ -42,7 +42,8 @@ export function readFile(filePath: string): string {
 		});
 		return text;
 	} catch (error) {
-		throw new CompileError(`could not read file at path '${filePath}'`);
+		console.error(`could not read file at path '${filePath}'`);
+		return null;
 	}
 }
 

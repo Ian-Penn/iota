@@ -1,5 +1,5 @@
 >cd ~builtin
->module_import builtin
+>import builtin
 >cd ~
 Number = builtin_Number
 String = builtin_String
@@ -19,4 +19,12 @@ String = builtin_String
 // 	age = -10000
 // }
 
-a = a
+fib = @n(Number)
+	if n <= 1 then
+		n
+	else
+		(fib n - 1) + (fib n - 2)
+
+// >import ./numbers
+
+fib c

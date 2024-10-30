@@ -1,1 +1,0 @@
-node_modules/.bin/tsc -p ./tsconfig.json && node out/main.js init ./test/main

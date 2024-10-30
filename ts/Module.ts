@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import path from "path";
+import { join as joinPath, dirname, basename, relative as relativePath } from "path";
 
 import * as utilities from "./utilities.js";
 import logger, { LogType } from "./logger.js";
@@ -109,26 +109,58 @@ export class Module {
 	) {
 		logger.log(LogType.module, `made new Module ${fsBasePath} ${name}`);
 		this.moduleIndex = moduleList.push(this)-1;
+		if (fsBasePath != null) {
+			this.loadFromFileSystem();
+		}
+	}
+	
+	getFullFsPath() {
+		let fsBasePath = this.fsBasePath
+		if (fsBasePath == null) {
+			fsBasePath = "";
+		}
+		return joinPath(fsBasePath, this.name);
 	}
 	
 	importModule(rootPath: string, fullFsPath: string) {
 		logger.log(LogType.module, `importModule ${fullFsPath}`);
 		
-		const basePath = path.dirname(fullFsPath);
-		const name = path.basename(fullFsPath);
+		const fsBasePath = dirname(fullFsPath);
+		const name = basename(fullFsPath);
 		
-		const existingModule = getFromModuleList(name);
+		let module = getFromModuleList(name);
+		
+		for (let i = 0; i < this.imports.length; i++) {
+			const element = this.imports[i];
+			const importedModule = moduleList[element.moduleIndex];
+			if (importedModule.name == name) {
+				logger.log(LogType.module, `module with name '${name}' Is already imported in module '${this.name}'`);
+				return;
+			}
+		}
 		
 		if (name == "builtin") {
-			if (existingModule == null) {
+			if (module == null) {
 				utilities.unreachable();
 			}
+			
 			this.imports.push({
 				rootPath: rootPath,
-				moduleIndex: existingModule.moduleIndex,
-			})
+				moduleIndex: module.moduleIndex,
+			});
 		} else {
-			utilities.TODO();
+			if (module == null) {
+				let thisFsBasePath = this.fsBasePath;
+				if (thisFsBasePath == null) {
+					thisFsBasePath = "";
+				}
+				module = new Module(joinPath(thisFsBasePath, fsBasePath), name);
+			}
+			
+			this.imports.push({
+				rootPath: rootPath,
+				moduleIndex: module.moduleIndex,
+			});
 		}
 	}
 	
@@ -137,7 +169,7 @@ export class Module {
 			utilities.unreachable();
 		}
 		
-		return path.join(this.fsBasePath, this.name, "defs.iota");
+		return joinPath(this.fsBasePath, this.name, "defs.iota");
 	}
 	
 	getMetaPath(): string {
@@ -145,7 +177,7 @@ export class Module {
 			utilities.unreachable();
 		}
 		
-		return path.join(this.fsBasePath, this.name, "meta.json");
+		return joinPath(this.fsBasePath, this.name, "meta.json");
 	}
 	
 	saveToFileSystem() {
@@ -154,7 +186,8 @@ export class Module {
 			utilities.unreachable();
 		}
 		
-		utilities.makeDir(this.fsBasePath);
+		debugger;
+		utilities.makeDir(joinPath(this.fsBasePath, this.name));
 		utilities.writeFile(this.getDefsPath(), this.printDefs());
 		utilities.writeFile(this.getMetaPath(), JSON.stringify(this.getMetaObj(), null, "\t"));
 	}
@@ -165,13 +198,16 @@ export class Module {
 		
 		logger.log(LogType.module, `loadFromFileSystem ${defsPath} ${metaPath}`);
 		
-		const metaObject: MetaObject = JSON.parse(utilities.readFile(metaPath));
+		const metaText = utilities.readFile(metaPath);
+		if (metaText == null) utilities.TODO_addError();
+		const metaObject: MetaObject = JSON.parse(metaText);
 		for (let i = 0; i < metaObject.imports.length; i++) {
 			const module = metaObject.imports[i];
 			this.importModule(module.rootPath, module.name);
 		}
 		
 		const defsText = utilities.readFile(this.getDefsPath());
+		if (defsText == null) utilities.TODO_addError();
 		this.addText(defsPath, defsText);
 	}
 	

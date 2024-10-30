@@ -3,7 +3,7 @@ import { stdout } from "process";
 
 import { Module } from "./Module.js";
 
-export function startREPL(module: Module) {
+export function startREPL(module: Module, ) {
 	// https://en.wikipedia.org/wiki/ANSI_escape_code
 	const eraseLine = "\x1B[2K";
 	const cursorBack = "\x1B[D";
@@ -43,6 +43,7 @@ export function startREPL(module: Module) {
 		
 		if (key.name == "escape" || key.sequence == "\x04") {
 			stdout.write("\n");
+			module.saveToFileSystem();
 			process.exit();
 		} else if (key.sequence == "\x03") { // ^C
 			currentLine = "";

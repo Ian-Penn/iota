@@ -21,11 +21,10 @@ export function runCommand(module: Module, args: string[]) {
 	}
 	
 	switch (args[0]) {
-		case "module_import": {
+		case "import": {
 			const modulePath = nextArg();
 			
 			module.importModule(module.currentDirectory, modulePath);
-			
 			return;
 		}
 		
@@ -46,7 +45,9 @@ export function runCommand(module: Module, args: string[]) {
 			const filePath = nextArg();
 			
 			const oldDir = module.currentDirectory;
-			module.addText(filePath, utilities.readFile(filePath));
+			const text = utilities.readFile(filePath);
+			if (text == null) utilities.TODO_addError();
+			module.addText(filePath, text);
 			module.currentDirectory = oldDir;
 			return;
 		}

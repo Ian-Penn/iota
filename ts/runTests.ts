@@ -57,6 +57,7 @@ function testFile(filePath: string) {
 	
 	try {
 		const text = utilities.readFile(options.filePath);
+		if (text == null) utilities.TODO_addError();
 
 		const lexStart = Date.now();
 		const tokens = lex(options.filePath, text);

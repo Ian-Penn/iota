@@ -19,7 +19,7 @@
 			"preLaunchTask": "npm: debug",
 			"args": [
 				"init",
-				"./test/main"
+				"./test/test"
 			]
 		},
 		{

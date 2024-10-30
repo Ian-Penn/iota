@@ -31,7 +31,8 @@ export function getIndicatorText(indicator: Indicator, printPath: boolean, fancy
 	}
 	
 	if (indicator.location != "builtin") {
-		const text = utilities.readFile(indicator.location.path);
+		let text = utilities.readFile(indicator.location.path) as string;
+		if (text == null) utilities.TODO_addError();
 		
 		if (printPath) {
 			outputText += `at ${indicator.location.path}:${indicator.location.line}\n`;

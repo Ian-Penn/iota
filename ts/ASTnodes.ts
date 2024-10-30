@@ -704,7 +704,6 @@ export class ASTnode_identifier extends ASTnode {
 	}
 	
 	getType(context: BuilderContext): ASTnodeType | ASTnode_error {
-		debugger;
 		if (context.isOnEvalStackOnlyIdentifiers(this)) {
 			// TODO: This is better than the compiler stack overflowing.
 			// But this is still not a very good error message.
