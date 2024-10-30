@@ -45,7 +45,7 @@ export function codegen_js(module: Module, exports: string[], settings: CodegenJ
 		if (newFn == null) {
 			utilities.unreachable();
 		}
-		todo.push([name, newFn]);
+		todo.push([name, newFn[1]]);
 	}
 	
 	let nextAliasId = 0;

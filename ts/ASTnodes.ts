@@ -125,19 +125,19 @@ export class BuilderContext {
 		return null;
 	}
 	
-	getDef(name: string): TopLevelDef | null {
-		if (name.startsWith("~")) {
-			const path = name.slice(1);
-			const def = this.module.getDef(this.module.currentDirectory, path);
-			if (def != null) {
-				return def;
-			}
-		} else {
-			const def = this.module.getDef(this.module.currentDirectory, name);
-			if (def != null) {
-				return def;
-			}
+	getDef(name: string): [string, TopLevelDef] | null {
+		// if (name.startsWith("~")) {
+		// 	const path = name.slice(1);
+		// 	const def = this.module.getDef(this.module.currentDirectory, path);
+		// 	if (def != null) {
+		// 		return def;
+		// 	}
+		// } else {
+		const pair = this.module.getDef(this.module.currentDirectory, name);
+		if (pair != null) {
+			return pair;
 		}
+		// }
 		
 		return null;
 	}
@@ -720,9 +720,9 @@ export class ASTnode_identifier extends ASTnode {
 			if (alias != null) {
 				value = alias.value;
 			} else {
-				const def = context.getDef(this.name);
-				if (def != null) {
-					value = def.value;
+				const pair = context.getDef(this.name);
+				if (pair != null) {
+					value = pair[1].value;
 					if (context.currentDef != null && !context.currentDef.dependencies.includes(this.name)) {
 						context.currentDef.dependencies.push(this.name);
 					}
@@ -748,6 +748,7 @@ export class ASTnode_identifier extends ASTnode {
 	evaluate(context: BuilderContext): ASTnode {
 		let unalias = false;
 		let value: ASTnode;
+		let defPair: [string, TopLevelDef] | null = null;
 		{
 			const alias = context.getAlias(this.name);
 			if (alias != null) {
@@ -756,9 +757,9 @@ export class ASTnode_identifier extends ASTnode {
 					unalias = true;
 				}
 			} else {
-				const def = context.getDef(this.name);
-				if (def != null) {
-					value = def.value.evaluate(context);
+				defPair = context.getDef(this.name);
+				if (defPair != null) {
+					value = defPair[1].value.evaluate(context);
 					if (context.currentDef != null && !context.currentDef.dependencies.includes(this.name)) {
 						context.currentDef.dependencies.push(this.name);
 					}
@@ -783,7 +784,13 @@ export class ASTnode_identifier extends ASTnode {
 			return value;
 		}
 		
-		return this;
+		let newName = this.name;
+		
+		if (defPair != null) {
+			newName = defPair[0];
+		}
+		
+		return new ASTnode_identifier(this.location, newName);
 	}
 };
 

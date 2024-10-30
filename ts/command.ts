@@ -25,7 +25,6 @@ export function runCommand(module: Module, args: string[]) {
 	switch (args[0]) {
 		case "import": {
 			const modulePath = nextArg();
-			debugger;
 			if (module.fsBasePath == null) {
 				utilities.unreachable();
 			}

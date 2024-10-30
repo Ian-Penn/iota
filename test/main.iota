@@ -17,13 +17,20 @@
 // 	age = -10000
 // }
 
-// fib = @n(std_Number)
-// 	if n <= 1 then
-// 		n
+>cd ~test_builtin
+>import builtin
+
+>cd ~test_math
+// sum = @n(builtin_Number)
+// 	if n <= 0 then
+// 		0
 // 	else
-// 		(fib n - 1) + (fib n - 2)
+// 		(sum n - 1) + n
+I = @x(builtin_Number) x
+>cd ~
 
-// fib a
+// test_math_sum 2
 
-std_a
-b
+test_math_I 0
+
+>debug

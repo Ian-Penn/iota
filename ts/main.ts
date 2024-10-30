@@ -61,13 +61,13 @@ function main() {
 			const filePath = nextArg();
 			
 			const module = new Module(basePath, name);
-			module.loadFromFileSystem();
+			// module.loadFromFileSystem();
 			const text = utilities.readFile(filePath);
 			if (text == null) utilities.TODO_addError();
 			module.addText(filePath, text);
 			module.runEvalQueue();
 			module.outputErrorsAndEvaluations(true);
-			module.saveToFileSystem();
+			// module.saveToFileSystem();
 			break;
 		}
 		

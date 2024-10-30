@@ -61,14 +61,6 @@ export type MetaObject = {
 	imports: MetaObjectImport[],
 };
 
-export type TopLevelDef = {
-	// uuid: string,
-	name: string,
-	value: ASTnode,
-	valueRelativeTo: string,
-	dependencies: string[],
-};
-
 export type Import = {
 	/**
 	 * Inside the module.
@@ -90,6 +82,33 @@ function getFromModuleList(name: string): Module | null {
 	return null;
 }
 
+export class TopLevelDef {
+	constructor(
+		public name: string,
+		public value: ASTnode,
+		public valueRelativeTo: string,
+		public dependencies: string[],
+	) {}
+	
+	getModuleName(): string {
+		return this.name.split(":")[0];
+	}
+	
+	getNameRelativeToTopOfModule(): string {
+		const list = this.name.split(":");
+		return list[1];
+	}
+	
+	getOriginModule(): Module {
+		const module = getFromModuleList(this.getModuleName());
+		if (module == null) {
+			utilities.unreachable();
+		}
+		
+		return module;
+	}
+}
+
 export class Module {
 	defs = new Map<string, TopLevelDef>();
 	topLevelEvaluations: Indicator[] = [];
@@ -98,7 +117,8 @@ export class Module {
 	private imports: Import[] = [];
 	readonly moduleIndex: number;
 	
-	private evalQueue: TopLevelDef[] = [];
+	private defEvalQueue: TopLevelDef[] = [];
+	// private topLevelEvalQueue: TopLevelDef[] = [];
 	
 	/**
 	 * adds this to moduleList
@@ -211,7 +231,7 @@ export class Module {
 		logger.log(LogType.module, `setDef ${name}`);
 	}
 	
-	getDef(fromDirectory: string, name: string): TopLevelDef | null {
+	getDef(fromDirectory: string, name: string): [string, TopLevelDef] | null {
 		const nameList = name.split(pathSeparator);
 		
 		const paths = fromDirectory.split(pathSeparator);
@@ -219,11 +239,13 @@ export class Module {
 			const pathList = paths.slice(0, i);
 			pathList.push(name);
 			
+			const fullPath = pathList.join(pathSeparator);
+			
 			{
-				const fullName = this.name + ":" + pathList.join(pathSeparator);
+				const fullName = this.name + ":" + fullPath;
 				const def = this.defs.get(fullName);
 				if (def != undefined) {
-					return def;
+					return [fullPath, def];
 				}
 			}
 			
@@ -234,11 +256,11 @@ export class Module {
 				const element = this.imports[j];
 				if (element.path == rootPath) {
 					const module = moduleList[element.moduleIndex];
-					const nameInModule = name.slice(rootPath.length + (rootPathList.length));
+					const nameInModule = fullPath.slice(rootPath.length + 1);
 					const fullName = module.name + ":" + nameInModule;
 					const def = module.defs.get(fullName);
 					if (def != undefined) {
-						return def;
+						return [fullPath, def];
 					}
 				}
 			}
@@ -284,19 +306,20 @@ export class Module {
 	}
 	
 	addToEvalQueue(def: TopLevelDef) {
-		if (!this.evalQueue.includes(def)) {
-			this.evalQueue.push(def);
+		if (!this.defEvalQueue.includes(def)) {
+			this.defEvalQueue.push(def);
 			logger.log(LogType.module, `added to evalQueue: ${def.name}`);
 		}
 	}
 	
 	runEvalQueue() {
-		logger.log(LogType.module, `runEvalQueue length: ${this.evalQueue.length}`);
+		logger.log(LogType.module, `runEvalQueue length: ${this.defEvalQueue.length}`);
 		
-		for (let i = 0; i < this.evalQueue.length; i++) {
-			const def = this.evalQueue[i];
+		const oldDir = this.currentDirectory;
+		
+		for (let i = 0; i < this.defEvalQueue.length; i++) {
+			const def = this.defEvalQueue[i];
 			
-			const oldDir = this.currentDirectory;
 			this.currentDirectory = def.valueRelativeTo;
 			
 			const context = new BuilderContext(this);
@@ -308,10 +331,10 @@ export class Module {
 				break;
 			}
 			def.value = def.value.evaluate(context);
-			
-			this.currentDirectory = oldDir;
 		}
-		this.evalQueue = [];
+		
+		this.defEvalQueue = [];
+		this.currentDirectory = oldDir;
 	}
 	
 	addAST(AST: ASTnode[]) {
@@ -329,13 +352,7 @@ export class Module {
 					name = this.currentDirectory + pathSeparator + name;
 				}
 				name = this.name + ":" + name;
-				const newDef: TopLevelDef = {
-					// uuid: uuid,
-					name: name,
-					value: ASTnode.value,
-					valueRelativeTo: this.currentDirectory,
-					dependencies: [],
-				};
+				const newDef = new TopLevelDef(name, ASTnode.value, this.currentDirectory, []);
 				this.setDef(name, newDef);
 				this.addToEvalQueue(newDef);
 			} else {
@@ -420,6 +437,6 @@ export class Module {
 		console.log(`basePath: ${this.fsBasePath}`);
 		console.log(`currentDirectory: ${this.currentDirectory}`);
 		console.log(`printDefs:\n${this.printDefs(true, true)}`);
-		console.log(`getMetaObj:`, this.getMetaObj());
+		// console.log(`getMetaObj:`, this.getMetaObj());
 	}
 }
