@@ -15,7 +15,7 @@ import { CodeGenContext } from "./codegen.js";
 import { lex } from "./lexer.js";
 import { parse, ParserMode } from "./parser.js";
 import { pathSeparator } from "./const.js";
-import { runCommand } from "./command.js";
+import { runCommand } from "./commands.js";
 
 type Hash = string;
 function hashString(text: string): Hash {
