@@ -183,7 +183,7 @@ export class Module {
 		}
 		
 		utilities.makeDir(joinPath(this.fsBasePath, this.name));
-		utilities.writeFile(this.getDefsPath(), this.printDefs());
+		utilities.writeFile(this.getDefsPath(), this.printDefs(true, false));
 		// utilities.writeFile(this.getMetaPath(), JSON.stringify(this.getMetaObj(), null, "\t"));
 	}
 	
@@ -264,13 +264,15 @@ export class Module {
 		};
 	}
 	
-	printDefs(extraLines?: boolean): string {
+	printDefs(addImports: boolean, extraLines: boolean): string {
 		let list: string[] = [];
-		this.imports.forEach((value) => {
-			list.push(`>cd ~${value.path}`);
-			list.push(`>import ${value.relativeFsPath}`);
-			list.push(`>cd ~`);
-		});
+		if (addImports) {
+			this.imports.forEach((value) => {
+				list.push(`>cd ~${value.path}`);
+				list.push(`>import ${value.relativeFsPath}`);
+				list.push(`>cd ~`);
+			});
+		}
 		this.defs.forEach((def, name) => {
 			list.push(`// [${def.dependencies.join(", ")}]`);
 			list.push(`${name.slice(this.name.length+1)} = ${def.value.print()}`);
@@ -417,7 +419,7 @@ export class Module {
 		console.log(`name: ${this.name}`);
 		console.log(`basePath: ${this.fsBasePath}`);
 		console.log(`currentDirectory: ${this.currentDirectory}`);
-		console.log(`printDefs:\n${this.printDefs()}`);
+		console.log(`printDefs:\n${this.printDefs(true, true)}`);
 		console.log(`getMetaObj:`, this.getMetaObj());
 	}
 }

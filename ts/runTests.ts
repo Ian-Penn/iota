@@ -140,7 +140,7 @@ function testFile(filePath: string) {
 				testFailure(`-- expectedOutput\n${expectedOutput}\n-- actualOutput\n${actualOutput}`);
 			}
 		} else if (mode == "topLevel") {
-			const text = module.printDefs();
+			const text = module.printDefs(false, false);
 			const expectedOutput = comments.join("\n");
 			if (expectedOutput == text) {
 				testSuccess();
