@@ -1,8 +1,6 @@
->cd ~builtin
->import builtin
->cd ~
-Number = builtin_Number
-String = builtin_String
+// >cd ~std
+// >import ./../std
+// >cd ~
 
 // User = enum {
 // 	Regular struct {
@@ -19,12 +17,13 @@ String = builtin_String
 // 	age = -10000
 // }
 
-fib = @n(Number)
-	if n <= 1 then
-		n
-	else
-		(fib n - 1) + (fib n - 2)
+// fib = @n(std_Number)
+// 	if n <= 1 then
+// 		n
+// 	else
+// 		(fib n - 1) + (fib n - 2)
 
-// >import ./numbers
+// fib a
 
-fib c
+std_a
+b

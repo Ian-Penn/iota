@@ -7,7 +7,7 @@
 		{
 			"type": "node",
 			"request": "launch",
-			"name": "setup",
+			"name": "init",
 			"skipFiles": [
 				"<node_internals>/**"
 			],
@@ -19,7 +19,7 @@
 			"preLaunchTask": "npm: debug",
 			"args": [
 				"init",
-				"./test/test"
+				"./std"
 			]
 		},
 		{

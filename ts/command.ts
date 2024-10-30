@@ -1,3 +1,5 @@
+import { join as joinPath } from "path";
+
 import * as utilities from "./utilities.js";
 import { Module } from "./Module.js";
 
@@ -23,7 +25,10 @@ export function runCommand(module: Module, args: string[]) {
 	switch (args[0]) {
 		case "import": {
 			const modulePath = nextArg();
-			
+			debugger;
+			if (module.fsBasePath == null) {
+				utilities.unreachable();
+			}
 			module.importModule(module.currentDirectory, modulePath);
 			return;
 		}

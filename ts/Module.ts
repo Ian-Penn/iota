@@ -52,9 +52,8 @@ export type MetaObjectImport = {
 	/**
 	 * Inside the module.
 	 */
-	rootPath: string,
-	// fsPath: string,
-	name: string,
+	path: string,
+	relativeFsPath: string | null,
 };
 
 export type MetaObject = {
@@ -74,7 +73,8 @@ export type Import = {
 	/**
 	 * Inside the module.
 	 */
-	rootPath: string,
+	path: string,
+	relativeFsPath: string | null,
 	moduleIndex: number,
 };
 
@@ -109,9 +109,6 @@ export class Module {
 	) {
 		logger.log(LogType.module, `made new Module ${fsBasePath} ${name}`);
 		this.moduleIndex = moduleList.push(this)-1;
-		if (fsBasePath != null) {
-			this.loadFromFileSystem();
-		}
 	}
 	
 	getFullFsPath() {
@@ -122,11 +119,20 @@ export class Module {
 		return joinPath(fsBasePath, this.name);
 	}
 	
-	importModule(rootPath: string, fullFsPath: string) {
-		logger.log(LogType.module, `importModule ${fullFsPath}`);
+	importModule(rootPath: string, relativeFsPath: string | null) {
+		logger.log(LogType.module, `importModule ${relativeFsPath}`);
 		
-		const fsBasePath = dirname(fullFsPath);
-		const name = basename(fullFsPath);
+		if (relativeFsPath == null) {
+			this.imports.push({
+				path: rootPath,
+				moduleIndex: getFromModuleList("builtin")!.moduleIndex,
+				relativeFsPath: null,
+			});
+			return;
+		}
+		
+		const fsBasePath = dirname(relativeFsPath);
+		const name = basename(relativeFsPath);
 		
 		let module = getFromModuleList(name);
 		
@@ -139,29 +145,19 @@ export class Module {
 			}
 		}
 		
-		if (name == "builtin") {
-			if (module == null) {
-				utilities.unreachable();
-			}
-			
-			this.imports.push({
-				rootPath: rootPath,
-				moduleIndex: module.moduleIndex,
-			});
-		} else {
-			if (module == null) {
-				let thisFsBasePath = this.fsBasePath;
-				if (thisFsBasePath == null) {
-					thisFsBasePath = "";
-				}
-				module = new Module(joinPath(thisFsBasePath, fsBasePath), name);
-			}
-			
-			this.imports.push({
-				rootPath: rootPath,
-				moduleIndex: module.moduleIndex,
-			});
+		if (module == null) {
+			let thisFsBasePath = this.fsBasePath;
+			if (thisFsBasePath == null) thisFsBasePath = "";
+			debugger;
+			module = new Module(joinPath(thisFsBasePath, fsBasePath), name);
+			module.loadFromFileSystem();
 		}
+		
+		this.imports.push({
+			path: rootPath,
+			moduleIndex: module.moduleIndex,
+			relativeFsPath: relativeFsPath,
+		});
 	}
 	
 	getDefsPath(): string {
@@ -172,13 +168,13 @@ export class Module {
 		return joinPath(this.fsBasePath, this.name, "defs.iota");
 	}
 	
-	getMetaPath(): string {
-		if (this.fsBasePath == null) {
-			utilities.unreachable();
-		}
+	// getMetaPath(): string {
+	// 	if (this.fsBasePath == null) {
+	// 		utilities.unreachable();
+	// 	}
 		
-		return joinPath(this.fsBasePath, this.name, "meta.json");
-	}
+	// 	return joinPath(this.fsBasePath, this.name, "meta.json");
+	// }
 	
 	saveToFileSystem() {
 		logger.log(LogType.module, "saveToFileSystem");
@@ -186,25 +182,24 @@ export class Module {
 			utilities.unreachable();
 		}
 		
-		debugger;
 		utilities.makeDir(joinPath(this.fsBasePath, this.name));
 		utilities.writeFile(this.getDefsPath(), this.printDefs());
-		utilities.writeFile(this.getMetaPath(), JSON.stringify(this.getMetaObj(), null, "\t"));
+		// utilities.writeFile(this.getMetaPath(), JSON.stringify(this.getMetaObj(), null, "\t"));
 	}
 	
 	loadFromFileSystem() {
-		const metaPath = this.getMetaPath();
+		// const metaPath = this.getMetaPath();
 		const defsPath = this.getDefsPath();
 		
-		logger.log(LogType.module, `loadFromFileSystem ${defsPath} ${metaPath}`);
+		logger.log(LogType.module, `loadFromFileSystem ${defsPath}`);
 		
-		const metaText = utilities.readFile(metaPath);
-		if (metaText == null) utilities.TODO_addError();
-		const metaObject: MetaObject = JSON.parse(metaText);
-		for (let i = 0; i < metaObject.imports.length; i++) {
-			const module = metaObject.imports[i];
-			this.importModule(module.rootPath, module.name);
-		}
+		// const metaText = utilities.readFile(metaPath);
+		// if (metaText == null) utilities.TODO_addError();
+		// const metaObject: MetaObject = JSON.parse(metaText);
+		// for (let i = 0; i < metaObject.imports.length; i++) {
+		// 	const module = metaObject.imports[i];
+		// 	this.importModule(module.path, module.relativeFsPath);
+		// }
 		
 		const defsText = utilities.readFile(this.getDefsPath());
 		if (defsText == null) utilities.TODO_addError();
@@ -237,7 +232,7 @@ export class Module {
 			const rootPath = rootPathList.join(pathSeparator);
 			for (let j = 0; j < this.imports.length; j++) {
 				const element = this.imports[j];
-				if (element.rootPath == rootPath) {
+				if (element.path == rootPath) {
 					const module = moduleList[element.moduleIndex];
 					const nameInModule = name.slice(rootPath.length + (rootPathList.length));
 					const fullName = module.name + ":" + nameInModule;
@@ -254,15 +249,15 @@ export class Module {
 	getMetaObj(): MetaObject {
 		return {
 			imports: this.imports.map((value) => {
-				const module = moduleList[value.moduleIndex];
+				// const module = moduleList[value.moduleIndex];
 				// const fsPathList = [];
 				// if (module.fsBasePath != null) {
 				// 	fsPathList.push(module.fsBasePath);
 				// }
 				// fsPathList.push(module.name);
 				const metaImport: MetaObjectImport = {
-					rootPath: value.rootPath,
-					name: module.name,
+					path: value.path,
+					relativeFsPath: value.relativeFsPath,
 				};
 				return metaImport;
 			}),
@@ -271,6 +266,11 @@ export class Module {
 	
 	printDefs(extraLines?: boolean): string {
 		let list: string[] = [];
+		this.imports.forEach((value) => {
+			list.push(`>cd ~${value.path}`);
+			list.push(`>import ${value.relativeFsPath}`);
+			list.push(`>cd ~`);
+		});
 		this.defs.forEach((def, name) => {
 			list.push(`// [${def.dependencies.join(", ")}]`);
 			list.push(`${name.slice(this.name.length+1)} = ${def.value.print()}`);

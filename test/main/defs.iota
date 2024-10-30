@@ -1,10 +1,5 @@
-// [Number, builtin_Number, fib]
-fib = @n(Number)
-	if (n <= 1) then
-		n
-	else
-		((fib (n - 1)) + (fib (n - 2)))
-// [builtin_Number]
-Number = builtin_Number
-// [builtin_String]
-String = builtin_String
+>cd ~std
+>import ./../std
+>cd ~
+// [std_a]
+b = std_a
