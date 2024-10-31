@@ -24,7 +24,4 @@
 I = @x(builtin_Number) x
 >cd ~
 
->debug
-
->cd test_math
->l
+test_math_I 4

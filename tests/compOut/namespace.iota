@@ -1,13 +1,10 @@
 // compOut
-// line:10 -> 1
-// line:11 -> 2
-// line:12 -> 3
+// line:10 -> 2
 
-a = 1
-a_b = 2
->cd ~a
-b_c = 3
-a
-b
-b_c
->cd ~test
+a = 8
+
+>cd ~test_math
+fn = @x(builtin_Number) x - a
+>cd ~
+
+test_math_fn a + 2
