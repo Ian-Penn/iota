@@ -16,7 +16,7 @@ flags:
 
 modes:
   init <modulePath>
-  runFile <modulePath> <filePath>
+  runFile <filePath>
   start <modulePath>
 `;
 
@@ -54,13 +54,13 @@ function main() {
 		}
 		
 		case "runFile": {
-			const modulePath = nextArg();
-			const basePath = path.dirname(modulePath);
-			const name = path.basename(modulePath);
+			// const modulePath = nextArg();
+			// const basePath = path.dirname(modulePath);
+			// const name = path.basename(modulePath);
 			
 			const filePath = nextArg();
 			
-			const module = new Module(basePath, name);
+			const module = new Module("", "runFileMain");
 			// module.loadFromFileSystem();
 			const text = utilities.readFile(filePath);
 			if (text == null) utilities.TODO_addError();

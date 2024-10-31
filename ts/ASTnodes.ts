@@ -2,7 +2,7 @@ import * as utilities from "./utilities.js";
 import logger, { LogType } from "./logger.js";
 import { Module, ModulePath, TopLevelDef } from "./Module.js";
 import { CompileError } from "./report.js";
-import { getBuiltinType, isBuiltinType, makeListType, makeEffectType, task_getArg } from "./builtin.js";
+import { getBuiltinType, isBuiltinType, makeListType, makeEffectType } from "./builtin.js";
 import { CodeGenContext } from "./codegen.js";
 
 export type SourceLocation = "builtin" | {
@@ -1152,35 +1152,36 @@ export class ASTnode_operator extends ASTnode {
 				
 				return alias.value;
 			} else if (left instanceof ASTnodeType_enum) {
-				const enumCase = left.getCase(name);
-				if (enumCase == null) {
-					utilities.unreachable();
-				}
-				const task = new ASTnode_builtinTask("", (context): ASTnodeType | ASTnode_error => {
-					return left;
-				}, (context): ASTnode => {
-					return withResolve(context, () => {
-						const input = task_getArg(context, "input");
-						if (!(input instanceof ASTnode_instance)) {
-							return task;
-						}
-						const instance = new ASTnode_instance(this.location, left, input.codeBlock);
-						// instance.caseName = left.getCaseIndex(name);
-						// if (instance.caseName == null) {
-						// 	utilities.unreachable();
-						// }
-						instance.caseName = name;
-						return instance;
-					});
-				});
-				const enumConstructor = new ASTnode_function(
-					this.location,
-					new ASTnode_argument(this.location, "input", enumCase.type),
-					[
-						task
-					],
-				);
-				return enumConstructor;
+				// const enumCase = left.getCase(name);
+				// if (enumCase == null) {
+				// 	utilities.unreachable();
+				// }
+				// const task = new ASTnode_builtinTask("", (context): ASTnodeType | ASTnode_error => {
+				// 	return left;
+				// }, (context): ASTnode => {
+				// 	return withResolve(context, () => {
+				// 		const input = task_getArg(context, "input");
+				// 		if (!(input instanceof ASTnode_instance)) {
+				// 			return task;
+				// 		}
+				// 		const instance = new ASTnode_instance(this.location, left, input.codeBlock);
+				// 		// instance.caseName = left.getCaseIndex(name);
+				// 		// if (instance.caseName == null) {
+				// 		// 	utilities.unreachable();
+				// 		// }
+				// 		instance.caseName = name;
+				// 		return instance;
+				// 	});
+				// });
+				// const enumConstructor = new ASTnode_function(
+				// 	this.location,
+				// 	new ASTnode_argument(this.location, "input", enumCase.type),
+				// 	[
+				// 		task
+				// 	],
+				// );
+				// return enumConstructor;
+				utilities.TODO();
 			} else {
 				utilities.unreachable();
 			}
@@ -1523,13 +1524,37 @@ export class ASTnode_unknowable extends ASTnode {
 	}
 };
 
+type ASTnode_builtinTask_dependency = {
+	name: string,
+	value: ASTnode,
+};
 export class ASTnode_builtinTask extends ASTnode {
+	dependencies: ASTnode_builtinTask_dependency[] = [];
+	
 	constructor(
 		readonly codegenId: string,
+		// dependencies: string[],
 		private _getType: (context: BuilderContext) => ASTnodeType | ASTnode_error,
-		private _evaluate: (context: BuilderContext) => ASTnode,
+		private _evaluate: (context: BuilderContext, task: ASTnode_builtinTask) => ASTnode,
 	) {
 		super("builtin");
+		// for (let i = 0; i < dependencies.length; i++) {
+		// 	const name = dependencies[i];
+		// 	this.dependencies.push({
+		// 		name: name,
+		// 		value: new ASTnode_identifier(this.location, name),
+		// 	});
+		// }
+	}
+	
+	getDependency(context: BuilderContext, name: string): ASTnode {
+		for (let i = 0; i < this.dependencies.length; i++) {
+			const dependency = this.dependencies[i];
+			if (dependency.name == name) {
+				return dependency.value.evaluate(context);
+			}
+		}
+		utilities.unreachable();
 	}
 	
 	_print(context = new CodeGenContext()): string {
@@ -1541,7 +1566,28 @@ export class ASTnode_builtinTask extends ASTnode {
 	}
 	
 	evaluate(context: BuilderContext): ASTnode {
-		return this._evaluate(context);
+		const output = this._evaluate(context, this);
+		if (output == this) {
+			const newTask = new ASTnode_builtinTask(
+				this.codegenId,
+				// [],
+				this._getType,
+				this._evaluate,
+			);
+			
+			for (let i = 0; i < this.dependencies.length; i++) {
+				const dependency = this.dependencies[i];
+				newTask.dependencies.push({
+					name: dependency.name,
+					value: dependency.value.evaluate(context),
+				});
+			}
+			
+			return newTask;
+		} else {
+			// done
+			return output;
+		}
 	}
 }
 

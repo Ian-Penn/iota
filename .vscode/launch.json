@@ -37,7 +37,6 @@
 			"preLaunchTask": "npm: debug",
 			"args": [
 				"runFile",
-				"./test/main",
 				"./test/main.iota"
 			]
 		},

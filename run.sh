@@ -1,1 +1,1 @@
-node_modules/.bin/tsc -p ./tsconfig.json && node out/main.js runFile ./test/main ./test/main.iota
+node_modules/.bin/tsc -p ./tsconfig.json && node out/main.js runFile ./test/main.iota

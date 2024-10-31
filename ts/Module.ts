@@ -276,9 +276,11 @@ export class Module {
 				}
 			}
 			
-			const importPath = new ModulePath(fullPath.segments.slice(0, fullPath.segments.length-1));
 			for (let j = 0; j < this.imports.length; j++) {
 				const element = this.imports[j];
+				const importPath = new ModulePath(
+					fullPath.segments.slice(0, element.path.segments.length)
+				);
 				if (element.path.equals(importPath)) {
 					const module = moduleList[element.moduleIndex];
 					const nameInModule = fullPath.segments.slice(element.path.segments.length).join(pathSeparator);
@@ -461,6 +463,8 @@ export class Module {
 		console.log(`basePath: ${this.fsBasePath}`);
 		console.log(`currentDirectory: ${this.currentDirectory}`);
 		console.log(`printDefs:\n${this.printDefs(true, true)}`);
-		// console.log(`getMetaObj:`, this.getMetaObj());
+		for (let i = 0; i < this.imports.length; i++) {
+			moduleList[this.imports[i].moduleIndex].dumpDebug();
+		}
 	}
 }

@@ -61,14 +61,6 @@ export function makeEffectType(T: ASTnodeType): ASTnodeType {
 	);
 }
 
-export function task_getArg(context: BuilderContext, name: string): ASTnode {
-	const alias = context.getAlias(name);
-	if (alias == null) {
-		utilities.unreachable();
-	}
-	return alias.value;
-}
-
 export function setUpBuiltins() {
 	builtinTypes = [
 		makeBuiltinType("Type"),
@@ -86,14 +78,6 @@ export function setUpBuiltins() {
 		const name = builtinPrefix + type.left.name;
 		builtins.set(name, new TopLevelDef(name, type.value, new ModulePath([]), []));
 	}
-	function makeFunction(arg: string, argType: ASTnodeType, body: ASTnode[]): ASTnode_function {
-		const fn = new ASTnode_function("builtin",
-			new ASTnode_argument("builtin", arg, argType),
-			body
-		);
-		fn.onlyResolveOnFullCall = true;
-		return fn;
-	}
 	function makeType(argType: ASTnodeType, returnType: ASTnodeType): ASTnodeType_functionType {
 		return new ASTnodeType_functionType(
 			"builtin",
@@ -108,23 +92,41 @@ export function setUpBuiltins() {
 		builtins.set(nameWithPrefix, new TopLevelDef(nameWithPrefix, value, new ModulePath([]), []));
 	}
 	
-	{
-		const task = new ASTnode_builtinTask("", (context): ASTnodeType | ASTnode_error => {
-			return getBuiltinType("Type");
-		}, (context): ASTnode => {
-			return withResolve(context, () => {
-				const T = task_getArg(context, "T");
-				if (!(T instanceof ASTnodeType) || T instanceof ASTnodeType_selfType) {
-					return task;
-				}
-				return makeListType(T);
+	function makeFunction(name: string, args: [string, ASTnodeType][], task: ASTnode_builtinTask) {
+		let last: ASTnode = task;
+		for (let i = args.length - 1; i >= 0; i--) {
+			const arg = args[i];
+			task.dependencies.push({
+				name: arg[0],
+				value: new ASTnode_identifier("builtin", arg[0])
 			});
-		});
-		makeBuiltin("List", makeFunction("T", getBuiltinType("Type"), [ task ]));
+			last = new ASTnode_function("builtin",
+				new ASTnode_argument("builtin", arg[0], arg[1]),
+				[last]
+			);
+		}
+		
+		makeBuiltin(name, last);
+	}
+	
+	{
+		makeFunction("List", [["T", getBuiltinType("Type")]], 
+			new ASTnode_builtinTask("", (context): ASTnodeType | ASTnode_error => {
+				return getBuiltinType("Type");
+			}, (context, task): ASTnode => {
+				return withResolve(context, () => {
+					const T = task.getDependency(context, "T");
+					if (!(T instanceof ASTnodeType) || T instanceof ASTnodeType_selfType) {
+						return task;
+					}
+					return makeListType(T);
+				});
+			})
+		);
 	}
 	
 	// {
-	// 	const task = new ASTnode_builtinTask("List:get", (context): ASTnodeType | ASTnode_error => {
+	// 	new ASTnode_builtinTask("List:get", (context): ASTnodeType | ASTnode_error => {
 	// 		const list = getArg(context, "index");
 	// 		if (!(list instanceof ASTnode_list)) {
 	// 			return new ASTnode_error("builtin", null);
@@ -159,33 +161,35 @@ export function setUpBuiltins() {
 	// }
 	
 	{
-		const task = new ASTnode_builtinTask("", (context): ASTnodeType | ASTnode_error => {
-			return getBuiltinType("Type");
-		}, (context): ASTnode => {
-			return withResolve(context, () => {
-				const T = task_getArg(context, "T");
-				if (!(T instanceof ASTnodeType) || T instanceof ASTnodeType_selfType) {
-					return task;
-				}
-				return makeEffectType(T);
-			});
-		});
-		makeBuiltin("Effect", makeFunction("T", getBuiltinType("Type"), [ task ]));
+		makeFunction("Effect", [["T", getBuiltinType("Type")]], 
+			new ASTnode_builtinTask("", (context): ASTnodeType | ASTnode_error => {
+				return getBuiltinType("Type");
+			}, (context, task): ASTnode => {
+				return withResolve(context, () => {
+					const T = task.getDependency(context, "T");
+					if (!(T instanceof ASTnodeType) || T instanceof ASTnodeType_selfType) {
+						return task;
+					}
+					return makeEffectType(T);
+				});
+			})
+		);
 	}
 	
 	{
-		const task = new ASTnode_builtinTask("numberToString", (context): ASTnodeType | ASTnode_error => {
-			return getBuiltinType("String");
-		}, (context): ASTnode => {
-			return withResolve(context, () => {
-				const number = task_getArg(context, "number");
-				if (!(number instanceof ASTnode_number)) {
-					return task;
-				}
-				return new ASTnode_string("builtin", number.value.toString());
-			});
-		});
-		makeBuiltin("numberToString", makeFunction("number", getBuiltinType("Number"), [ task ]));
+		makeFunction("numberToString", [["number", getBuiltinType("Number")]], 
+			new ASTnode_builtinTask("numberToString", (context): ASTnodeType | ASTnode_error => {
+				return getBuiltinType("String");
+			}, (context, task): ASTnode => {
+				return withResolve(context, () => {
+					const number = task.getDependency(context, "number");
+					if (!(number instanceof ASTnode_number)) {
+						return task;
+					}
+					return new ASTnode_string("builtin", number.value.toString());
+				});
+			})
+		);
 	}
 	
 	// builtins.set("List:map", {
@@ -201,6 +205,41 @@ export function setUpBuiltins() {
 	// 		]
 	// 	)
 	// });
+	
+	//#region operators
+	
+	function makeOperatorBuiltin_number(
+		name: string,
+		callBack: (left: ASTnode_number, right: ASTnode_number) => ASTnode_number
+	) {
+		makeFunction(name, [["left", getBuiltinType("Number")], ["right", getBuiltinType("Number")]],
+			new ASTnode_builtinTask(name, (context): ASTnodeType | ASTnode_error => {
+				return getBuiltinType("Number");
+			}, (context, task): ASTnode => {
+				return withResolve(context, () => {
+					const left = task.getDependency(context, "left");
+					const right = task.getDependency(context, "right");
+					if (left instanceof ASTnode_number && right instanceof ASTnode_number && context.doResolve()) {
+						return callBack(left, right);
+					}
+					return task;
+				});
+			})
+		);
+	}
+	
+	function newNumber(number: number): ASTnode_number {
+		return new ASTnode_number("builtin", number);
+	}
+	
+	makeOperatorBuiltin_number(
+		"JsNumber_add",
+		(left: ASTnode_number, right: ASTnode_number) => {
+			return newNumber(left.value + right.value);
+		}
+	);
+	
+	//#endregion operators
 	
 	// add the module
 	const builtinModule = new Module(null, "builtin");

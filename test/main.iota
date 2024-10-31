@@ -17,11 +17,10 @@
 // 	age = -10000
 // }
 
->cd ~test_builtin
+>cd ~builtin
 >import builtin
-
->cd ~test_math
-I = @x(builtin_Number) x
 >cd ~
 
-test_math_I 4
+>debug
+
+builtin_JsNumber_add 1 2
