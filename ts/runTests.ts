@@ -3,7 +3,7 @@ import path from "path";
 
 import * as utilities from "./utilities.js";
 import logger from "./logger.js";
-import { CompilerOptions, Module } from "./Module.js";
+import { CompilerOptions, Module, ModulePath } from "./Module.js";
 import { lex, TokenKind } from "./lexer.js";
 import { CompileError, getIndicatorText, removeDuplicateErrors } from "./report.js";
 import { parse, ParserMode } from "./parser.js";
@@ -53,7 +53,7 @@ function testFile(filePath: string) {
 	};
 	
 	const module = new Module(null, "main");
-	module.importModule("builtin", "builtin");
+	module.importModule(new ModulePath(["builtin"]), "builtin");
 	
 	try {
 		const text = utilities.readFile(options.filePath);

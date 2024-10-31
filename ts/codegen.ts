@@ -16,7 +16,7 @@ import {
 	ASTnode_string,
 	ASTnode_builtinTask
 } from "./ASTnodes.js";
-import { Module, TopLevelDef } from "./Module.js";
+import { Module, ModulePath, TopLevelDef } from "./Module.js";
 
 export class CodeGenContext {
 	fprintOrigin = false;
@@ -41,7 +41,7 @@ export function codegen_js(module: Module, exports: string[], settings: CodegenJ
 			return;
 		}
 		
-		const newFn = module.getDef("", name);
+		const newFn = module.getDef(new ModulePath([]), new ModulePath([name]));
 		if (newFn == null) {
 			utilities.unreachable();
 		}

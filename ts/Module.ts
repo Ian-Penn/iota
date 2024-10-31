@@ -14,7 +14,6 @@ import {
 import { CodeGenContext } from "./codegen.js";
 import { lex } from "./lexer.js";
 import { parse, ParserMode } from "./parser.js";
-import { pathSeparator } from "./const.js";
 import { runCommand } from "./commands.js";
 
 type Hash = string;
@@ -48,24 +47,24 @@ export type CompilerOptions = {
 	ideOptions?: IdeOptions,
 };
 
-export type MetaObjectImport = {
-	/**
-	 * Inside the module.
-	 */
-	path: string,
-	relativeFsPath: string | null,
-};
+// export type MetaObjectImport = {
+// 	/**
+// 	 * Inside the module.
+// 	 */
+// 	path: string,
+// 	relativeFsPath: string | null,
+// };
 
-export type MetaObject = {
-	// version: number,
-	imports: MetaObjectImport[],
-};
+// export type MetaObject = {
+// 	// version: number,
+// 	imports: MetaObjectImport[],
+// };
 
 export type Import = {
 	/**
 	 * Inside the module.
 	 */
-	path: string,
+	path: ModulePath,
 	relativeFsPath: string | null,
 	moduleIndex: number,
 };
@@ -82,11 +81,45 @@ function getFromModuleList(name: string): Module | null {
 	return null;
 }
 
+export const pathSeparator = "_";
+export class ModulePath {
+	segments: string[] = [];
+	
+	constructor(segments: string[]) {
+		for (let i = 0; i < segments.length; i++) {
+			const segment = segments[i];
+			const subSegments = segment.split(pathSeparator);
+			for (let i = 0; i < subSegments.length; i++) {
+				const subSegment = subSegments[i];
+				if (subSegment != "") {
+					this.segments.push(subSegment);
+				}
+			}
+		}
+	}
+	
+	toString(): string {
+		return this.segments.join(pathSeparator);
+	}
+	
+	isTop(): boolean {
+		return this.segments.length == 0;
+	}
+	
+	startsWith(otherPath: ModulePath): boolean {
+		return this.toString().startsWith(otherPath.toString());
+	}
+	
+	equals(otherPath: ModulePath): boolean {
+		return this.toString() == otherPath.toString();
+	}
+}
+
 export class TopLevelDef {
 	constructor(
 		public name: string,
 		public value: ASTnode,
-		public valueRelativeTo: string,
+		public relativeTo: ModulePath,
 		public dependencies: string[],
 	) {}
 	
@@ -94,9 +127,8 @@ export class TopLevelDef {
 		return this.name.split(":")[0];
 	}
 	
-	getNameRelativeToTopOfModule(): string {
-		const list = this.name.split(":");
-		return list[1];
+	getPath(): ModulePath {
+		return new ModulePath([this.name.split(":")[1]]);
 	}
 	
 	getOriginModule(): Module {
@@ -113,7 +145,7 @@ export class Module {
 	defs = new Map<string, TopLevelDef>();
 	topLevelEvaluations: Indicator[] = [];
 	errors: CompileError[] = [];
-	currentDirectory: string = "";
+	currentDirectory = new ModulePath([]);
 	private imports: Import[] = [];
 	readonly moduleIndex: number;
 	
@@ -139,7 +171,7 @@ export class Module {
 		return joinPath(fsBasePath, this.name);
 	}
 	
-	importModule(rootPath: string, relativeFsPath: string | null) {
+	importModule(rootPath: ModulePath, relativeFsPath: string | null) {
 		logger.log(LogType.module, `importModule ${relativeFsPath}`);
 		
 		if (relativeFsPath == null) {
@@ -231,32 +263,25 @@ export class Module {
 		logger.log(LogType.module, `setDef ${name}`);
 	}
 	
-	getDef(fromDirectory: string, name: string): [string, TopLevelDef] | null {
-		const nameList = name.split(pathSeparator);
-		
-		const paths = fromDirectory.split(pathSeparator);
-		for (let i = 0; i < paths.length + 1; i++) {
-			const pathList = paths.slice(0, i);
-			pathList.push(name);
-			
-			const fullPath = pathList.join(pathSeparator);
+	getDef(fromDirectory: ModulePath, name: ModulePath): [ModulePath, TopLevelDef] | null {
+		for (let i = 0; i < fromDirectory.segments.length + 1; i++) {
+			// const rootPath = new ModulePath(fromDirectory.segments.slice(0, i));
+			const fullPath = new ModulePath([fromDirectory.segments.slice(0, i), name.segments].flat());
 			
 			{
-				const fullName = this.name + ":" + fullPath;
+				const fullName = this.name + ":" + fullPath.toString();
 				const def = this.defs.get(fullName);
 				if (def != undefined) {
 					return [fullPath, def];
 				}
 			}
 			
-			const rootPathList = paths.slice(0, i);
-			rootPathList.push(...nameList.slice(0, nameList.length-1));
-			const rootPath = rootPathList.join(pathSeparator);
+			const importPath = new ModulePath(fullPath.segments.slice(0, fullPath.segments.length-1));
 			for (let j = 0; j < this.imports.length; j++) {
 				const element = this.imports[j];
-				if (element.path == rootPath) {
+				if (element.path.equals(importPath)) {
 					const module = moduleList[element.moduleIndex];
-					const nameInModule = fullPath.slice(rootPath.length + 1);
+					const nameInModule = fullPath.segments.slice(element.path.segments.length).join(pathSeparator);
 					const fullName = module.name + ":" + nameInModule;
 					const def = module.defs.get(fullName);
 					if (def != undefined) {
@@ -265,26 +290,27 @@ export class Module {
 				}
 			}
 		}
+		
 		return null;
 	}
 	
-	getMetaObj(): MetaObject {
-		return {
-			imports: this.imports.map((value) => {
-				// const module = moduleList[value.moduleIndex];
-				// const fsPathList = [];
-				// if (module.fsBasePath != null) {
-				// 	fsPathList.push(module.fsBasePath);
-				// }
-				// fsPathList.push(module.name);
-				const metaImport: MetaObjectImport = {
-					path: value.path,
-					relativeFsPath: value.relativeFsPath,
-				};
-				return metaImport;
-			}),
-		};
-	}
+	// getMetaObj(): MetaObject {
+	// 	return {
+	// 		imports: this.imports.map((value) => {
+	// 			// const module = moduleList[value.moduleIndex];
+	// 			// const fsPathList = [];
+	// 			// if (module.fsBasePath != null) {
+	// 			// 	fsPathList.push(module.fsBasePath);
+	// 			// }
+	// 			// fsPathList.push(module.name);
+	// 			const metaImport: MetaObjectImport = {
+	// 				path: value.path,
+	// 				relativeFsPath: value.relativeFsPath,
+	// 			};
+	// 			return metaImport;
+	// 		}),
+	// 	};
+	// }
 	
 	printDefs(addImports: boolean, extraLines: boolean): string {
 		let list: string[] = [];
@@ -320,7 +346,7 @@ export class Module {
 		for (let i = 0; i < this.defEvalQueue.length; i++) {
 			const def = this.defEvalQueue[i];
 			
-			this.currentDirectory = def.valueRelativeTo;
+			this.currentDirectory = def.relativeTo;
 			
 			const context = new BuilderContext(this);
 			context.resolve = "none";
@@ -347,11 +373,9 @@ export class Module {
 			} else if (ASTnode instanceof ASTnode_alias) {
 				// const hash = hashString(JSON.stringify(ASTnode.value));
 				// const uuid = getUUID();
-				let name = ASTnode.left.print();
-				if (this.currentDirectory != "") {
-					name = this.currentDirectory + pathSeparator + name;
-				}
-				name = this.name + ":" + name;
+				const ASTname = ASTnode.left.print();
+				const path = new ModulePath([this.currentDirectory.segments, ASTname].flat());
+				const name = `${this.name}:${path.toString()}`;
 				const newDef = new TopLevelDef(name, ASTnode.value, this.currentDirectory, []);
 				this.setDef(name, newDef);
 				this.addToEvalQueue(newDef);

@@ -16,7 +16,7 @@ import {
 	BuilderContext,
 	withResolve
 } from "./ASTnodes.js";
-import { Module, TopLevelDef } from "./Module.js";
+import { Module, ModulePath, TopLevelDef } from "./Module.js";
 
 export const builtinPrefix = "builtin:";
 
@@ -84,7 +84,7 @@ export function setUpBuiltins() {
 	for (let i = 0; i < builtinTypes.length; i++) {
 		const type = builtinTypes[i];
 		const name = builtinPrefix + type.left.name;
-		builtins.set(name, new TopLevelDef(name, type.value, "", []));
+		builtins.set(name, new TopLevelDef(name, type.value, new ModulePath([]), []));
 	}
 	function makeFunction(arg: string, argType: ASTnodeType, body: ASTnode[]): ASTnode_function {
 		const fn = new ASTnode_function("builtin",
@@ -105,7 +105,7 @@ export function setUpBuiltins() {
 	
 	function makeBuiltin(name: string, value: ASTnode) {
 		const nameWithPrefix = builtinPrefix + name;
-		builtins.set(nameWithPrefix, new TopLevelDef(nameWithPrefix, value, "", []));
+		builtins.set(nameWithPrefix, new TopLevelDef(nameWithPrefix, value, new ModulePath([]), []));
 	}
 	
 	{

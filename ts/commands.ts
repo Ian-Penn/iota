@@ -1,7 +1,5 @@
-import { join as joinPath } from "path";
-
 import * as utilities from "./utilities.js";
-import { Module } from "./Module.js";
+import { Module, ModulePath } from "./Module.js";
 
 export function runCommand(module: Module, args: string[]) {
 	let argIndex = 1;
@@ -34,8 +32,41 @@ export function runCommand(module: Module, args: string[]) {
 		
 		case "cd": {
 			const path = nextArg();
-			if (!path.startsWith("~")) utilities.TODO();
-			module.currentDirectory = path.slice(1);
+			if (path.startsWith("~")) {
+				module.currentDirectory = new ModulePath([path.slice(1)]);
+			} else {
+				module.currentDirectory = new ModulePath([module.currentDirectory.segments, path].flat());
+			}
+			return;
+		}
+		
+		case "l": { // list
+			module.runEvalQueue();
+			
+			console.log(`module: ${module.name} at: ${module.currentDirectory}\n`);
+			module.defs.forEach((def) => {
+				let path = def.getPath();
+				if (!path.startsWith(module.currentDirectory)) return;
+				path = new ModulePath(
+					path.segments.slice(module.currentDirectory.segments.length)
+				);
+				console.log(path.toString());
+			});
+			return;
+		}
+		
+		case "ll": { // long list
+			module.runEvalQueue();
+			
+			console.log(`module: ${module.name} at: ${module.currentDirectory}\n`);
+			module.defs.forEach((def) => {
+				let path = def.getPath();
+				if (!path.startsWith(module.currentDirectory)) return;
+				path = new ModulePath(
+					path.segments.slice(module.currentDirectory.segments.length)
+				);
+				console.log(`${path.toString()} = ${def.value.print()}`);
+			});
 			return;
 		}
 		

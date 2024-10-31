@@ -1,6 +1,6 @@
 import * as utilities from "./utilities.js";
 import logger, { LogType } from "./logger.js";
-import { Module, TopLevelDef } from "./Module.js";
+import { Module, ModulePath, TopLevelDef } from "./Module.js";
 import { CompileError } from "./report.js";
 import { getBuiltinType, isBuiltinType, makeListType, makeEffectType, task_getArg } from "./builtin.js";
 import { CodeGenContext } from "./codegen.js";
@@ -125,7 +125,7 @@ export class BuilderContext {
 		return null;
 	}
 	
-	getDef(name: string): [string, TopLevelDef] | null {
+	getDef(name: string): [ModulePath, TopLevelDef] | null {
 		// if (name.startsWith("~")) {
 		// 	const path = name.slice(1);
 		// 	const def = this.module.getDef(this.module.currentDirectory, path);
@@ -133,7 +133,7 @@ export class BuilderContext {
 		// 		return def;
 		// 	}
 		// } else {
-		const pair = this.module.getDef(this.module.currentDirectory, name);
+		const pair = this.module.getDef(this.module.currentDirectory, new ModulePath([name]));
 		if (pair != null) {
 			return pair;
 		}
@@ -748,7 +748,7 @@ export class ASTnode_identifier extends ASTnode {
 	evaluate(context: BuilderContext): ASTnode {
 		let unalias = false;
 		let value: ASTnode;
-		let defPair: [string, TopLevelDef] | null = null;
+		let defPair: [ModulePath, TopLevelDef] | null = null;
 		{
 			const alias = context.getAlias(this.name);
 			if (alias != null) {
@@ -787,7 +787,7 @@ export class ASTnode_identifier extends ASTnode {
 		let newName = this.name;
 		
 		if (defPair != null) {
-			newName = defPair[0];
+			newName = defPair[0].toString();
 		}
 		
 		return new ASTnode_identifier(this.location, newName);

@@ -21,16 +21,10 @@
 >import builtin
 
 >cd ~test_math
-// sum = @n(builtin_Number)
-// 	if n <= 0 then
-// 		0
-// 	else
-// 		(sum n - 1) + n
 I = @x(builtin_Number) x
 >cd ~
 
-// test_math_sum 2
-
-test_math_I 0
-
 >debug
+
+>cd test_math
+>l
