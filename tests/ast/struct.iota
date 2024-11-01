@@ -1,19 +1,19 @@
 // topLevel
-// // [builtin_Number]
-// Number = builtin_Number
-// // [Number, builtin_Number]
+// // [builtin_Float64]
+// Number = builtin_Float64
+// // [Number, builtin_Float64]
 // Test = struct {
 // 	a Number,
 // 	b Number
 // }
-// // [Number, builtin_Number, Test]
+// // [Number, builtin_Float64, Test]
 // Test_new = @a(Number) @b(Number)
 // 	&Test {
 // 		a = a,
 // 		b = b
 // 	}
 
-Number = builtin_Number
+Number = builtin_Float64
 Test = struct { a(Number), b(Number) }
 Test_new = @a(Number) @b(Number)
 	&Test {

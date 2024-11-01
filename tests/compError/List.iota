@@ -11,7 +11,7 @@
 
 List = builtin_List
 String = builtin_String
-Number = builtin_Number
+Number = builtin_Float64
 
 I = @x(List String) x
 I [1]

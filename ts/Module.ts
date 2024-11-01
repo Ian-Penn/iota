@@ -9,10 +9,13 @@ import {
 	ASTnode_alias,
 	ASTnode_command,
 	ASTnode_error,
+	ASTnode_identifier,
+	ASTnode_set,
 	BuilderContext,
+	printAST,
 } from "./ASTnodes.js";
 import { CodeGenContext } from "./codegen.js";
-import { lex } from "./lexer.js";
+import { isOperator, lex } from "./lexer.js";
 import { parse, ParserMode } from "./parser.js";
 import { runCommand } from "./commands.js";
 
@@ -324,8 +327,12 @@ export class Module {
 			});
 		}
 		this.defs.forEach((def, name) => {
+			name = name.slice(this.name.length+1);
+			if (isOperator(name)) {
+				name = `(${name})`;
+			}
 			list.push(`// [${def.dependencies.join(", ")}]`);
-			list.push(`${name.slice(this.name.length+1)} = ${def.value.print()}`);
+			list.push(`${name} = ${def.value.print()}`);
 			if (extraLines == true) {
 				list.push("");
 			}
@@ -365,22 +372,58 @@ export class Module {
 		this.currentDirectory = oldDir;
 	}
 	
+	setValueAtPath(path: ModulePath, value: ASTnode) {
+		const name = `${this.name}:${path.toString()}`;
+		const newDef = new TopLevelDef(name, value, this.currentDirectory, []);
+		this.setDef(name, newDef);
+		this.addToEvalQueue(newDef);
+	}
+	
 	addAST(AST: ASTnode[]) {
-		for (let i = 0; i < AST.length; i++) {
-			const ASTnode = AST[i];
+		for (let index = 0; index < AST.length; index++) {
+			const ASTnode = AST[index];
 			
 			if (ASTnode instanceof ASTnode_command) {
 				runCommand(this, ASTnode.text.split(" "));
 				continue;
 			} else if (ASTnode instanceof ASTnode_alias) {
-				// const hash = hashString(JSON.stringify(ASTnode.value));
-				// const uuid = getUUID();
-				const ASTname = ASTnode.left.print();
-				const path = new ModulePath([this.currentDirectory.segments, ASTname].flat());
-				const name = `${this.name}:${path.toString()}`;
-				const newDef = new TopLevelDef(name, ASTnode.value, this.currentDirectory, []);
-				this.setDef(name, newDef);
-				this.addToEvalQueue(newDef);
+				const context = new CodeGenContext();
+				context.noParenthesesForFloatingOperators = true;
+				
+				if (ASTnode.left instanceof ASTnode_identifier) {
+					const path = new ModulePath([
+						this.currentDirectory.segments,
+						ASTnode.left.print(context)
+					].flat());
+					this.setValueAtPath(path, ASTnode.value);
+				} else if (ASTnode.left instanceof ASTnode_set) {
+					if (!(ASTnode.value instanceof ASTnode_identifier)) {
+						utilities.TODO_addError();
+					}
+					
+					for (let j = 0; j < ASTnode.left.elements.length; j++) {
+						const element = ASTnode.left.elements[j];
+						
+						if (!(element instanceof ASTnode_identifier)) {
+							utilities.TODO_addError();
+						}
+						
+						const path = new ModulePath([
+							this.currentDirectory.segments,
+							element.print(context),
+						].flat());
+						
+						const pair = this.getDef(this.currentDirectory, new ModulePath([
+							ASTnode.value.name,
+							element.name,
+						]));
+						if (pair == null) {
+							utilities.TODO_addError();
+						}
+						debugger;
+						this.setValueAtPath(path, new ASTnode_identifier(ASTnode.left.location, pair[0].toString()));
+					}
+				}
 			} else {
 				logger.log(LogType.module, `found top level evaluation`);
 				

@@ -4,7 +4,7 @@
 // }
 // var main = g0("testing js codegen");
 
-Number = builtin_Number
+Number = builtin_Float64
 String = builtin_String
 Void = builtin_Void
 

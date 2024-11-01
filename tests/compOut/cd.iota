@@ -5,7 +5,7 @@
 // line:17 -> 8
 
 >cd ~math
-add = @x(builtin_Number) @y(builtin_Number)
+add = @x(builtin_Float64) @y(builtin_Float64)
 	x + y
 
 add 1 1

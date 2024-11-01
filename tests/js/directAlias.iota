@@ -4,5 +4,5 @@
 // }
 // var main = g0;
 
-I = @x(builtin_Number) x
+I = @x(builtin_Float64) x
 main = I

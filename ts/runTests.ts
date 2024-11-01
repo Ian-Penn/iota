@@ -54,6 +54,7 @@ function testFile(filePath: string) {
 	
 	const module = new Module(null, "main");
 	module.importModule(new ModulePath(["builtin"]), "builtin");
+	// module.addText("__none__", "((+), (-), (*), (/)) = builtin_Float64");
 	
 	try {
 		const text = utilities.readFile(options.filePath);

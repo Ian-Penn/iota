@@ -12,7 +12,7 @@
 // 	};
 // }
 
-Number = builtin_Number
+Number = builtin_Float64
 Bool = builtin_Bool
 maybeAdd1 = @n(Number) @bool(Bool)
 	if bool then

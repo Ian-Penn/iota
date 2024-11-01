@@ -2,7 +2,7 @@
 // line:8 -> 4
 
 a = 1
-b = @x(builtin_Number) x + a
+b = @x(builtin_Float64) x + a
 a = 2
 
 b 2

@@ -9,7 +9,7 @@
 
 Type = builtin_Type
 String = builtin_String
-Number = builtin_Number
+Number = builtin_Float64
 Function = builtin_Function
 
 makeIdentity = @T(Type) @x(T) x

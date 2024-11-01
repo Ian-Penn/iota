@@ -1,5 +1,16 @@
 import { SourceLocation } from "./ASTnodes.js";
 
+export function isOperator(text: string) {
+	return text == '>' ||
+	text == '<' ||
+	text == '+' ||
+	text == '-' ||
+	text == '*' ||
+	text == '/' ||
+	text == '%' ||
+	text == '==';
+}
+
 export enum TokenKind {
 	command,
 	comment,

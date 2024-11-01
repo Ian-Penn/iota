@@ -1,9 +1,9 @@
 // compOut
 // line:10 -> 3
 
-test = @x(builtin_Number)
+test = @x(builtin_Float64)
 	a = x
-	@y(builtin_Number)
+	@y(builtin_Float64)
 		b = y
 		a + b
 

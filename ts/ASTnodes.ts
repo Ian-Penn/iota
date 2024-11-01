@@ -4,6 +4,7 @@ import { Module, ModulePath, TopLevelDef } from "./Module.js";
 import { CompileError } from "./report.js";
 import { getBuiltinType, isBuiltinType, makeListType, makeEffectType } from "./builtin.js";
 import { CodeGenContext } from "./codegen.js";
+import { isOperator } from "./lexer.js";
 
 export type SourceLocation = "builtin" | {
 	path: string,
@@ -325,6 +326,28 @@ export class ASTnode_list extends ASTnode {
 			elements.push(element.evaluate(context));
 		}
 		return new ASTnode_list(fromNode(this), elements);
+	}
+}
+
+export class ASTnode_set extends ASTnode {
+	constructor(
+		location: SourceLocation,
+		public elements: ASTnode[],
+	) {
+		super(location);
+	}
+	
+	_print(context = new CodeGenContext()): string {
+		const elements = printAST(context, this.elements).join(", ");
+		return `(${elements})`;
+	}
+	
+	getType(context: BuilderContext): ASTnodeType | ASTnode_error {
+		utilities.unreachable();
+	}
+	
+	evaluate(context: BuilderContext): ASTnode {
+		utilities.unreachable();
 	}
 }
 
@@ -700,7 +723,11 @@ export class ASTnode_identifier extends ASTnode {
 	}
 	
 	_print(context = new CodeGenContext()): string {
-		return `${this.name}`;
+		if (isOperator(this.name) && !context.noParenthesesForFloatingOperators) {
+			return `(${this.name})`;
+		} else {
+			return `${this.name}`;
+		}
 	}
 	
 	getType(context: BuilderContext): ASTnodeType | ASTnode_error {

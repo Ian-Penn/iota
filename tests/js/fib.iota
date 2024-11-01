@@ -7,7 +7,7 @@
 // 	}
 // }
 
-Number = builtin_Number
+Number = builtin_Float64
 main = @n(Number)
 	if n <= 1 then
 		n

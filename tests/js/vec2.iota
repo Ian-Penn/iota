@@ -19,7 +19,7 @@
 // 	};
 // }
 
-Number = builtin_Number
+Number = builtin_Float64
 Vec2 = struct {
 	x Number,
 	y Number

@@ -1,11 +1,11 @@
 // compOut
 // line:12 -> 1
 
-b = @y(builtin_Number)
+b = @y(builtin_Float64)
 	t = 2
 	1
 
-a = @x(builtin_Number)
+a = @x(builtin_Float64)
 	t = 2
 	b 1
 

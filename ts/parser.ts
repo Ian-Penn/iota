@@ -18,7 +18,8 @@ import {
 	ASTnode_string,
 	ASTnodeType_functionType,
 	ASTnodeType_struct,
-	ASTnodeType_enum
+	ASTnodeType_enum,
+	ASTnode_set
 } from "./ASTnodes.js";
 
 export type ParserContext = {
@@ -566,9 +567,13 @@ export function parse(context: ParserContext, mode: ParserMode, indentation: num
 				if (token.text == "(") {
 					const elements = parse(context, ParserMode.comma, nextIndentation, ")");
 					if (elements.length == 0) {
-						utilities.unreachable();
+						utilities.TODO();
 					} else if (elements.length > 1) {
-						utilities.TODO_addError();
+						// utilities.TODO_addError();
+						ASTnodes.push(new ASTnode_set(
+							token.location,
+							elements,
+						));
 					} else {
 						ASTnodes.push(elements[0]);
 					}

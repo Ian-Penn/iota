@@ -2,8 +2,8 @@
 // error: alias 'x' does not exist
 // line:6 -> here
 
-b = @y(builtin_Number)
+b = @y(builtin_Float64)
 	x
 
-a = @x(builtin_Number)
+a = @x(builtin_Float64)
 	b 1

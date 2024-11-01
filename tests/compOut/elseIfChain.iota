@@ -4,7 +4,7 @@
 // line:24 -> 25
 // line:25 -> 0.5
 
-Number = builtin_Number
+Number = builtin_Float64
 String = builtin_String
 
 operator = @string(String) @left(Number) @right(Number)

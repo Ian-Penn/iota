@@ -1,7 +1,7 @@
 // compOut
 // line:7 -> 6
 
-Number = builtin_Number
+Number = builtin_Float64
 sum = @x(Number) @y(Number) @z(Number) x + y + z
 
 sum

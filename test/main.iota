@@ -21,10 +21,19 @@
 >import builtin
 >cd ~
 
-(+) = builtin_Float64_-
+// (+) = builtin_Float64_+
+// (-) = builtin_Float64_-
+// (*) = builtin_Float64_*
+// (/) = builtin_Float64_/
+
+((+), (-), (*), (/)) = builtin_Float64
+// (+, -, *, /) = builtin_Float64
+
 
 a = 2 + 3
 
 a
 
->ll
+(+)
+
+>debug

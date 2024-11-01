@@ -10,4 +10,4 @@
 
 \("") -> 2
 
-\(builtin_Number) -> 2
+\(builtin_Float64) -> 2

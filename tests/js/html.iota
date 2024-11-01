@@ -23,7 +23,7 @@
 // var g4 = () => {return document.body.innerHTML};
 
 Bool = builtin_Bool
-Number = builtin_Number
+Number = builtin_Float64
 String = builtin_String
 Function = builtin_Function
 Effect = builtin_Effect
