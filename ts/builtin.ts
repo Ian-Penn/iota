@@ -233,28 +233,28 @@ export function setUpBuiltins() {
 	}
 	
 	makeOperatorBuiltin_Float64(
-		"Float64_add",
+		"Float64_+",
 		(left: ASTnode_number, right: ASTnode_number) => {
 			return newNumber(left.value + right.value);
 		}
 	);
 	
 	makeOperatorBuiltin_Float64(
-		"Float64_subtract",
+		"Float64_-",
 		(left: ASTnode_number, right: ASTnode_number) => {
 			return newNumber(left.value - right.value);
 		}
 	);
 	
 	makeOperatorBuiltin_Float64(
-		"Float64_multiply",
+		"Float64_*",
 		(left: ASTnode_number, right: ASTnode_number) => {
 			return newNumber(left.value * right.value);
 		}
 	);
 	
 	makeOperatorBuiltin_Float64(
-		"Float64_divide",
+		"Float64_/",
 		(left: ASTnode_number, right: ASTnode_number) => {
 			return newNumber(left.value / right.value);
 		}

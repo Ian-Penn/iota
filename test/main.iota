@@ -21,9 +21,9 @@
 >import builtin
 >cd ~
 
-(+) = builtin_Float64_add
+(+) = builtin_Float64_-
 
-a = 1 + 2
+a = 2 + 3
 
 a
 

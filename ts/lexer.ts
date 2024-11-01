@@ -25,7 +25,7 @@ function wordStart(text: string, i: number): boolean {
 }
 
 function wordContinue(text: string, i: number): boolean {
-	return wordStart(text, i) || base10Number(text, i) || text[i] == '_';
+	return wordStart(text, i) || base10Number(text, i) || text[i] == '_' || oneCharacterOperator(text, i);
 }
 
 function base10Number(text: string, i: number): boolean {
