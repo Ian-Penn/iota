@@ -11,7 +11,6 @@ import {
 	ASTnode_instance,
 	ASTnode_list,
 	ASTnode_number,
-	ASTnode_operator,
 	ASTnode_unsafeEffect,
 	ASTnode_string,
 	ASTnode_builtinTask
@@ -131,83 +130,83 @@ export function codegen_js(module: Module, exports: string[], settings: CodegenJ
 		// 	node = node.location.origin;
 		// }
 		
-		if (node instanceof ASTnode_bool) {
-			if (node.value) {
-				return unit("true");
-			} else {
-				return unit("false");
-			}
-		} else if (node instanceof ASTnode_number) {
-			return unit(`${node.value}`);
-		} else if (node instanceof ASTnode_string) {
-			return unit(`"${node.value.replaceAll("\"", "\\\"").replaceAll("\n", "\\n")}"`);
-		} else if (node instanceof ASTnode_identifier) {
-			return unit(`${getAlias(node.name)}`);
-		} else if (node instanceof ASTnode_call) {
-			return unit(`${print(node.left, "", "", true)}(${print(node.arg)})`);
-		} else if (node instanceof ASTnode_operator) {
-			let operatorText = node.operatorText;
-			if (operatorText == ".") {
-				if (!(node.right instanceof ASTnode_identifier)) {
-					utilities.unreachable();
-				}
-				return unit(`${print(node.left)}.${node.right.name}`);
-			} else {
-				return unit(`(${print(node.left)} ${operatorText} ${print(node.right)})`);
-			}
-		} else if (node instanceof ASTnode_if) {
-			const condition = print(node.condition);
-			const trueBody = joinBody(printList(node.trueBody, start, end));
-			const falseBody = joinBody(printList(node.falseBody, start, end));
-			return `if (${condition}) {${trueBody}\n} else {${falseBody}\n}`;
-		} else if (node instanceof ASTnode_function) {
-			makeAlias(node.arg.name);
-			const body = printList(node.body, "return ", ";");
-			const text = `(${getAlias(node.arg.name)}) => {${joinBody(body)}\n}`;
-			endAlias();
-			return unit(text, true);
-		} else if (node instanceof ASTnode_instance) {
-			let fields: string[] = [];
-			for (let i = 0; i < node.codeBlock.length; i++) {
-				const field = node.codeBlock[i];
-				if (!(field instanceof ASTnode_alias)) {
-					utilities.unreachable();
-				}
-				if (!(field.left instanceof ASTnode_identifier)) {
-					utilities.unreachable();
-				}
-				fields.push(`${field.left.name}: ${print(field.value)},`);
-			}
-			return unit(`{${joinBody(fields)}\n}`);
-		} else if (node instanceof ASTnode_unsafeEffect) {
-			if (!(node.list instanceof ASTnode_list)) {
-				utilities.TODO_addError();
-			}
+		// if (node instanceof ASTnode_bool) {
+		// 	if (node.value) {
+		// 		return unit("true");
+		// 	} else {
+		// 		return unit("false");
+		// 	}
+		// } else if (node instanceof ASTnode_number) {
+		// 	return unit(`${node.value}`);
+		// } else if (node instanceof ASTnode_string) {
+		// 	return unit(`"${node.value.replaceAll("\"", "\\\"").replaceAll("\n", "\\n")}"`);
+		// } else if (node instanceof ASTnode_identifier) {
+		// 	return unit(`${getAlias(node.name)}`);
+		// } else if (node instanceof ASTnode_call) {
+		// 	return unit(`${print(node.left, "", "", true)}(${print(node.arg)})`);
+		// } else if (node instanceof ASTnode_operator) {
+		// 	let operatorText = node.operatorText;
+		// 	if (operatorText == ".") {
+		// 		if (!(node.right instanceof ASTnode_identifier)) {
+		// 			utilities.unreachable();
+		// 		}
+		// 		return unit(`${print(node.left)}.${node.right.name}`);
+		// 	} else {
+		// 		return unit(`(${print(node.left)} ${operatorText} ${print(node.right)})`);
+		// 	}
+		// } else if (node instanceof ASTnode_if) {
+		// 	const condition = print(node.condition);
+		// 	const trueBody = joinBody(printList(node.trueBody, start, end));
+		// 	const falseBody = joinBody(printList(node.falseBody, start, end));
+		// 	return `if (${condition}) {${trueBody}\n} else {${falseBody}\n}`;
+		// } else if (node instanceof ASTnode_function) {
+		// 	makeAlias(node.arg.name);
+		// 	const body = printList(node.body, "return ", ";");
+		// 	const text = `(${getAlias(node.arg.name)}) => {${joinBody(body)}\n}`;
+		// 	endAlias();
+		// 	return unit(text, true);
+		// } else if (node instanceof ASTnode_instance) {
+		// 	let fields: string[] = [];
+		// 	for (let i = 0; i < node.codeBlock.length; i++) {
+		// 		const field = node.codeBlock[i];
+		// 		if (!(field instanceof ASTnode_alias)) {
+		// 			utilities.unreachable();
+		// 		}
+		// 		if (!(field.left instanceof ASTnode_identifier)) {
+		// 			utilities.unreachable();
+		// 		}
+		// 		fields.push(`${field.left.name}: ${print(field.value)},`);
+		// 	}
+		// 	return unit(`{${joinBody(fields)}\n}`);
+		// } else if (node instanceof ASTnode_unsafeEffect) {
+		// 	if (!(node.list instanceof ASTnode_list)) {
+		// 		utilities.TODO_addError();
+		// 	}
 			
-			let source = node.source;
-			for (let i = 0; i < node.list.elements.length; i++) {
-				const element = node.list.elements[i];
-				source = source.replaceAll(`%%${i}%%`, print(element, "", "", true));
-			}
-			if (settings.addDebugComments) {
-				return unit(`(/*unsafeEffect*/) => {${source}}`, true);
-			} else {
-				return unit(`() => {${source}}`, true);
-			}
-		} else if (node instanceof ASTnode_alias) {
-			if (!(node.left instanceof ASTnode_identifier)) {
-				utilities.TODO();
-			}
-			const name = makeAlias(node.left.name);
-			const value = print(node.value, `${name} = `, ";");
-			return `let ${name};\n${value}`;
-		} else if (node instanceof ASTnode_builtinTask) {
-			if (node.codegenId == "numberToString") {
-				return unit(`${getAlias("number")}.toString()`);
-			} else {
-				return `___TODO___ASTnode_builtinTask(${node.codegenId})`;
-			}
-		}
+		// 	let source = node.source;
+		// 	for (let i = 0; i < node.list.elements.length; i++) {
+		// 		const element = node.list.elements[i];
+		// 		source = source.replaceAll(`%%${i}%%`, print(element, "", "", true));
+		// 	}
+		// 	if (settings.addDebugComments) {
+		// 		return unit(`(/*unsafeEffect*/) => {${source}}`, true);
+		// 	} else {
+		// 		return unit(`() => {${source}}`, true);
+		// 	}
+		// } else if (node instanceof ASTnode_alias) {
+		// 	if (!(node.left instanceof ASTnode_identifier)) {
+		// 		utilities.TODO();
+		// 	}
+		// 	const name = makeAlias(node.left.name);
+		// 	const value = print(node.value, `${name} = `, ";");
+		// 	return `let ${name};\n${value}`;
+		// } else if (node instanceof ASTnode_builtinTask) {
+		// 	if (node.codegenId == "numberToString") {
+		// 		return unit(`${getAlias("number")}.toString()`);
+		// 	} else {
+		// 		return `___TODO___ASTnode_builtinTask(${node.codegenId})`;
+		// 	}
+		// }
 		
 		return `___TODO___(${utilities.getClassName(node)})`;
 	}

@@ -257,7 +257,7 @@ export class ASTnode_number extends ASTnode {
 	}
 	
 	getType(context: BuilderContext): ASTnodeType | ASTnode_error {
-		return getBuiltinType("Number");
+		return getBuiltinType("Float64");
 	}
 	
 	clone() {
@@ -326,7 +326,7 @@ export class ASTnode_list extends ASTnode {
 		}
 		return new ASTnode_list(fromNode(this), elements);
 	}
-};
+}
 
 //#endregion
 
@@ -613,7 +613,7 @@ export class ASTnode_function extends ASTnode {
 		
 		return newFunction;
 	}
-};
+}
 
 export class ASTnode_argument extends ASTnode {
 	constructor(
@@ -633,7 +633,7 @@ export class ASTnode_argument extends ASTnode {
 		const type = this.type.evaluate(context);
 		return new ASTnode_argument(fromNode(this), this.name, type);
 	}
-};
+}
 
 export class ASTnode_alias extends ASTnode {
 	unalias = false;
@@ -689,7 +689,7 @@ export class ASTnode_alias extends ASTnode {
 		out.unalias = this.unalias;
 		return out;
 	}
-};
+}
 
 export class ASTnode_identifier extends ASTnode {
 	constructor(
@@ -792,7 +792,7 @@ export class ASTnode_identifier extends ASTnode {
 		
 		return new ASTnode_identifier(this.location, newName);
 	}
-};
+}
 
 export class ASTnode_call extends ASTnode {
 	constructor(
@@ -933,267 +933,267 @@ export class ASTnode_call extends ASTnode {
 		newCall.deadEnd = hasDeadEnd;
 		return newCall;
 	}
-};
+}
 
-export class ASTnode_operator extends ASTnode {
-	constructor(
-		location: SourceLocation,
-		public operatorText: string,
-		public left: ASTnode,
-		public right: ASTnode,
-	) {
-		super(location);
-	}
+// export class ASTnode_operator extends ASTnode {
+// 	constructor(
+// 		location: SourceLocation,
+// 		public operatorText: string,
+// 		public left: ASTnode,
+// 		public right: ASTnode,
+// 	) {
+// 		super(location);
+// 	}
 	
-	numberToNumber(op: string): boolean {
-		return op == "+" ||
-		       op == "-" ||
-		       op == "*" ||
-		       op == "/";
-	}
+// 	numberToNumber(op: string): boolean {
+// 		return op == "+" ||
+// 		       op == "-" ||
+// 		       op == "*" ||
+// 		       op == "/";
+// 	}
 	
-	stringToBool(op: string): boolean {
-		return op == "!=" ||
-			   op == "==";
-	}
+// 	stringToBool(op: string): boolean {
+// 		return op == "!=" ||
+// 			   op == "==";
+// 	}
 	
-	toBool(op: string): boolean {
-		return op == "!=" ||
-		       op == "==" ||
-		       op == "<" ||
-		       op == ">" ||
-		       op == "<=" ||
-		       op == ">=";
-	}
+// 	toBool(op: string): boolean {
+// 		return op == "!=" ||
+// 		       op == "==" ||
+// 		       op == "<" ||
+// 		       op == ">" ||
+// 		       op == "<=" ||
+// 		       op == ">=";
+// 	}
 	
-	_print(context = new CodeGenContext()): string {
-		const left = this.left.print(context);
-		const right = this.right.print(context);
-		if (this.operatorText == ".") {
-			return `${left}.${right}`;
-		} else {
-			return `(${left} ${this.operatorText} ${right})`;
-		}
-	}
+// 	_print(context = new CodeGenContext()): string {
+// 		const left = this.left.print(context);
+// 		const right = this.right.print(context);
+// 		if (this.operatorText == ".") {
+// 			return `${left}.${right}`;
+// 		} else {
+// 			return `(${left} ${this.operatorText} ${right})`;
+// 		}
+// 	}
 	
-	getType(context: BuilderContext): ASTnodeType | ASTnode_error {
-		const op = this.operatorText;
+// 	getType(context: BuilderContext): ASTnodeType | ASTnode_error {
+// 		const op = this.operatorText;
 		
-		if (this.numberToNumber(op) || this.toBool(op)) {
-			const left = this.left.getType(context);
-			if (left instanceof ASTnode_error) {
-				return left;
-			}
-			const right = this.right.getType(context);
-			if (right instanceof ASTnode_error) {
-				return right;
-			}
+// 		if (this.numberToNumber(op) || this.toBool(op)) {
+// 			const left = this.left.getType(context);
+// 			if (left instanceof ASTnode_error) {
+// 				return left;
+// 			}
+// 			const right = this.right.getType(context);
+// 			if (right instanceof ASTnode_error) {
+// 				return right;
+// 			}
 			
-			let expectedType = getBuiltinType("Number");
-			if (isBuiltinType(left, "String")) {
-				expectedType = left;
-			}
+// 			let expectedType = getBuiltinType("Number");
+// 			if (isBuiltinType(left, "String")) {
+// 				expectedType = left;
+// 			}
 			
-			let outType: ASTnodeType;
-			if (this.toBool(op)) {
-				outType = getBuiltinType("Bool");
-			} else {
-				if (op == "+" && isBuiltinType(left, "String") && isBuiltinType(right, "String")) {
-					outType = getBuiltinType("String");
-				} else {
-					outType = getBuiltinType("Number");
-				}
-			}
+// 			let outType: ASTnodeType;
+// 			if (this.toBool(op)) {
+// 				outType = getBuiltinType("Bool");
+// 			} else {
+// 				if (op == "+" && isBuiltinType(left, "String") && isBuiltinType(right, "String")) {
+// 					outType = getBuiltinType("String");
+// 				} else {
+// 					outType = getBuiltinType("Number");
+// 				}
+// 			}
 			
-			{
-				let error = expectType(context, expectedType, left);
-				if (error) {
-					error.indicator(this.left.location, `on left of '${op}' operator`);
-					return new ASTnode_error(fromNode(this), error);
-				}
-			}
-			{
-				let error = expectType(context, expectedType, right);
-				if (error) {
-					error.indicator(this.right.location, `on right of '${op}' operator`);
-					return new ASTnode_error(fromNode(this), error);
-				}
-			}
+// 			{
+// 				let error = expectType(context, expectedType, left);
+// 				if (error) {
+// 					error.indicator(this.left.location, `on left of '${op}' operator`);
+// 					return new ASTnode_error(fromNode(this), error);
+// 				}
+// 			}
+// 			{
+// 				let error = expectType(context, expectedType, right);
+// 				if (error) {
+// 					error.indicator(this.right.location, `on right of '${op}' operator`);
+// 					return new ASTnode_error(fromNode(this), error);
+// 				}
+// 			}
 			
-			return outType;
-		}
+// 			return outType;
+// 		}
 		
-		else if (op == ".") {
-			if (!(this.right instanceof ASTnode_identifier)) {
-				utilities.TODO_addError();
-			}
-			const name = this.right.name;
+// 		else if (op == ".") {
+// 			if (!(this.right instanceof ASTnode_identifier)) {
+// 				utilities.TODO_addError();
+// 			}
+// 			const name = this.right.name;
 			
-			const leftType = this.left.getType(context);
-			if (leftType instanceof ASTnode_error) {
-				return leftType;
-			}
+// 			const leftType = this.left.getType(context);
+// 			if (leftType instanceof ASTnode_error) {
+// 				return leftType;
+// 			}
 			
-			if (leftType instanceof ASTnodeType_struct) {
-				if (isBuiltinType(leftType, "Type")) {
-					const left = this.left.evaluate(context);
-					if (left instanceof ASTnodeType_enum) {
-						const enumCase = left.getCase(name);
-						if (enumCase == null) {
-							utilities.TODO_addError();
-						}
-						return new ASTnodeType_functionType(
-							this.location,
-							"",
-							enumCase.type,
-							left,
-						);
-						// return getBuiltinType("Type");
-					} else {
-						utilities.TODO_addError();
-					}
-				} else {
-					const field = leftType.getField(name);
-					if (field == null) {
-						utilities.TODO_addError();
-					}
+// 			if (leftType instanceof ASTnodeType_struct) {
+// 				if (isBuiltinType(leftType, "Type")) {
+// 					const left = this.left.evaluate(context);
+// 					if (left instanceof ASTnodeType_enum) {
+// 						const enumCase = left.getCase(name);
+// 						if (enumCase == null) {
+// 							utilities.TODO_addError();
+// 						}
+// 						return new ASTnodeType_functionType(
+// 							this.location,
+// 							"",
+// 							enumCase.type,
+// 							left,
+// 						);
+// 						// return getBuiltinType("Type");
+// 					} else {
+// 						utilities.TODO_addError();
+// 					}
+// 				} else {
+// 					const field = leftType.getField(name);
+// 					if (field == null) {
+// 						utilities.TODO_addError();
+// 					}
 					
-					const type = field.type.evaluate(context);
-					if (!(type instanceof ASTnodeType)) {
-						utilities.unreachable();
-					}
+// 					const type = field.type.evaluate(context);
+// 					if (!(type instanceof ASTnodeType)) {
+// 						utilities.unreachable();
+// 					}
 					
-					return type;
-				}
-			} else {
-				utilities.TODO_addError();
-			}
-		}
+// 					return type;
+// 				}
+// 			} else {
+// 				utilities.TODO_addError();
+// 			}
+// 		}
 		
-		else {
-			utilities.TODO();
-		}
-	}
+// 		else {
+// 			utilities.TODO();
+// 		}
+// 	}
 	
-	evaluate(context: BuilderContext): ASTnode {
-		const op = this.operatorText;
+// 	evaluate(context: BuilderContext): ASTnode {
+// 		const op = this.operatorText;
 		
-		if (this.numberToNumber(op) || this.toBool(op)) {
-			const left = this.left.evaluate(context);
-			const right = this.right.evaluate(context);
-			if (left instanceof ASTnode_number && right instanceof ASTnode_number && context.doResolve()) {
-				const left_v = left.value;
-				const right_v = right.value;
+// 		if (this.numberToNumber(op) || this.toBool(op)) {
+// 			const left = this.left.evaluate(context);
+// 			const right = this.right.evaluate(context);
+// 			if (left instanceof ASTnode_number && right instanceof ASTnode_number && context.doResolve()) {
+// 				const left_v = left.value;
+// 				const right_v = right.value;
 				
-				if (op == "+") {
-					return new ASTnode_number(fromNode(this), left_v + right_v);
-				} else if (op == "-") {
-					return new ASTnode_number(fromNode(this), left_v - right_v);
-				} else if (op == "*") {
-					return new ASTnode_number(fromNode(this), left_v * right_v);
-				} else if (op == "/") {
-					return new ASTnode_number(fromNode(this), left_v / right_v);
-				} else if (op == "==") {
-					return new ASTnode_bool(fromNode(this), left_v == right_v);
-				} else if (op == "!=") {
-					return new ASTnode_bool(fromNode(this), left_v != right_v);
-				} else if (op == "<") {
-					return new ASTnode_bool(fromNode(this), left_v < right_v);
-				} else if (op == ">") {
-					return new ASTnode_bool(fromNode(this), left_v > right_v);
-				} else if (op == "<=") {
-					return new ASTnode_bool(fromNode(this), left_v <= right_v);
-				} else if (op == ">=") {
-					return new ASTnode_bool(fromNode(this), left_v >= right_v);
-				}
+// 				if (op == "+") {
+// 					return new ASTnode_number(fromNode(this), left_v + right_v);
+// 				} else if (op == "-") {
+// 					return new ASTnode_number(fromNode(this), left_v - right_v);
+// 				} else if (op == "*") {
+// 					return new ASTnode_number(fromNode(this), left_v * right_v);
+// 				} else if (op == "/") {
+// 					return new ASTnode_number(fromNode(this), left_v / right_v);
+// 				} else if (op == "==") {
+// 					return new ASTnode_bool(fromNode(this), left_v == right_v);
+// 				} else if (op == "!=") {
+// 					return new ASTnode_bool(fromNode(this), left_v != right_v);
+// 				} else if (op == "<") {
+// 					return new ASTnode_bool(fromNode(this), left_v < right_v);
+// 				} else if (op == ">") {
+// 					return new ASTnode_bool(fromNode(this), left_v > right_v);
+// 				} else if (op == "<=") {
+// 					return new ASTnode_bool(fromNode(this), left_v <= right_v);
+// 				} else if (op == ">=") {
+// 					return new ASTnode_bool(fromNode(this), left_v >= right_v);
+// 				}
 				
-				utilities.unreachable();
-			} else if (left instanceof ASTnode_string && right instanceof ASTnode_string && context.doResolve()) {
-				const left_v = left.value;
-				const right_v = right.value;
+// 				utilities.unreachable();
+// 			} else if (left instanceof ASTnode_string && right instanceof ASTnode_string && context.doResolve()) {
+// 				const left_v = left.value;
+// 				const right_v = right.value;
 				
-				if (op == "+") {
-					return new ASTnode_string(fromNode(this), left_v + right_v);
-				} else if (op == "==") {
-					return new ASTnode_bool(fromNode(this), left_v == right_v);
-				} else if (op == "!=") {
-					return new ASTnode_bool(fromNode(this), left_v != right_v);
-				}
+// 				if (op == "+") {
+// 					return new ASTnode_string(fromNode(this), left_v + right_v);
+// 				} else if (op == "==") {
+// 					return new ASTnode_bool(fromNode(this), left_v == right_v);
+// 				} else if (op == "!=") {
+// 					return new ASTnode_bool(fromNode(this), left_v != right_v);
+// 				}
 				
-				utilities.unreachable();
-			}
+// 				utilities.unreachable();
+// 			}
 			
-			const output = new ASTnode_operator(fromNode(this), this.operatorText, left, right);
-			if (context.doResolve()) {
-				output.deadEnd = true;
-			}
-			return output;
-		} else if (op == ".") {
-			const left = this.left.evaluate(context);
-			debugger;
-			if (left.deadEnd) {
-				const output = new ASTnode_operator(fromNode(this), this.operatorText, left, this.right);
-				if (context.doResolve()) {
-					output.deadEnd = true;
-				}
-				return output;
-			}
+// 			const output = new ASTnode_operator(fromNode(this), this.operatorText, left, right);
+// 			if (context.doResolve()) {
+// 				output.deadEnd = true;
+// 			}
+// 			return output;
+// 		} else if (op == ".") {
+// 			const left = this.left.evaluate(context);
+// 			debugger;
+// 			if (left.deadEnd) {
+// 				const output = new ASTnode_operator(fromNode(this), this.operatorText, left, this.right);
+// 				if (context.doResolve()) {
+// 					output.deadEnd = true;
+// 				}
+// 				return output;
+// 			}
 			
-			if (!(this.right instanceof ASTnode_identifier)) {
-				utilities.unreachable();
-			}
-			const name = this.right.name;
+// 			if (!(this.right instanceof ASTnode_identifier)) {
+// 				utilities.unreachable();
+// 			}
+// 			const name = this.right.name;
 			
-			if (left instanceof ASTnode_instance) {
-				const alias = getAliasFromList(left.codeBlock, name);
-				if (!alias) {
-					utilities.unreachable();
-				}
+// 			if (left instanceof ASTnode_instance) {
+// 				const alias = getAliasFromList(left.codeBlock, name);
+// 				if (!alias) {
+// 					utilities.unreachable();
+// 				}
 				
-				return alias.value;
-			} else if (left instanceof ASTnodeType_enum) {
-				// const enumCase = left.getCase(name);
-				// if (enumCase == null) {
-				// 	utilities.unreachable();
-				// }
-				// const task = new ASTnode_builtinTask("", (context): ASTnodeType | ASTnode_error => {
-				// 	return left;
-				// }, (context): ASTnode => {
-				// 	return withResolve(context, () => {
-				// 		const input = task_getArg(context, "input");
-				// 		if (!(input instanceof ASTnode_instance)) {
-				// 			return task;
-				// 		}
-				// 		const instance = new ASTnode_instance(this.location, left, input.codeBlock);
-				// 		// instance.caseName = left.getCaseIndex(name);
-				// 		// if (instance.caseName == null) {
-				// 		// 	utilities.unreachable();
-				// 		// }
-				// 		instance.caseName = name;
-				// 		return instance;
-				// 	});
-				// });
-				// const enumConstructor = new ASTnode_function(
-				// 	this.location,
-				// 	new ASTnode_argument(this.location, "input", enumCase.type),
-				// 	[
-				// 		task
-				// 	],
-				// );
-				// return enumConstructor;
-				utilities.TODO();
-			} else {
-				utilities.unreachable();
-			}
-		} else {
-			utilities.TODO();
-		}
-	}
+// 				return alias.value;
+// 			} else if (left instanceof ASTnodeType_enum) {
+// 				// const enumCase = left.getCase(name);
+// 				// if (enumCase == null) {
+// 				// 	utilities.unreachable();
+// 				// }
+// 				// const task = new ASTnode_builtinTask("", (context): ASTnodeType | ASTnode_error => {
+// 				// 	return left;
+// 				// }, (context): ASTnode => {
+// 				// 	return withResolve(context, () => {
+// 				// 		const input = task_getArg(context, "input");
+// 				// 		if (!(input instanceof ASTnode_instance)) {
+// 				// 			return task;
+// 				// 		}
+// 				// 		const instance = new ASTnode_instance(this.location, left, input.codeBlock);
+// 				// 		// instance.caseName = left.getCaseIndex(name);
+// 				// 		// if (instance.caseName == null) {
+// 				// 		// 	utilities.unreachable();
+// 				// 		// }
+// 				// 		instance.caseName = name;
+// 				// 		return instance;
+// 				// 	});
+// 				// });
+// 				// const enumConstructor = new ASTnode_function(
+// 				// 	this.location,
+// 				// 	new ASTnode_argument(this.location, "input", enumCase.type),
+// 				// 	[
+// 				// 		task
+// 				// 	],
+// 				// );
+// 				// return enumConstructor;
+// 				utilities.TODO();
+// 			} else {
+// 				utilities.unreachable();
+// 			}
+// 		} else {
+// 			utilities.TODO();
+// 		}
+// 	}
 	
-	clone() {
-		return new ASTnode_operator(this.location, this.operatorText, this.left, this.right);
-	}
-};
+// 	clone() {
+// 		return new ASTnode_operator(this.location, this.operatorText, this.left, this.right);
+// 	}
+// }
 
 export class ASTnode_field extends ASTnode {
 	constructor(
@@ -1203,7 +1203,7 @@ export class ASTnode_field extends ASTnode {
 	) {
 		super(location);
 	}
-};
+}
 
 export class ASTnode_match extends ASTnode {
 	constructor(
@@ -1213,7 +1213,7 @@ export class ASTnode_match extends ASTnode {
 	) {
 		super(location);
 	}
-};
+}
 
 export class ASTnode_matchCase extends ASTnode {
 	constructor(
@@ -1224,7 +1224,7 @@ export class ASTnode_matchCase extends ASTnode {
 	) {
 		super(location);
 	}
-};
+}
 
 export class ASTnode_while extends ASTnode {
 	constructor(
@@ -1234,7 +1234,7 @@ export class ASTnode_while extends ASTnode {
 	) {
 		super(location);
 	}
-};
+}
 
 export class ASTnode_if extends ASTnode {
 	constructor(
@@ -1315,7 +1315,7 @@ export class ASTnode_if extends ASTnode {
 			return resultList[resultList.length-1];
 		}
 	}
-};
+}
 
 export class ASTnode_codeBlock extends ASTnode {
 	constructor(
@@ -1324,7 +1324,7 @@ export class ASTnode_codeBlock extends ASTnode {
 	) {
 		super(location);
 	}
-};
+}
 
 export class ASTnode_instance extends ASTnode {
 	caseName: string | null = null;
@@ -1440,7 +1440,7 @@ export class ASTnode_instance extends ASTnode {
 		}
 		return new ASTnode_instance(fromNode(this), template, codeBlock);
 	}
-};
+}
 
 export class ASTnode_unsafeEffect extends ASTnode {
 	constructor(
@@ -1498,7 +1498,7 @@ export class ASTnode_error extends ASTnode {
 			return `__compileError__`;
 		}
 	}
-};
+}
 
 export class ASTnode_void extends ASTnode_error {
 	constructor(
@@ -1522,7 +1522,7 @@ export class ASTnode_unknowable extends ASTnode {
 	getType(context: BuilderContext): ASTnodeType | ASTnode_error {
 		return new ASTnode_error(this.location, null);
 	}
-};
+}
 
 type ASTnode_builtinTask_dependency = {
 	name: string,

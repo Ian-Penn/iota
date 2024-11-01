@@ -21,6 +21,10 @@
 >import builtin
 >cd ~
 
->debug
+(+) = builtin_Float64_add
 
-builtin_JsNumber_add 1 2
+a = 1 + 2
+
+a
+
+>ll

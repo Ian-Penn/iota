@@ -14,7 +14,6 @@ import {
 	ASTnode_instance,
 	ASTnode_list,
 	ASTnode_number,
-	ASTnode_operator,
 	ASTnode_unsafeEffect,
 	ASTnode_string,
 	ASTnodeType_functionType,
@@ -180,7 +179,16 @@ function parseOperators(context: ParserContext, left: ASTnode, lastPrecedence: n
 			if (nextOperator.text == "=") {
 				return new ASTnode_alias(nextOperator.location, left, right);
 			} else {
-				return new ASTnode_operator(nextOperator.location, nextOperator.text, left, right);
+				// return new ASTnode_operator(nextOperator.location, nextOperator.text, left, right);
+				return new ASTnode_call(
+					nextOperator.location,
+					new ASTnode_call(
+						nextOperator.location,
+						new ASTnode_identifier(nextOperator.location, nextOperator.text),
+						left,
+					),
+					right,
+				);
 			}
 		}
 	}
@@ -639,7 +647,7 @@ export function parse(context: ParserContext, mode: ParserMode, indentation: num
 			case TokenKind.operator: {
 				const left = ASTnodes[ASTnodes.length-1];
 				if (left == undefined) {
-					utilities.TODO();
+					ASTnodes.push(new ASTnode_identifier(token.location, token.text));
 				} else {
 					if (token.text == "->") {
 						utilities.TODO();

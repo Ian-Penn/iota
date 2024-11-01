@@ -65,7 +65,7 @@ export function setUpBuiltins() {
 	builtinTypes = [
 		makeBuiltinType("Type"),
 		makeBuiltinType("Bool"),
-		makeBuiltinType("Number"),
+		makeBuiltinType("Float64"),
 		makeBuiltinType("String"),
 		makeBuiltinType("Effect"),
 		makeBuiltinType("Function"),
@@ -177,7 +177,7 @@ export function setUpBuiltins() {
 	}
 	
 	{
-		makeFunction("numberToString", [["number", getBuiltinType("Number")]], 
+		makeFunction("Float64ToString", [["number", getBuiltinType("Float64")]], 
 			new ASTnode_builtinTask("numberToString", (context): ASTnodeType | ASTnode_error => {
 				return getBuiltinType("String");
 			}, (context, task): ASTnode => {
@@ -208,13 +208,13 @@ export function setUpBuiltins() {
 	
 	//#region operators
 	
-	function makeOperatorBuiltin_number(
+	function makeOperatorBuiltin_Float64(
 		name: string,
 		callBack: (left: ASTnode_number, right: ASTnode_number) => ASTnode_number
 	) {
-		makeFunction(name, [["left", getBuiltinType("Number")], ["right", getBuiltinType("Number")]],
+		makeFunction(name, [["left", getBuiltinType("Float64")], ["right", getBuiltinType("Float64")]],
 			new ASTnode_builtinTask(name, (context): ASTnodeType | ASTnode_error => {
-				return getBuiltinType("Number");
+				return getBuiltinType("Float64");
 			}, (context, task): ASTnode => {
 				return withResolve(context, () => {
 					const left = task.getDependency(context, "left");
@@ -232,10 +232,31 @@ export function setUpBuiltins() {
 		return new ASTnode_number("builtin", number);
 	}
 	
-	makeOperatorBuiltin_number(
-		"JsNumber_add",
+	makeOperatorBuiltin_Float64(
+		"Float64_add",
 		(left: ASTnode_number, right: ASTnode_number) => {
 			return newNumber(left.value + right.value);
+		}
+	);
+	
+	makeOperatorBuiltin_Float64(
+		"Float64_subtract",
+		(left: ASTnode_number, right: ASTnode_number) => {
+			return newNumber(left.value - right.value);
+		}
+	);
+	
+	makeOperatorBuiltin_Float64(
+		"Float64_multiply",
+		(left: ASTnode_number, right: ASTnode_number) => {
+			return newNumber(left.value * right.value);
+		}
+	);
+	
+	makeOperatorBuiltin_Float64(
+		"Float64_divide",
+		(left: ASTnode_number, right: ASTnode_number) => {
+			return newNumber(left.value / right.value);
 		}
 	);
 	
