@@ -10,7 +10,6 @@ import {
 	ASTnode_command,
 	ASTnode_error,
 	ASTnode_identifier,
-	ASTnode_set,
 	BuilderContext,
 	printAST,
 } from "./ASTnodes.js";
@@ -390,40 +389,15 @@ export class Module {
 				const context = new CodeGenContext();
 				context.noParenthesesForFloatingOperators = true;
 				
-				if (ASTnode.left instanceof ASTnode_identifier) {
-					const path = new ModulePath([
-						this.currentDirectory.segments,
-						ASTnode.left.print(context)
-					].flat());
-					this.setValueAtPath(path, ASTnode.value);
-				} else if (ASTnode.left instanceof ASTnode_set) {
-					if (!(ASTnode.value instanceof ASTnode_identifier)) {
-						utilities.TODO_addError();
-					}
-					
-					for (let j = 0; j < ASTnode.left.elements.length; j++) {
-						const element = ASTnode.left.elements[j];
-						
-						if (!(element instanceof ASTnode_identifier)) {
-							utilities.TODO_addError();
-						}
-						
-						const path = new ModulePath([
-							this.currentDirectory.segments,
-							element.print(context),
-						].flat());
-						
-						const pair = this.getDef(this.currentDirectory, new ModulePath([
-							ASTnode.value.name,
-							element.name,
-						]));
-						if (pair == null) {
-							utilities.TODO_addError();
-						}
-						debugger;
-						this.setValueAtPath(path, new ASTnode_identifier(ASTnode.left.location, pair[0].toString()));
-					}
+				if (!(ASTnode.left instanceof ASTnode_identifier)) {
+					utilities.TODO_addError();
 				}
+				
+				const path = new ModulePath([
+					this.currentDirectory.segments,
+					ASTnode.left.print(context)
+				].flat());
+				this.setValueAtPath(path, ASTnode.value);
 			} else {
 				logger.log(LogType.module, `found top level evaluation`);
 				

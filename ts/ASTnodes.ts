@@ -329,25 +329,25 @@ export class ASTnode_list extends ASTnode {
 	}
 }
 
-export class ASTnode_set extends ASTnode {
+export class ASTnode_object extends ASTnode {
 	constructor(
 		location: SourceLocation,
-		public elements: ASTnode[],
+		public members: ASTnode[],
 	) {
 		super(location);
 	}
 	
 	_print(context = new CodeGenContext()): string {
-		const elements = printAST(context, this.elements).join(", ");
-		return `(${elements})`;
+		const members = joinBody(printAST(context, this.members));
+		return `{${members}\n}`;
 	}
 	
 	getType(context: BuilderContext): ASTnodeType | ASTnode_error {
-		utilities.unreachable();
+		return getBuiltinType("Any");
 	}
 	
 	evaluate(context: BuilderContext): ASTnode {
-		utilities.unreachable();
+		return this;
 	}
 }
 

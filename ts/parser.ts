@@ -19,7 +19,7 @@ import {
 	ASTnodeType_functionType,
 	ASTnodeType_struct,
 	ASTnodeType_enum,
-	ASTnode_set
+	ASTnode_object
 } from "./ASTnodes.js";
 
 export type ParserContext = {
@@ -569,11 +569,7 @@ export function parse(context: ParserContext, mode: ParserMode, indentation: num
 					if (elements.length == 0) {
 						utilities.TODO();
 					} else if (elements.length > 1) {
-						// utilities.TODO_addError();
-						ASTnodes.push(new ASTnode_set(
-							token.location,
-							elements,
-						));
+						utilities.TODO_addError();
 					} else {
 						ASTnodes.push(elements[0]);
 					}
@@ -639,6 +635,10 @@ export function parse(context: ParserContext, mode: ParserMode, indentation: num
 					));
 				} else if (token.text == ":") {
 					throw new CompileError("unexpected separator ':'").indicator(token.location, "here");
+				} else if (token.text == "{") {
+					const members = parse(context, ParserMode.normal, nextIndentation, "}");
+					
+					ASTnodes.push(new ASTnode_object(token.location, members));
 				} else {
 					if (endAt == null) {
 						context.i--;

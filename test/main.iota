@@ -1,39 +1,65 @@
-// >cd ~std
-// >import ./../std
-// >cd ~
+// builtin = import("builtin")
 
-// User = enum {
-// 	Regular struct {
-// 		name String,
-// 		age Number
-// 	},
-// 	Visitor struct {
-// 		name String
+{
+	x = 1
+}
+
+// Number = builtin.Float64
+
+// Vec2 = struct {
+// 	x Number,
+// 	y Number
+// } & {
+// 	new = @x(:Number) @y(:Number)
+// 		&Vec2{
+// 			x = x,
+// 			y = y
+// 		}
+	
+// 	add = @v1(Vec2) @v2(:Vec2)
+// 		(+) = Number.+
+// 		&Vec2{
+// 			x = v1.x + v2.x,
+// 			y = v1.y + v2.y
+// 		}
+// }
+
+// Vec2 = {
+// 	__prototype__ = Type
+// 	fields = {
+// 		x = Number
+// 		y = Number
 // 	}
+	
+// 	new = @x(:Number) @y(:Number)
+// 		&Vec2{
+// 			x = x,
+// 			y = y
+// 		}
+	
+// 	add = @v1(Vec2) @v2(:Vec2)
+// 		(+) = Number.+
+// 		&Vec2{
+// 			x = v1.x + v2.x,
+// 			y = v1.y + v2.y
+// 		}
 // }
 
-// User.Regular &{
-// 	name = "none",
-// 	age = -10000
+// bad
+// 1 & {...}
+
+// one = {
+// 	__prototype__ = Number
+// 	value
 // }
 
->cd ~builtin
->import builtin
->cd ~
+// vec = {
+// 	__prototype__ = Vec2
+// 	x = 1
+// 	y = 2
+// }
 
-// (+) = builtin_Float64_+
-// (-) = builtin_Float64_-
-// (*) = builtin_Float64_*
-// (/) = builtin_Float64_/
+// a = Vec2.new x: 1 y: 2
+// b = Vec2.new x: 10 y: 20
 
-((+), (-), (*), (/)) = builtin_Float64
-// (+, -, *, /) = builtin_Float64
-
-
-a = 2 + 3
-
-a
-
-(+)
-
->debug
+// Vec2.add a to: b
