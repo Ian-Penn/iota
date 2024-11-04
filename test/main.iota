@@ -1,8 +1,11 @@
 // builtin = import("builtin")
 
-{
-	x = 1
-}
+true
+1
+
+// {
+// 	x = 1
+// }
 
 // Number = builtin.Float64
 
@@ -63,3 +66,9 @@
 // b = Vec2.new x: 10 y: 20
 
 // Vec2.add a to: b
+
+// Case = {
+// 	__prototype__ = Enum
+// 	tag = 0
+// 	value = {...}
+// }

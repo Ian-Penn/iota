@@ -2,68 +2,69 @@ import * as utilities from "./utilities.js";
 import {
 	ASTnode,
 	ASTnode_alias,
-	ASTnode_argument,
 	ASTnode_builtinTask,
 	ASTnode_error,
-	ASTnode_function,
 	ASTnode_identifier,
 	ASTnode_number,
+	ASTnode_object,
 	ASTnode_string,
 	ASTnodeType,
-	ASTnodeType_functionType,
-	ASTnodeType_selfType,
-	ASTnodeType_struct,
-	BuilderContext,
 	withResolve
 } from "./ASTnodes.js";
 import { Module, ModulePath, TopLevelDef } from "./Module.js";
 
 export const builtinPrefix = "builtin:";
 
-type BuiltinType = ASTnode_alias & { left: ASTnode_identifier, value: ASTnodeType_struct };
+type BuiltinType = ASTnode_alias & { left: ASTnode_identifier, value: ASTnodeType };
 
 function makeBuiltinType(name: string): BuiltinType {
+	const value = new ASTnode_object("builtin", TypeType, []);
+	
 	return new ASTnode_alias(
 		"builtin",
 		new ASTnode_identifier("builtin", name),
-		new ASTnodeType_struct("builtin", builtinPrefix + name, [])
+		value,
 	) as BuiltinType;
 }
 
-export function isSomeBuiltinType(type: ASTnodeType): boolean {
-	return type.id.startsWith(builtinPrefix);
-}
-
-export function isBuiltinType(type: ASTnodeType, name: string): boolean {
-	return isSomeBuiltinType(type) && type.id.split(":")[1] == name;
-}
-
+let TypeType: ASTnode_object;
 export let builtinTypes: BuiltinType[] = [];
 export const builtins = new Map<string, TopLevelDef>();
 
-export function makeListType(T: ASTnodeType): ASTnodeType {
-	return new ASTnodeType_struct(
-		"builtin",
-		builtinPrefix + "List",
-		[
-			new ASTnode_argument("builtin", "T", T),
-		]
-	);
-}
+// export function makeListType(T: ASTnodeType): ASTnodeType {
+// 	return new ASTnodeType_struct(
+// 		"builtin",
+// 		builtinPrefix + "List",
+// 		[
+// 			new ASTnode_argument("builtin", "T", T),
+// 		]
+// 	);
+// }
 
-export function makeEffectType(T: ASTnodeType): ASTnodeType {
-	return new ASTnodeType_struct(
-		"builtin",
-		builtinPrefix + "Effect",
-		[
-			new ASTnode_argument("builtin", "T", T),
-		]
-	);
-}
+// export function makeEffectType(T: ASTnodeType): ASTnodeType {
+// 	return new ASTnodeType_struct(
+// 		"builtin",
+// 		builtinPrefix + "Effect",
+// 		[
+// 			new ASTnode_argument("builtin", "T", T),
+// 		]
+// 	);
+// }
 
 export function setUpBuiltins() {
-	builtinTypes = [
-		makeBuiltinType("Type"),
+	{
+		TypeType = new ASTnode_object("builtin", null, []);
+		TypeType.prototype = TypeType;
+		
+		builtinTypes.push(new ASTnode_alias(
+			"builtin",
+			new ASTnode_identifier("builtin", "Type"),
+			TypeType,
+		) as BuiltinType);
+		debugger;
+	}
+	
+	builtinTypes.push(
 		makeBuiltinType("Bool"),
 		makeBuiltinType("Float64"),
 		makeBuiltinType("String"),
@@ -72,58 +73,58 @@ export function setUpBuiltins() {
 		makeBuiltinType("Any"),
 		makeBuiltinType("Void"),
 		makeBuiltinType("__Unknown__"),
-	];
+	);
 	for (let i = 0; i < builtinTypes.length; i++) {
 		const type = builtinTypes[i];
 		const name = builtinPrefix + type.left.name;
 		builtins.set(name, new TopLevelDef(name, type.value, new ModulePath([]), []));
 	}
-	function makeType(argType: ASTnodeType, returnType: ASTnodeType): ASTnodeType_functionType {
-		return new ASTnodeType_functionType(
-			"builtin",
-			"",
-			argType,
-			returnType,
-		);
-	}
+	// function makeType(argType: ASTnodeType, returnType: ASTnodeType): ASTnodeType_functionType {
+	// 	return new ASTnodeType_functionType(
+	// 		"builtin",
+	// 		"",
+	// 		argType,
+	// 		returnType,
+	// 	);
+	// }
 	
-	function makeBuiltin(name: string, value: ASTnode) {
-		const nameWithPrefix = builtinPrefix + name;
-		builtins.set(nameWithPrefix, new TopLevelDef(nameWithPrefix, value, new ModulePath([]), []));
-	}
+	// function makeBuiltin(name: string, value: ASTnode) {
+	// 	const nameWithPrefix = builtinPrefix + name;
+	// 	builtins.set(nameWithPrefix, new TopLevelDef(nameWithPrefix, value, new ModulePath([]), []));
+	// }
 	
-	function makeFunction(name: string, args: [string, ASTnodeType][], task: ASTnode_builtinTask) {
-		let last: ASTnode = task;
-		for (let i = args.length - 1; i >= 0; i--) {
-			const arg = args[i];
-			task.dependencies.push({
-				name: arg[0],
-				value: new ASTnode_identifier("builtin", arg[0])
-			});
-			last = new ASTnode_function("builtin",
-				new ASTnode_argument("builtin", arg[0], arg[1]),
-				[last]
-			);
-		}
+	// function makeFunction(name: string, args: [string, ASTnodeType][], task: ASTnode_builtinTask) {
+	// 	let last: ASTnode = task;
+	// 	for (let i = args.length - 1; i >= 0; i--) {
+	// 		const arg = args[i];
+	// 		task.dependencies.push({
+	// 			name: arg[0],
+	// 			value: new ASTnode_identifier("builtin", arg[0])
+	// 		});
+	// 		last = new ASTnode_function("builtin",
+	// 			new ASTnode_argument("builtin", arg[0], arg[1]),
+	// 			[last]
+	// 		);
+	// 	}
 		
-		makeBuiltin(name, last);
-	}
+	// 	makeBuiltin(name, last);
+	// }
 	
-	{
-		makeFunction("List", [["T", getBuiltinType("Type")]], 
-			new ASTnode_builtinTask("", (context): ASTnodeType | ASTnode_error => {
-				return getBuiltinType("Type");
-			}, (context, task): ASTnode => {
-				return withResolve(context, () => {
-					const T = task.getDependency(context, "T");
-					if (!(T instanceof ASTnodeType) || T instanceof ASTnodeType_selfType) {
-						return task;
-					}
-					return makeListType(T);
-				});
-			})
-		);
-	}
+	// {
+	// 	makeFunction("List", [["T", getBuiltinType("Type")]], 
+	// 		new ASTnode_builtinTask("", (context): ASTnodeType | ASTnode_error => {
+	// 			return getBuiltinType("Type");
+	// 		}, (context, task): ASTnode => {
+	// 			return withResolve(context, () => {
+	// 				const T = task.getDependency(context, "T");
+	// 				if (!(T instanceof ASTnodeType) || T instanceof ASTnodeType_selfType) {
+	// 					return task;
+	// 				}
+	// 				return makeListType(T);
+	// 			});
+	// 		})
+	// 	);
+	// }
 	
 	// {
 	// 	new ASTnode_builtinTask("List:get", (context): ASTnodeType | ASTnode_error => {
@@ -160,37 +161,37 @@ export function setUpBuiltins() {
 	// 	);
 	// }
 	
-	{
-		makeFunction("Effect", [["T", getBuiltinType("Type")]], 
-			new ASTnode_builtinTask("", (context): ASTnodeType | ASTnode_error => {
-				return getBuiltinType("Type");
-			}, (context, task): ASTnode => {
-				return withResolve(context, () => {
-					const T = task.getDependency(context, "T");
-					if (!(T instanceof ASTnodeType) || T instanceof ASTnodeType_selfType) {
-						return task;
-					}
-					return makeEffectType(T);
-				});
-			})
-		);
-	}
+	// {
+	// 	makeFunction("Effect", [["T", getBuiltinType("Type")]], 
+	// 		new ASTnode_builtinTask("", (context): ASTnodeType | ASTnode_error => {
+	// 			return getBuiltinType("Type");
+	// 		}, (context, task): ASTnode => {
+	// 			return withResolve(context, () => {
+	// 				const T = task.getDependency(context, "T");
+	// 				if (!(T instanceof ASTnodeType) || T instanceof ASTnodeType_selfType) {
+	// 					return task;
+	// 				}
+	// 				return makeEffectType(T);
+	// 			});
+	// 		})
+	// 	);
+	// }
 	
-	{
-		makeFunction("Float64ToString", [["number", getBuiltinType("Float64")]], 
-			new ASTnode_builtinTask("numberToString", (context): ASTnodeType | ASTnode_error => {
-				return getBuiltinType("String");
-			}, (context, task): ASTnode => {
-				return withResolve(context, () => {
-					const number = task.getDependency(context, "number");
-					if (!(number instanceof ASTnode_number)) {
-						return task;
-					}
-					return new ASTnode_string("builtin", number.value.toString());
-				});
-			})
-		);
-	}
+	// {
+	// 	makeFunction("Float64ToString", [["number", getBuiltinType("Float64")]], 
+	// 		new ASTnode_builtinTask("numberToString", (context): ASTnodeType | ASTnode_error => {
+	// 			return getBuiltinType("String");
+	// 		}, (context, task): ASTnode => {
+	// 			return withResolve(context, () => {
+	// 				const number = task.getDependency(context, "number");
+	// 				if (!(number instanceof ASTnode_number)) {
+	// 					return task;
+	// 				}
+	// 				return new ASTnode_string("builtin", number.value.toString());
+	// 			});
+	// 		})
+	// 	);
+	// }
 	
 	// builtins.set("List:map", {
 	// 	value: makeFunction("fn", makeType,
@@ -208,57 +209,57 @@ export function setUpBuiltins() {
 	
 	//#region operators
 	
-	function makeOperatorBuiltin_Float64(
-		name: string,
-		callBack: (left: ASTnode_number, right: ASTnode_number) => ASTnode_number
-	) {
-		makeFunction(name, [["left", getBuiltinType("Float64")], ["right", getBuiltinType("Float64")]],
-			new ASTnode_builtinTask(name, (context): ASTnodeType | ASTnode_error => {
-				return getBuiltinType("Float64");
-			}, (context, task): ASTnode => {
-				return withResolve(context, () => {
-					const left = task.getDependency(context, "left");
-					const right = task.getDependency(context, "right");
-					if (left instanceof ASTnode_number && right instanceof ASTnode_number && context.doResolve()) {
-						return callBack(left, right);
-					}
-					return task;
-				});
-			})
-		);
-	}
+	// function makeOperatorBuiltin_Float64(
+	// 	name: string,
+	// 	callBack: (left: ASTnode_number, right: ASTnode_number) => ASTnode_number
+	// ) {
+	// 	makeFunction(name, [["left", getBuiltinType("Float64")], ["right", getBuiltinType("Float64")]],
+	// 		new ASTnode_builtinTask(name, (context): ASTnodeType | ASTnode_error => {
+	// 			return getBuiltinType("Float64");
+	// 		}, (context, task): ASTnode => {
+	// 			return withResolve(context, () => {
+	// 				const left = task.getDependency(context, "left");
+	// 				const right = task.getDependency(context, "right");
+	// 				if (left instanceof ASTnode_number && right instanceof ASTnode_number && context.doResolve()) {
+	// 					return callBack(left, right);
+	// 				}
+	// 				return task;
+	// 			});
+	// 		})
+	// 	);
+	// }
 	
-	function newNumber(number: number): ASTnode_number {
-		return new ASTnode_number("builtin", number);
-	}
+	// function newNumber(number: number): ASTnode_number {
+	// 	return new ASTnode_number("builtin", number);
+	// }
 	
-	makeOperatorBuiltin_Float64(
-		"Float64_+",
-		(left: ASTnode_number, right: ASTnode_number) => {
-			return newNumber(left.value + right.value);
-		}
-	);
+	// makeOperatorBuiltin_Float64(
+	// 	"Float64_+",
+	// 	(left: ASTnode_number, right: ASTnode_number) => {
+	// 		return newNumber(left.value + right.value);
+	// 	}
+	// );
 	
-	makeOperatorBuiltin_Float64(
-		"Float64_-",
-		(left: ASTnode_number, right: ASTnode_number) => {
-			return newNumber(left.value - right.value);
-		}
-	);
+	// makeOperatorBuiltin_Float64(
+	// 	"Float64_-",
+	// 	(left: ASTnode_number, right: ASTnode_number) => {
+	// 		return newNumber(left.value - right.value);
+	// 	}
+	// );
 	
-	makeOperatorBuiltin_Float64(
-		"Float64_*",
-		(left: ASTnode_number, right: ASTnode_number) => {
-			return newNumber(left.value * right.value);
-		}
-	);
+	// makeOperatorBuiltin_Float64(
+	// 	"Float64_*",
+	// 	(left: ASTnode_number, right: ASTnode_number) => {
+	// 		return newNumber(left.value * right.value);
+	// 	}
+	// );
 	
-	makeOperatorBuiltin_Float64(
-		"Float64_/",
-		(left: ASTnode_number, right: ASTnode_number) => {
-			return newNumber(left.value / right.value);
-		}
-	);
+	// makeOperatorBuiltin_Float64(
+	// 	"Float64_/",
+	// 	(left: ASTnode_number, right: ASTnode_number) => {
+	// 		return newNumber(left.value / right.value);
+	// 	}
+	// );
 	
 	//#endregion operators
 	
