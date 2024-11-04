@@ -243,70 +243,18 @@ export function Bool_new(location: SourceLocation, value: boolean): ASTnode_obje
 	return object;
 }
 
-// export class ASTnode_bool extends ASTnode {
-// 	constructor(
-// 		location: SourceLocation,
-// 		public value: boolean,
-// 	) {
-// 		super(location);
-// 	}
-	
-// 	_print(context = new CodeGenContext()): string {
-// 		if (this.value) {
-// 			return "true";
-// 		} else {
-// 			return "false";
-// 		}
-// 	}
-	
-// 	getType(context: BuilderContext): ASTnodeType | ASTnode_error {
-// 		return getBuiltinType("Bool");
-// 	}
-	
-// 	clone() {
-// 		return new ASTnode_bool(this.location, this.value);
-// 	}
-// }
-export class ASTnode_number extends ASTnode {
-	constructor(
-		location: SourceLocation,
-		public value: number,
-	) {
-		super(location);
-	}
-	
-	_print(context = new CodeGenContext()): string {
-		return `${this.value}`;
-	}
-	
-	getType(context: BuilderContext): ASTnodeType | ASTnode_error {
-		return getBuiltinType("Float64");
-	}
-	
-	clone() {
-		return new ASTnode_number(this.location, this.value);
-	}
+export function Float64_new(location: SourceLocation, value: number): ASTnode_object {
+	const object = new ASTnode_object(location, getBuiltinType("Float64"), []);
+	object.data = value;
+	return object;
 }
-export class ASTnode_string extends ASTnode {
-	constructor(
-		location: SourceLocation,
-		public value: string,
-	) {
-		super(location);
-	}
-	
-	_print(context = new CodeGenContext()): string {
-		return `"${this.value.replaceAll("\n", "\\n").replaceAll("\"", "\\\"")}"`;
-	}
-	
-	getType(context: BuilderContext): ASTnodeType | ASTnode_error {
-		return getBuiltinType("String");
-	}
-	
-	clone() {
-		return new ASTnode_string(this.location, this.value);
-	}
+
+export function String_new(location: SourceLocation, value: string): ASTnode_object {
+	const object = new ASTnode_object(location, getBuiltinType("Bool"), []);
+	object.data = value;
+	return object;
 }
+
 // export class ASTnode_list extends ASTnode {
 // 	constructor(
 // 		location: SourceLocation,
@@ -394,6 +342,10 @@ export class ASTnode_object extends ASTnode {
 			if (context.simplifyObjects) {
 				if (this.prototype.equals(getBuiltinType("Bool"))) {
 					return `${this.data}`;
+				} else if (this.prototype.equals(getBuiltinType("Float64"))) {
+					return `${this.data}`;
+				} else if (this.prototype.equals(getBuiltinType("Bool"))) {
+					return `"${this.data.replaceAll("\n", "\\n").replaceAll("\"", "\\\"")}"`;
 				}
 			}
 			prototype = `{${this.prototype.print(context)}}`;

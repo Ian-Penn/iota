@@ -1,15 +1,9 @@
 import * as utilities from "./utilities.js";
 import {
-	ASTnode,
 	ASTnode_alias,
-	ASTnode_builtinTask,
-	ASTnode_error,
 	ASTnode_identifier,
-	ASTnode_number,
 	ASTnode_object,
-	ASTnode_string,
 	ASTnodeType,
-	withResolve
 } from "./ASTnodes.js";
 import { Module, ModulePath, TopLevelDef } from "./Module.js";
 

@@ -3,14 +3,13 @@ import { CompileError } from "./report.js";
 import { Token, TokenKind } from "./lexer.js";
 import {
 	ASTnode,
-	ASTnode_alias,
 	ASTnode_command,
 	ASTnode_identifier,
 	ASTnode_if,
-	ASTnode_number,
-	ASTnode_string,
 	ASTnode_object,
-	Bool_new
+	Bool_new,
+	Float64_new,
+	String_new
 } from "./ASTnodes.js";
 
 export type ParserContext = {
@@ -447,12 +446,12 @@ export function parse(context: ParserContext, mode: ParserMode, indentation: num
 			}
 			
 			case TokenKind.number: {
-				ASTnodes.push(new ASTnode_number(token.location, Number(token.text)));
+				ASTnodes.push(Float64_new(token.location, Number(token.text)));
 				break;
 			}
 			
 			case TokenKind.string: {
-				ASTnodes.push(new ASTnode_string(token.location, token.text));
+				ASTnodes.push(String_new(token.location, token.text));
 				break;
 			}
 			
