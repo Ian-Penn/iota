@@ -4,6 +4,7 @@ import {
 	ASTnode_identifier,
 	ASTnode_object,
 	ASTnodeType,
+	String_new,
 } from "./ASTnodes.js";
 import { Module, ModulePath, TopLevelDef } from "./Module.js";
 
@@ -11,13 +12,19 @@ export const builtinPrefix = "builtin:";
 
 type BuiltinType = ASTnode_alias & { left: ASTnode_identifier, value: ASTnodeType };
 
-function makeBuiltinType(name: string): BuiltinType {
-	const value = new ASTnode_object("builtin", TypeType, []);
+function makeBuiltinType(name: string): ASTnodeType {
+	const object = new ASTnode_object("builtin", TypeType, []) as ASTnodeType;
+	// object.addMember("tag", String_new("builtin", name));
+	object.name = `builtin.${name}`;
 	
+	return object;
+}
+
+function makeBuiltinTypeAlias(name: string): BuiltinType {
 	return new ASTnode_alias(
 		"builtin",
 		new ASTnode_identifier("builtin", name),
-		value,
+		makeBuiltinType(name),
 	) as BuiltinType;
 }
 
@@ -47,9 +54,8 @@ export const builtins = new Map<string, TopLevelDef>();
 
 export function setUpBuiltins() {
 	{
-		TypeType = new ASTnode_object("builtin", null, []);
-		// TypeType.prototype = TypeType;
-		
+		TypeType = makeBuiltinType("Type");
+
 		builtinTypes.push(new ASTnode_alias(
 			"builtin",
 			new ASTnode_identifier("builtin", "Type"),
@@ -58,14 +64,14 @@ export function setUpBuiltins() {
 	}
 	
 	builtinTypes.push(
-		makeBuiltinType("Bool"),
-		makeBuiltinType("Float64"),
-		makeBuiltinType("String"),
-		makeBuiltinType("Effect"),
-		makeBuiltinType("Function"),
-		makeBuiltinType("Any"),
-		makeBuiltinType("Void"),
-		makeBuiltinType("__Unknown__"),
+		makeBuiltinTypeAlias("Bool"),
+		makeBuiltinTypeAlias("Float64"),
+		makeBuiltinTypeAlias("String"),
+		makeBuiltinTypeAlias("Effect"),
+		makeBuiltinTypeAlias("Function"),
+		makeBuiltinTypeAlias("Any"),
+		makeBuiltinTypeAlias("Void"),
+		makeBuiltinTypeAlias("__Unknown__"),
 	);
 	for (let i = 0; i < builtinTypes.length; i++) {
 		const type = builtinTypes[i];

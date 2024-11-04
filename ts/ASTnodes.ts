@@ -250,7 +250,7 @@ export function Float64_new(location: SourceLocation, value: number): ASTnode_ob
 }
 
 export function String_new(location: SourceLocation, value: string): ASTnode_object {
-	const object = new ASTnode_object(location, getBuiltinType("Bool"), []);
+	const object = new ASTnode_object(location, getBuiltinType("String"), []);
 	object.data = value;
 	return object;
 }
@@ -306,6 +306,7 @@ export class ASTnode_object extends ASTnode {
 	// static prototypeName = "__prototype__";
 	
 	public data: any = null;
+	public name: string = "";
 	
 	constructor(
 		location: SourceLocation,
@@ -324,7 +325,10 @@ export class ASTnode_object extends ASTnode {
 	}
 	
 	equals(other: ASTnode_object): boolean {
-		return this.print() == other.print();
+		return (
+			this.name == other.name &&
+			this.print() == other.print()
+		);
 	}
 	
 	addMember(name: string, value: ASTnode) {
@@ -340,11 +344,12 @@ export class ASTnode_object extends ASTnode {
 		let prototype = "";
 		if (this.prototype != null) {
 			if (context.simplifyObjects) {
+				debugger;
 				if (this.prototype.equals(getBuiltinType("Bool"))) {
 					return `${this.data}`;
 				} else if (this.prototype.equals(getBuiltinType("Float64"))) {
 					return `${this.data}`;
-				} else if (this.prototype.equals(getBuiltinType("Bool"))) {
+				} else if (this.prototype.equals(getBuiltinType("String"))) {
 					return `"${this.data.replaceAll("\n", "\\n").replaceAll("\"", "\\\"")}"`;
 				}
 			}

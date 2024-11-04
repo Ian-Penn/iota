@@ -1,13 +1,15 @@
 // builtin = import("builtin")
 
-true
-false
+// true
+// false
 
-1
+// 1
 
-2
+// 2
 
-"Hello, World"
+// "Hello, World"
+
+"Hello, World!\n\"in quotes on a new line\""
 
 // {
 // 	x = 1
