@@ -160,7 +160,7 @@ export class ASTnode {
 	}
 	
 	asBool(): boolean | null {
-		if (this instanceof ASTnode_object && this.isPrototype(getBuiltinType("Bool"))) {
+		if (this instanceof ASTnode_object && this.hasPrototype(getBuiltinType("Bool"))) {
 			return this.data;
 		} else {
 			return null;
@@ -367,12 +367,12 @@ export class ASTnode_object extends ASTnode {
 		super(location);
 	}
 	
-	// addPrototype(value: ASTnode) {
-	// 	this.addMember(ASTnode_object.prototypeName, value);
-	// }
-	
-	isPrototype(other: ASTnode_object): boolean {
-		return this.prototype != null && this.prototype.equals(other);
+	hasPrototype(other: ASTnode_object): boolean {
+		if (this.prototype == null) {
+			return false;
+		}
+		
+		return this.prototype.equals(other) || this.prototype.hasPrototype(other);
 	}
 	
 	equals(other: ASTnode_object): boolean {
@@ -389,8 +389,18 @@ export class ASTnode_object extends ASTnode {
 	}
 	
 	_print(context = new CodeGenContext()): string {
+		let prototype = "";
+		if (this.prototype != null) {
+			if (context.simplifyObjects) {
+				if (this.prototype.equals(getBuiltinType("Bool"))) {
+					return `${this.data}`;
+				}
+			}
+			prototype = `{${this.prototype.print(context)}}`;
+		}
+		
 		const members = joinBody(printAST(context, this.members));
-		return `{${members}\n}`;
+		return `${prototype}{${members}\n}`;
 	}
 	
 	getType(context: BuilderContext): ASTnodeType | ASTnode_error {

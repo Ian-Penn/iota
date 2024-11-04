@@ -420,6 +420,7 @@ export class Module {
 				const result = ASTnode.evaluate(new BuilderContext(this));
 				const codeGenContext = new CodeGenContext();
 				codeGenContext.fprintOrigin = false;
+				codeGenContext.simplifyObjects = true;
 				const resultText = result.print(codeGenContext);
 				
 				this.topLevelEvaluations.push({ location: location, msg: `${resultText}` });

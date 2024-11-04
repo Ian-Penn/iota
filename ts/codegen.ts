@@ -9,6 +9,7 @@ export class CodeGenContext {
 	fprintOrigin = false;
 	softLineMax = 10;
 	noParenthesesForFloatingOperators = false;
+	simplifyObjects = false;
 };
 
 export type CodegenJsSettings = {

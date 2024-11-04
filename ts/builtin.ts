@@ -54,14 +54,13 @@ export const builtins = new Map<string, TopLevelDef>();
 export function setUpBuiltins() {
 	{
 		TypeType = new ASTnode_object("builtin", null, []);
-		TypeType.prototype = TypeType;
+		// TypeType.prototype = TypeType;
 		
 		builtinTypes.push(new ASTnode_alias(
 			"builtin",
 			new ASTnode_identifier("builtin", "Type"),
 			TypeType,
 		) as BuiltinType);
-		debugger;
 	}
 	
 	builtinTypes.push(
