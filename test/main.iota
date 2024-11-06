@@ -1,22 +1,18 @@
 builtin = #import "builtin"
+builtin
 
 string = "Hello, World"
 string
 
-Itype = {
-	__prototype__ = Type // or FunctionType
-	argType = Number
-	returnType = Number
-}
+// Vec2 = {
+// 	__traits__ = {
+// 		builtin_typedValue = {
+// 			getType = @value(Vec2) Vec2
+// 		}
+// 	}
+// }
 
 // I = @x(Number) x
-
-// I = {
-// 	__prototype__ = Function
-// 	argName = "x"
-// 	argType = Number
-// 	data = [x]
-// }
 
 // test = {
 // 	I = @x(Number) x

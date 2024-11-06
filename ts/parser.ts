@@ -4,13 +4,14 @@ import { Token, TokenKind } from "./lexer.js";
 import {
 	ASTnode,
 	ASTnode_alias,
+	ASTnode_bool,
+	ASTnode_call,
 	ASTnode_command,
 	ASTnode_identifier,
 	ASTnode_if,
+	ASTnode_number,
 	ASTnode_object,
-	Bool_new,
-	Float64_new,
-	String_new
+	ASTnode_string,
 } from "./ASTnodes.js";
 
 export type ParserContext = {
@@ -366,64 +367,64 @@ export function parse(context: ParserContext, mode: ParserMode, indentation: num
 			return ASTnodes;
 		}
 		
-		// {
-		// 	const last = getLast(context);
-		// 	if (
-		// 		mode != ParserMode.singleNoCall &&
-		// 		ASTnodes.length > 0 &&
-		// 		more(context) &&
-		// 		getNext(context).kind != TokenKind.operator &&
-		// 		ASTnodes[ASTnodes.length - 1] instanceof ASTnode &&
-		// 		!(ASTnodes[ASTnodes.length - 1] instanceof ASTnode_command) &&
-		// 		!(
-		// 			getNext(context).kind == TokenKind.separator &&
-		// 			getNext(context).text == ")"
-		// 		) &&
-		// 		!(
-		// 			last &&
-		// 			last.kind == TokenKind.separator &&
-		// 			last.text == ","
-		// 		)
-		// 	) {
-		// 		const left = ASTnodes.pop();
-		// 		if (!left || getLast(context) == null || left.location == "builtin") {
-		// 			utilities.unreachable();
-		// 		}
+		{
+			const last = getLast(context);
+			if (
+				mode != ParserMode.singleNoCall &&
+				ASTnodes.length > 0 &&
+				more(context) &&
+				getNext(context).kind != TokenKind.operator &&
+				ASTnodes[ASTnodes.length - 1] instanceof ASTnode &&
+				!(ASTnodes[ASTnodes.length - 1] instanceof ASTnode_command) &&
+				!(
+					getNext(context).kind == TokenKind.separator &&
+					getNext(context).text == ")"
+				) &&
+				!(
+					last &&
+					last.kind == TokenKind.separator &&
+					last.text == ","
+				)
+			) {
+				const left = ASTnodes.pop();
+				if (!left || getLast(context) == null || left.location == "builtin") {
+					utilities.unreachable();
+				}
 				
-		// 		let newIndentation;
-		// 		if (left instanceof ASTnode_call) {
-		// 			newIndentation = left.location.indentation + 1;
-		// 		} else {
-		// 			newIndentation = indentation + 1;
-		// 		}
+				let newIndentation;
+				if (left instanceof ASTnode_call) {
+					newIndentation = left.location.indentation + 1;
+				} else {
+					newIndentation = indentation + 1;
+				}
 				
-		// 		let mode;
-		// 		if (getLine(left) == getLine(getNext(context))) {
-		// 			mode = ParserMode.singleNoCall;
-		// 		} else {
-		// 			mode = ParserMode.single;
-		// 		}
+				let mode;
+				if (getLine(left) == getLine(getNext(context))) {
+					mode = ParserMode.singleNoCall;
+				} else {
+					mode = ParserMode.single;
+				}
 				
-		// 		const arg = parse(
-		// 			context,
-		// 			mode,
-		// 			// getLast(context)!.indentation + 1,
-		// 			newIndentation,
-		// 			null
-		// 		)[0];
+				const arg = parse(
+					context,
+					mode,
+					// getLast(context)!.indentation + 1,
+					newIndentation,
+					null
+				)[0];
 				
-		// 		if (arg == undefined) {
-		// 			ASTnodes.push(left); // undo pop
-		// 			// if (doIndentationCancel()) {
-		// 			// 	earlyReturn();
-		// 			// 	return ASTnodes;
-		// 			// }
-		// 		} else {
-		// 			ASTnodes.push(new ASTnode_call(left.location, left, arg));
-		// 			continue;
-		// 		}
-		// 	}
-		// }
+				if (arg == undefined) {
+					ASTnodes.push(left); // undo pop
+					// if (doIndentationCancel()) {
+					// 	earlyReturn();
+					// 	return ASTnodes;
+					// }
+				} else {
+					ASTnodes.push(new ASTnode_call(left.location, left, arg));
+					continue;
+				}
+			}
+		}
 		
 		if (
 			mode == ParserMode.single &&
@@ -448,18 +449,18 @@ export function parse(context: ParserContext, mode: ParserMode, indentation: num
 			}
 			
 			case TokenKind.number: {
-				ASTnodes.push(Float64_new(token.location, Number(token.text)));
+				ASTnodes.push(new ASTnode_number(token.location, Number(token.text)));
 				break;
 			}
 			
 			case TokenKind.string: {
-				ASTnodes.push(String_new(token.location, token.text));
+				ASTnodes.push(new ASTnode_string(token.location, token.text));
 				break;
 			}
 			
 			case TokenKind.word: {
 				if (token.text == "true" || token.text == "false") {
-					ASTnodes.push(Bool_new(token.location, token.text == "true"));
+					ASTnodes.push(new ASTnode_bool(token.location, token.text == "true"));
 				}
 				
 				else if (token.text == "if") {

@@ -32,11 +32,11 @@ export type Token = {
 };
 
 function wordStart(text: string, i: number): boolean {
-	return (text[i] >= 'a' && text[i] <= 'z') || (text[i] >= 'A' && text[i] <= 'Z') || text[i] == '_';
+	return (text[i] >= 'a' && text[i] <= 'z') || (text[i] >= 'A' && text[i] <= 'Z') || text[i] == '_' || text[i] == '#';
 }
 
 function wordContinue(text: string, i: number): boolean {
-	return wordStart(text, i) || base10Number(text, i) || text[i] == '_' || oneCharacterOperator(text, i);
+	return wordStart(text, i) || base10Number(text, i) || oneCharacterOperator(text, i);
 }
 
 function base10Number(text: string, i: number): boolean {
@@ -75,7 +75,7 @@ function separator(text: string, i: number): boolean {
 	text[i] == ';' ||
 	text[i] == ',' ||
 	text[i] == '@' ||
-	text[i] == '#' ||
+	// text[i] == '#' ||
 	text[i] == '&' ||
 	text[i] == ':' ||
 	text[i] == '\\';

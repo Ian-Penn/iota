@@ -1,10 +1,16 @@
 import * as utilities from "./utilities.js";
 import {
+	ASTnode,
 	ASTnode_alias,
+	ASTnode_argument,
+	ASTnode_builtinTask,
+	ASTnode_error,
+	ASTnode_function,
 	ASTnode_identifier,
 	ASTnode_object,
+	ASTnode_string,
 	ASTnodeType,
-	String_new,
+	withResolve,
 } from "./ASTnodes.js";
 import { Module, ModulePath, TopLevelDef } from "./Module.js";
 
@@ -13,11 +19,11 @@ export const builtinPrefix = "builtin:";
 type BuiltinType = ASTnode_alias & { left: ASTnode_identifier, value: ASTnodeType };
 
 function makeBuiltinType(name: string): ASTnodeType {
-	const object = new ASTnode_object("builtin", TypeType, []) as ASTnodeType;
+	const object = new ASTnode_object("builtin", TypeType, []);
 	// object.addMember("tag", String_new("builtin", name));
 	object.name = `builtin.${name}`;
 	
-	return object;
+	return object as ASTnodeType;
 }
 
 function makeBuiltinTypeAlias(name: string): BuiltinType {
@@ -54,7 +60,7 @@ export const builtins = new Map<string, TopLevelDef>();
 
 export function setUpBuiltins() {
 	{
-		TypeType = makeBuiltinType("Type");
+		TypeType = makeBuiltinType("Type") as ASTnode_object;
 
 		builtinTypes.push(new ASTnode_alias(
 			"builtin",
@@ -87,27 +93,41 @@ export function setUpBuiltins() {
 	// 	);
 	// }
 	
-	// function makeBuiltin(name: string, value: ASTnode) {
-	// 	const nameWithPrefix = builtinPrefix + name;
-	// 	builtins.set(nameWithPrefix, new TopLevelDef(nameWithPrefix, value, new ModulePath([]), []));
-	// }
+	function makeBuiltin(name: string, value: ASTnode) {
+		const nameWithPrefix = builtinPrefix + name;
+		builtins.set(nameWithPrefix, new TopLevelDef(nameWithPrefix, value, new ModulePath([]), []));
+	}
 	
-	// function makeFunction(name: string, args: [string, ASTnodeType][], task: ASTnode_builtinTask) {
-	// 	let last: ASTnode = task;
-	// 	for (let i = args.length - 1; i >= 0; i--) {
-	// 		const arg = args[i];
-	// 		task.dependencies.push({
-	// 			name: arg[0],
-	// 			value: new ASTnode_identifier("builtin", arg[0])
-	// 		});
-	// 		last = new ASTnode_function("builtin",
-	// 			new ASTnode_argument("builtin", arg[0], arg[1]),
-	// 			[last]
-	// 		);
-	// 	}
+	function makeFunction(name: string, args: [string, ASTnodeType][], task: ASTnode_builtinTask) {
+		let last: ASTnode = task;
+		for (let i = args.length - 1; i >= 0; i--) {
+			const arg = args[i];
+			task.dependencies.push({
+				name: arg[0],
+				value: new ASTnode_identifier("builtin", arg[0])
+			});
+			last = new ASTnode_function("builtin",
+				new ASTnode_argument("builtin", arg[0], arg[1]),
+				[last]
+			);
+		}
 		
-	// 	makeBuiltin(name, last);
-	// }
+		makeBuiltin(name, last);
+	}
+	
+	makeFunction("import", [["path", getBuiltinType("String")]],
+		new ASTnode_builtinTask("", (context): ASTnodeType | ASTnode_error => {
+			return getBuiltinType("Any");
+		}, (context, task): ASTnode => {
+			return withResolve(context, () => {
+				const path = task.getDependency(context, "path");
+				if (path.deadEnd) {
+					return task;
+				}
+				return new ASTnode_string("builtin", "hello");
+			});
+		})
+	);
 	
 	// {
 	// 	makeFunction("List", [["T", getBuiltinType("Type")]], 
