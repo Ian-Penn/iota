@@ -3,6 +3,7 @@ import { CompileError } from "./report.js";
 import { Token, TokenKind } from "./lexer.js";
 import {
 	ASTnode,
+	ASTnode_alias,
 	ASTnode_command,
 	ASTnode_identifier,
 	ASTnode_if,
@@ -139,53 +140,54 @@ function getNext(context: ParserContext): Token {
 	return token;
 }
 
-// function parseOperators(context: ParserContext, left: ASTnode, lastPrecedence: number): ASTnode {
-// 	if (!context.tokens[context.i]) {
-// 		return left;
-// 	}
+function parseOperators(context: ParserContext, left: ASTnode, lastPrecedence: number): ASTnode {
+	if (!context.tokens[context.i]) {
+		return left;
+	}
 	
-// 	const nextOperator = context.tokens[context.i];
+	const nextOperator = context.tokens[context.i];
 	
-// 	if (nextOperator.kind == TokenKind.operator) {
-// 		const nextPrecedence = getOperatorPrecedence(nextOperator.text);
+	if (nextOperator.kind == TokenKind.operator) {
+		const nextPrecedence = getOperatorPrecedence(nextOperator.text);
 		
-// 		if (nextPrecedence > lastPrecedence) {
-// 			let right: ASTnode;
-// 			context.i++;
-// 			let mode;
-// 			if (nextOperator.text == "=") {
-// 				mode = ParserMode.single;
-// 			} else if (nextOperator.text == ".") {
-// 				mode = ParserMode.singleNoContinue;
-// 			} else {
-// 				mode = ParserMode.singleNoOperatorContinue;
-// 			}
+		if (nextPrecedence > lastPrecedence) {
+			let right: ASTnode;
+			context.i++;
+			let mode;
+			if (nextOperator.text == "=") {
+				mode = ParserMode.single;
+			} else if (nextOperator.text == ".") {
+				mode = ParserMode.singleNoContinue;
+			} else {
+				mode = ParserMode.singleNoOperatorContinue;
+			}
 			
-// 			const _r = parse(context, mode, getIndentation(nextOperator), null)[0];
-// 			if (_r == undefined) {
-// 				throw new CompileError("nothing on right side of operator").indicator(nextOperator.location, "here");
-// 			}
-// 			right = parseOperators(context, _r, nextPrecedence);
+			const _r = parse(context, mode, getIndentation(nextOperator), null)[0];
+			if (_r == undefined) {
+				throw new CompileError("nothing on right side of operator").indicator(nextOperator.location, "here");
+			}
+			right = parseOperators(context, _r, nextPrecedence);
 			
-// 			if (nextOperator.text == "=") {
-// 				return new ASTnode_alias(nextOperator.location, left, right);
-// 			} else {
-// 				// return new ASTnode_operator(nextOperator.location, nextOperator.text, left, right);
-// 				return new ASTnode_call(
-// 					nextOperator.location,
-// 					new ASTnode_call(
-// 						nextOperator.location,
-// 						new ASTnode_identifier(nextOperator.location, nextOperator.text),
-// 						left,
-// 					),
-// 					right,
-// 				);
-// 			}
-// 		}
-// 	}
+			if (nextOperator.text == "=") {
+				return new ASTnode_alias(nextOperator.location, left, right);
+			} else {
+				utilities.TODO();
+				// return new ASTnode_operator(nextOperator.location, nextOperator.text, left, right);
+				// return new ASTnode_call(
+				// 	nextOperator.location,
+				// 	new ASTnode_call(
+				// 		nextOperator.location,
+				// 		new ASTnode_identifier(nextOperator.location, nextOperator.text),
+				// 		left,
+				// 	),
+				// 	right,
+				// );
+			}
+		}
+	}
 	
-// 	return left;
-// }
+	return left;
+}
 
 function parseType(context: ParserContext, separatingText: string): ASTnode | null {
 	let type: ASTnode | null = null;
@@ -661,14 +663,13 @@ export function parse(context: ParserContext, mode: ParserMode, indentation: num
 				if (left == undefined) {
 					ASTnodes.push(new ASTnode_identifier(token.location, token.text));
 				} else {
-					utilities.TODO();
-					// if (token.text == "->") {
-					// 	utilities.TODO();
-					// } else {
-					// 	context.i--;
-					// 	ASTnodes.pop();
-					// 	ASTnodes.push(parseOperators(context, left, 0));
-					// }
+					if (token.text == "->") {
+						utilities.TODO();
+					} else {
+						context.i--;
+						ASTnodes.pop();
+						ASTnodes.push(parseOperators(context, left, 0));
+					}
 				}
 				break;
 			}

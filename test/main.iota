@@ -1,18 +1,25 @@
-// builtin = import("builtin")
+builtin = #import "builtin"
 
-// true
-// false
+string = "Hello, World"
+string
 
-// 1
+Itype = {
+	__prototype__ = Type // or FunctionType
+	argType = Number
+	returnType = Number
+}
 
-// 2
+// I = @x(Number) x
 
-// "Hello, World"
+// I = {
+// 	__prototype__ = Function
+// 	argName = "x"
+// 	argType = Number
+// 	data = [x]
+// }
 
-"Hello, World!\n\"in quotes on a new line\""
-
-// {
-// 	x = 1
+// test = {
+// 	I = @x(Number) x
 // }
 
 // Number = builtin.Float64
