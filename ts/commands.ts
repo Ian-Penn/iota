@@ -21,71 +21,71 @@ export function runCommand(module: Module, args: string[]) {
 	}
 	
 	switch (args[0]) {
-		case "import": {
-			const modulePath = nextArg();
-			if (module.fsBasePath == null) {
-				utilities.unreachable();
-			}
-			module.importModule(module.currentDirectory, modulePath);
-			return;
-		}
+		// case "import": {
+		// 	const modulePath = nextArg();
+		// 	if (module.fsBasePath == null) {
+		// 		utilities.unreachable();
+		// 	}
+		// 	module.importModule(module.currentDirectory, modulePath);
+		// 	return;
+		// }
 		
-		case "cd": {
-			const path = nextArg();
-			if (path.startsWith("~")) {
-				module.currentDirectory = new ModulePath([path.slice(1)]);
-			} else {
-				module.currentDirectory = new ModulePath([module.currentDirectory.segments, path].flat());
-			}
-			return;
-		}
+		// case "cd": {
+		// 	const path = nextArg();
+		// 	if (path.startsWith("~")) {
+		// 		module.currentDirectory = new ModulePath([path.slice(1)]);
+		// 	} else {
+		// 		module.currentDirectory = new ModulePath([module.currentDirectory.segments, path].flat());
+		// 	}
+		// 	return;
+		// }
 		
-		case "l": { // list
-			module.runEvalQueue();
+		// case "l": { // list
+		// 	module.runEvalQueue();
 			
-			console.log(`module: ${module.name} at: ${module.currentDirectory}\n`);
-			module.defs.forEach((def) => {
-				let path = def.getPath();
-				if (!path.startsWith(module.currentDirectory)) return;
-				path = new ModulePath(
-					path.segments.slice(module.currentDirectory.segments.length)
-				);
-				console.log(path.toString());
-			});
-			return;
-		}
+		// 	console.log(`module: ${module.name} at: ${module.currentDirectory}\n`);
+		// 	module.defs.forEach((def) => {
+		// 		let path = def.getPath();
+		// 		if (!path.startsWith(module.currentDirectory)) return;
+		// 		path = new ModulePath(
+		// 			path.segments.slice(module.currentDirectory.segments.length)
+		// 		);
+		// 		console.log(path.toString());
+		// 	});
+		// 	return;
+		// }
 		
-		case "ll": { // long list
-			module.runEvalQueue();
+		// case "ll": { // long list
+		// 	module.runEvalQueue();
 			
-			console.log(`module: ${module.name} at: ${module.currentDirectory}\n`);
-			module.defs.forEach((def) => {
-				let path = def.getPath();
-				if (!path.startsWith(module.currentDirectory)) return;
-				path = new ModulePath(
-					path.segments.slice(module.currentDirectory.segments.length)
-				);
-				console.log(`${path.toString()} = ${def.value.print()}`);
-			});
-			return;
-		}
+		// 	console.log(`module: ${module.name} at: ${module.currentDirectory}\n`);
+		// 	module.defs.forEach((def) => {
+		// 		let path = def.getPath();
+		// 		if (!path.startsWith(module.currentDirectory)) return;
+		// 		path = new ModulePath(
+		// 			path.segments.slice(module.currentDirectory.segments.length)
+		// 		);
+		// 		console.log(`${path.toString()} = ${def.value.print()}`);
+		// 	});
+		// 	return;
+		// }
 		
-		case "debug": {
-			module.runEvalQueue();
-			module.dumpDebug();
-			return;
-		}
+		// case "debug": {
+		// 	module.runEvalQueue();
+		// 	module.dumpDebug();
+		// 	return;
+		// }
 		
-		case "includeFile": {
-			const filePath = nextArg();
+		// case "includeFile": {
+		// 	const filePath = nextArg();
 			
-			const oldDir = module.currentDirectory;
-			const text = utilities.readFile(filePath);
-			if (text == null) utilities.TODO_addError();
-			module.addText(filePath, text);
-			module.currentDirectory = oldDir;
-			return;
-		}
+		// 	const oldDir = module.currentDirectory;
+		// 	const text = utilities.readFile(filePath);
+		// 	if (text == null) utilities.TODO_addError();
+		// 	module.addText(filePath, text);
+		// 	module.currentDirectory = oldDir;
+		// 	return;
+		// }
 		
 		// case "import": {
 		// 	utilities.TODO();

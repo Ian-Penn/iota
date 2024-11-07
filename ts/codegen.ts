@@ -3,7 +3,7 @@ import {
 	BuilderContext,
 	ASTnode,
 } from "./ASTnodes.js";
-import { Module, ModulePath, TopLevelDef } from "./Module.js";
+import { Module } from "./Module.js";
 
 export class CodeGenContext {
 	fprintOrigin = false;

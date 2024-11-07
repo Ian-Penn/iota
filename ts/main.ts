@@ -5,6 +5,7 @@ import logger from "./logger.js";
 import { Module } from "./Module.js";
 import { setUpBuiltins } from "./builtin.js";
 import { startREPL } from "./REPL.js";
+import { ASTnode_object } from "./ASTnodes.js";
 
 function nextArg(): string {
 	return process.argv[i++];
@@ -43,15 +44,15 @@ function main() {
 	const mode = nextArg();
 	
 	switch (mode) {
-		case "init": {
-			const modulePath = nextArg();
-			const basePath = path.dirname(modulePath);
-			const name = path.basename(modulePath);
+		// case "init": {
+		// 	const modulePath = nextArg();
+		// 	const basePath = path.dirname(modulePath);
+		// 	const name = path.basename(modulePath);
 			
-			const module = new Module(basePath, name);
-			module.saveToFileSystem();
-			break;
-		}
+		// 	const module = new Module(basePath, name);
+		// 	module.saveToFileSystem();
+		// 	break;
+		// }
 		
 		case "runFile": {
 			// const modulePath = nextArg();
@@ -60,27 +61,27 @@ function main() {
 			
 			const filePath = nextArg();
 			
-			const module = new Module("", "runFileMain");
+			const module = new Module("", "runFileMain", new ASTnode_object("builtin", null, []));
 			// module.loadFromFileSystem();
 			const text = utilities.readFile(filePath);
 			if (text == null) utilities.TODO_addError();
 			module.addText(filePath, text);
-			module.runEvalQueue();
+			// module.runEvalQueue();
 			module.outputErrorsAndEvaluations(true);
 			// module.saveToFileSystem();
 			break;
 		}
 		
-		case "start": {
-			const modulePath = nextArg();
-			const basePath = path.dirname(modulePath);
-			const name = path.basename(modulePath);
+		// case "start": {
+		// 	const modulePath = nextArg();
+		// 	const basePath = path.dirname(modulePath);
+		// 	const name = path.basename(modulePath);
 			
-			const module = new Module(basePath, name);
-			module.loadFromFileSystem();
-			startREPL(module);
-			break;
-		}
+		// 	const module = new Module(basePath, name);
+		// 	module.loadFromFileSystem();
+		// 	startREPL(module);
+		// 	break;
+		// }
 	
 		default: {
 			utilities.TODO_addError();

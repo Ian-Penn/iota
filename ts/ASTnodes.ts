@@ -1,8 +1,8 @@
 import * as utilities from "./utilities.js";
 import logger, { LogType } from "./logger.js";
-import { Module, ModulePath, TopLevelDef } from "./Module.js";
+import { Module } from "./Module.js";
 import { CompileError } from "./report.js";
-import { builtinPrefix, builtins, getBuiltinType } from "./builtin.js";
+import { builtinPrefix, getBuiltinType } from "./builtin.js";
 import { CodeGenContext } from "./codegen.js";
 import { isOperator } from "./lexer.js";
 
@@ -66,7 +66,7 @@ export class BuilderContext {
 	evalStack: ASTnode[] = [];
 	// fnStack: ASTnode_function[] = [];
 	
-	currentDef: TopLevelDef | null = null;
+	// currentDef: TopLevelDef | null = null;
 	
 	constructor(
 		public module: Module,
@@ -126,28 +126,28 @@ export class BuilderContext {
 		return null;
 	}
 	
-	getDef(name: string): [ModulePath, TopLevelDef] | null {
-		if (name == "#import") {
-			const def = builtins.get(builtinPrefix + "import");
-			if (def == undefined) utilities.unreachable();
-			return [new ModulePath([name]), def];
-		}
+	// getDef(name: string): [ModulePath, TopLevelDef] | null {
+	// 	if (name == "#import") {
+	// 		const def = builtins.get(builtinPrefix + "import");
+	// 		if (def == undefined) utilities.unreachable();
+	// 		return [new ModulePath([name]), def];
+	// 	}
 		
-		// if (name.startsWith("~")) {
-		// 	const path = name.slice(1);
-		// 	const def = this.module.getDef(this.module.currentDirectory, path);
-		// 	if (def != null) {
-		// 		return def;
-		// 	}
-		// } else {
-		const pair = this.module.getDef(this.module.currentDirectory, new ModulePath([name]));
-		if (pair != null) {
-			return pair;
-		}
-		// }
+	// 	// if (name.startsWith("~")) {
+	// 	// 	const path = name.slice(1);
+	// 	// 	const def = this.module.getDef(this.module.currentDirectory, path);
+	// 	// 	if (def != null) {
+	// 	// 		return def;
+	// 	// 	}
+	// 	// } else {
+	// 	const pair = this.module.getDef(this.module.currentDirectory, new ModulePath([name]));
+	// 	if (pair != null) {
+	// 		return pair;
+	// 	}
+	// 	// }
 		
-		return null;
-	}
+	// 	return null;
+	// }
 }
 
 export class ASTnode {
@@ -164,14 +164,6 @@ export class ASTnode {
 		) || (
 			this instanceof ASTnodeType_functionType
 		);
-	}
-	
-	asBool(): boolean | null {
-		if (this instanceof ASTnode_object && this.hasPrototype(getBuiltinType("Bool"))) {
-			return this.data;
-		} else {
-			return null;
-		}
 	}
 	
 	_print(context = new CodeGenContext()): string {
@@ -733,18 +725,22 @@ export class ASTnode_identifier extends ASTnode {
 			if (alias != null) {
 				value = alias.value;
 			} else {
-				const pair = context.getDef(this.name);
-				if (pair != null) {
-					value = pair[1].value;
-					if (context.currentDef != null && !context.currentDef.dependencies.includes(this.name)) {
-						context.currentDef.dependencies.push(this.name);
-					}
-				} else {
-					return new ASTnode_error(fromNode(this),
-						new CompileError(`alias '${this.name}' does not exist`)
-							.indicator(this.location, `here`)
-					);
-				}
+				return new ASTnode_error(fromNode(this),
+					new CompileError(`alias '${this.name}' does not exist`)
+						.indicator(this.location, `here`)
+				);
+				// const pair = context.getDef(this.name);
+				// if (pair != null) {
+				// 	value = pair[1].value;
+				// 	if (context.currentDef != null && !context.currentDef.dependencies.includes(this.name)) {
+				// 		context.currentDef.dependencies.push(this.name);
+				// 	}
+				// } else {
+				// 	return new ASTnode_error(fromNode(this),
+				// 		new CompileError(`alias '${this.name}' does not exist`)
+				// 			.indicator(this.location, `here`)
+				// 	);
+				// }
 			}
 		}
 		
@@ -761,7 +757,7 @@ export class ASTnode_identifier extends ASTnode {
 	evaluate(context: BuilderContext): ASTnode {
 		let unalias = false;
 		let value: ASTnode;
-		let defPair: [ModulePath, TopLevelDef] | null = null;
+		// let defPair: [ModulePath, TopLevelDef] | null = null;
 		{
 			const alias = context.getAlias(this.name);
 			if (alias != null) {
@@ -770,15 +766,16 @@ export class ASTnode_identifier extends ASTnode {
 					unalias = true;
 				}
 			} else {
-				defPair = context.getDef(this.name);
-				if (defPair != null) {
-					value = defPair[1].value.evaluate(context);
-					if (context.currentDef != null && !context.currentDef.dependencies.includes(this.name)) {
-						context.currentDef.dependencies.push(this.name);
-					}
-				} else {
-					utilities.unreachable();
-				}
+				utilities.unreachable();
+				// defPair = context.getDef(this.name);
+				// if (defPair != null) {
+				// 	value = defPair[1].value.evaluate(context);
+				// 	if (context.currentDef != null && !context.currentDef.dependencies.includes(this.name)) {
+				// 		context.currentDef.dependencies.push(this.name);
+				// 	}
+				// } else {
+				// 	utilities.unreachable();
+				// }
 			}
 		}
 		
@@ -799,9 +796,9 @@ export class ASTnode_identifier extends ASTnode {
 		
 		let newName = this.name;
 		
-		if (defPair != null) {
-			newName = defPair[0].toString();
-		}
+		// if (defPair != null) {
+		// 	newName = defPair[0].toString();
+		// }
 		
 		return new ASTnode_identifier(this.location, newName);
 	}
@@ -1419,21 +1416,20 @@ export class ASTnode_if extends ASTnode {
 	}
 	
 	evaluate(context: BuilderContext): ASTnode {
-		const conditionNode = this.condition.evaluate(context);
-		const condition = conditionNode.asBool();
-		if (condition == null) {
+		const condition = this.condition.evaluate(context);
+		if (!(condition instanceof ASTnode_bool)) {
 			const trueBody = evaluateList(context, this.trueBody);
 			const falseBody = evaluateList(context, this.falseBody);
 			
 			return new ASTnode_if(
 				fromNode(this),
-				conditionNode,
+				condition,
 				trueBody,
 				falseBody,
 			);
 		}
 		
-		if (condition) {
+		if (condition.value) {
 			const resultList = evaluateList(context, this.trueBody);
 			return resultList[resultList.length-1];
 		} else {

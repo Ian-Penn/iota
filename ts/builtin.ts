@@ -12,7 +12,7 @@ import {
 	ASTnodeType,
 	withResolve,
 } from "./ASTnodes.js";
-import { Module, ModulePath, TopLevelDef } from "./Module.js";
+import { Module, ModulePath } from "./Module.js";
 
 export const builtinPrefix = "builtin:";
 
@@ -36,7 +36,6 @@ function makeBuiltinTypeAlias(name: string): BuiltinType {
 
 let TypeType: ASTnode_object;
 export let builtinTypes: BuiltinType[] = [];
-export const builtins = new Map<string, TopLevelDef>();
 
 // export function makeListType(T: ASTnodeType): ASTnodeType {
 // 	return new ASTnodeType_struct(
@@ -79,10 +78,15 @@ export function setUpBuiltins() {
 		makeBuiltinTypeAlias("Void"),
 		makeBuiltinTypeAlias("__Unknown__"),
 	);
+	
+	const builtinModule = new Module(null, "builtin",
+		new ASTnode_object("builtin", null, [])
+	);
+	
 	for (let i = 0; i < builtinTypes.length; i++) {
 		const type = builtinTypes[i];
 		const name = builtinPrefix + type.left.name;
-		builtins.set(name, new TopLevelDef(name, type.value, new ModulePath([]), []));
+		builtinModule.root.addMember(name, type.value);
 	}
 	// function makeType(argType: ASTnodeType, returnType: ASTnodeType): ASTnodeType_functionType {
 	// 	return new ASTnodeType_functionType(
@@ -95,7 +99,7 @@ export function setUpBuiltins() {
 	
 	function makeBuiltin(name: string, value: ASTnode) {
 		const nameWithPrefix = builtinPrefix + name;
-		builtins.set(nameWithPrefix, new TopLevelDef(nameWithPrefix, value, new ModulePath([]), []));
+		builtinModule.root.addMember(nameWithPrefix, value);
 	}
 	
 	function makeFunction(name: string, args: [string, ASTnodeType][], task: ASTnode_builtinTask) {
@@ -124,7 +128,15 @@ export function setUpBuiltins() {
 				if (path.deadEnd) {
 					return task;
 				}
-				return new ASTnode_string("builtin", "hello");
+				if (!(path instanceof ASTnode_string)) {
+					utilities.unreachable();
+				}
+				
+				if (path.value == "builtin") {
+					return builtinModule.root;
+				} else {
+					utilities.TODO();
+				}
 			});
 		})
 	);
@@ -281,10 +293,6 @@ export function setUpBuiltins() {
 	// );
 	
 	//#endregion operators
-	
-	// add the module
-	const builtinModule = new Module(null, "builtin");
-	builtinModule.defs = builtins;
 }
 
 export function getBuiltinType(name: string): ASTnodeType {

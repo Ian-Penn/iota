@@ -1,8 +1,8 @@
 builtin = #import "builtin"
-builtin
+// builtin
 
-string = "Hello, World"
-string
+// string = "Hello, World"
+// string
 
 // Vec2 = {
 // 	__traits__ = {
