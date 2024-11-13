@@ -68,7 +68,7 @@ function main() {
 			module.addText(filePath, text);
 			// module.runEvalQueue();
 			module.outputErrorsAndEvaluations(true);
-			// module.dumpDebug();
+			module.dumpDebug();
 			// module.saveToFileSystem();
 			break;
 		}

@@ -446,8 +446,11 @@ export class ASTnode_object extends ASTnode {
 			prototype = `{${this.prototype.print(context)}}`;
 		}
 		
-		const members = joinBody(printAST(context, this.members));
-		return `${prototype}{${members}\n}`;
+		let memberText = joinBody(printAST(context, this.members)) + "\n";
+		if (memberText.trim() == "") {
+			memberText = "";
+		}
+		return `${prototype}{${memberText}}`;
 	}
 	
 	getType(context: BuilderContext): ASTnodeType | ASTnode_error {
