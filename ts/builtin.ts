@@ -126,7 +126,6 @@ export function setUpBuiltins() {
 			return getBuiltinType("Any");
 		}, (context, task): ASTnode => {
 			return withResolve(context, () => {
-				debugger;
 				const path = task.getDependency(context, "path");
 				if (path.deadEnd || path instanceof ASTnode_unknown) {
 					return task;

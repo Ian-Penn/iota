@@ -392,9 +392,12 @@ export class Module {
 			} else {
 				logger.log(LogType.module, `found top level evaluation`);
 				
+				const builderContext = new BuilderContext(this);
+				builderContext.local.scopes.push(AST);
+				
 				const location = node.location;
 				{
-					const error = node.getType(new BuilderContext(this));
+					const error = node.getType(builderContext);
 					if (error instanceof ASTnode_error) {
 						if (!error.compileError) {
 							debugger;
@@ -406,7 +409,7 @@ export class Module {
 					}
 				}
 				
-				const result = node.evaluate(new BuilderContext(this));
+				const result = node.evaluate(builderContext);
 				const codeGenContext = new CodeGenContext();
 				codeGenContext.fprintOrigin = false;
 				codeGenContext.simplifyObjects = true;
