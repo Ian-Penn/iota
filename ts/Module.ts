@@ -468,7 +468,7 @@ export class Module {
 			// context.resolve = "none";
 			context.resolve = "all";
 			const newRoot = this.root.evaluate(context);
-			console.log("newRoot", newRoot.print());
+			// console.log("newRoot", newRoot.print());
 			if (!(newRoot instanceof ASTnode_object)) {
 				utilities.TODO();
 			}
