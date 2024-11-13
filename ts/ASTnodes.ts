@@ -230,10 +230,6 @@ export class ASTnode {
 	evaluate(context: BuilderContext): ASTnode {
 		return this;
 	}
-	
-	clone(): ASTnode {
-		utilities.unreachable();
-	}
 }
 
 export class ASTnode_command extends ASTnode {
@@ -278,10 +274,6 @@ export class ASTnode_bool extends ASTnode {
 	getType(context: BuilderContext): ASTnodeType | ASTnode_error {
 		return getBuiltinType("Bool");
 	}
-	
-	clone() {
-		return new ASTnode_bool(this.location, this.value);
-	}
 }
 export class ASTnode_number extends ASTnode {
 	constructor(
@@ -298,10 +290,6 @@ export class ASTnode_number extends ASTnode {
 	getType(context: BuilderContext): ASTnodeType | ASTnode_error {
 		return getBuiltinType("Float64");
 	}
-	
-	clone() {
-		return new ASTnode_number(this.location, this.value);
-	}
 }
 export class ASTnode_string extends ASTnode {
 	constructor(
@@ -317,10 +305,6 @@ export class ASTnode_string extends ASTnode {
 	
 	getType(context: BuilderContext): ASTnodeType | ASTnode_error {
 		return getBuiltinType("String");
-	}
-	
-	clone() {
-		return new ASTnode_string(this.location, this.value);
 	}
 }
 
@@ -561,10 +545,6 @@ export class ASTnode_object extends ASTnode {
 // 		}
 // 		// context.resolve = oldResolve;
 // 		return new ASTnodeType_struct(fromNode(this), this.id, fields);
-// 	}
-	
-// 	clone() {
-// 		return new ASTnodeType_struct(this.location, this.id, this.fields);
 // 	}
 // }
 
@@ -1355,11 +1335,90 @@ export class ASTnode_call extends ASTnode {
 // 			utilities.TODO();
 // 		}
 // 	}
-	
-// 	clone() {
-// 		return new ASTnode_operator(this.location, this.operatorText, this.left, this.right);
-// 	}
 // }
+
+export class ASTnode_memberAccess extends ASTnode {
+	constructor(
+		location: SourceLocation,
+		public left: ASTnode,
+		public name: string,
+	) {
+		super(location);
+	}
+	
+	getType(context: BuilderContext): ASTnodeType | ASTnode_error {
+		const left = this.left.evaluate(context);
+		if (left.deadEnd) {
+			return new ASTnode_unknown(this.location, null);
+		}
+		
+		if (left instanceof ASTnode_object) {
+			const alias = left.getMember(this.name);
+			if (!alias) {
+				utilities.TODO_addError();
+			}
+			
+			return alias.value.getType(context);
+		} else {
+			utilities.TODO();
+		}
+	}
+	
+	evaluate(context: BuilderContext): ASTnode {
+		const left = this.left.evaluate(context);
+		debugger;
+		if (left.deadEnd) {
+			const output = new ASTnode_memberAccess(fromNode(this), left, this.name);
+			if (context.doResolve()) {
+				output.deadEnd = true;
+			}
+			return output;
+		}
+		
+		if (left instanceof ASTnode_object) {
+			const alias = left.getMember(this.name);
+			if (!alias) {
+				utilities.unreachable();
+			}
+			
+			return alias.value;
+		}
+		// else if (left instanceof ASTnodeType_enum) {
+		// 	const enumCase = left.getCase(name);
+		// 	if (enumCase == null) {
+		// 		utilities.unreachable();
+		// 	}
+		// 	const task = new ASTnode_builtinTask("", (context): ASTnodeType | ASTnode_error => {
+		// 		return left;
+		// 	}, (context): ASTnode => {
+		// 		return withResolve(context, () => {
+		// 			const input = task_getArg(context, "input");
+		// 			if (!(input instanceof ASTnode_instance)) {
+		// 				return task;
+		// 			}
+		// 			const instance = new ASTnode_instance(this.location, left, input.codeBlock);
+		// 			// instance.caseName = left.getCaseIndex(name);
+		// 			// if (instance.caseName == null) {
+		// 			// 	utilities.unreachable();
+		// 			// }
+		// 			instance.caseName = name;
+		// 			return instance;
+		// 		});
+		// 	});
+		// 	const enumConstructor = new ASTnode_function(
+		// 		this.location,
+		// 		new ASTnode_argument(this.location, "input", enumCase.type),
+		// 		[
+		// 			task
+		// 		],
+		// 	);
+		// 	return enumConstructor;
+		// }
+		else {
+			utilities.unreachable();
+		}
+	}
+}
 
 export class ASTnode_field extends ASTnode {
 	constructor(

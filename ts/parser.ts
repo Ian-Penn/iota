@@ -9,6 +9,7 @@ import {
 	ASTnode_command,
 	ASTnode_identifier,
 	ASTnode_if,
+	ASTnode_memberAccess,
 	ASTnode_number,
 	ASTnode_object,
 	ASTnode_string,
@@ -171,18 +172,22 @@ function parseOperators(context: ParserContext, left: ASTnode, lastPrecedence: n
 			
 			if (nextOperator.text == "=") {
 				return new ASTnode_alias(nextOperator.location, left, right);
+			} else if (nextOperator.text == ".") {
+				if (!(right instanceof ASTnode_identifier)) {
+					utilities.TODO_addError();
+				}
+				return new ASTnode_memberAccess(nextOperator.location, left, right.name);
 			} else {
-				utilities.TODO();
 				// return new ASTnode_operator(nextOperator.location, nextOperator.text, left, right);
-				// return new ASTnode_call(
-				// 	nextOperator.location,
-				// 	new ASTnode_call(
-				// 		nextOperator.location,
-				// 		new ASTnode_identifier(nextOperator.location, nextOperator.text),
-				// 		left,
-				// 	),
-				// 	right,
-				// );
+				return new ASTnode_call(
+					nextOperator.location,
+					new ASTnode_call(
+						nextOperator.location,
+						new ASTnode_identifier(nextOperator.location, nextOperator.text),
+						left,
+					),
+					right,
+				);
 			}
 		}
 	}

@@ -1,5 +1,6 @@
 builtin = #import "builtin"
-builtin
+builtin.Float64
+// I = @x(builtin.Number) x
 
 // string = "Hello, World"
 // string
