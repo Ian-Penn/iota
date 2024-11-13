@@ -2,7 +2,7 @@ import * as utilities from "./utilities.js";
 import logger, { LogType } from "./logger.js";
 import { Module } from "./Module.js";
 import { CompileError } from "./report.js";
-import { builtinPrefix, getBuiltinType } from "./builtin.js";
+import { builtinModule, builtinPrefix, getBuiltinType } from "./builtin.js";
 import { CodeGenContext } from "./codegen.js";
 import { isOperator } from "./lexer.js";
 
@@ -41,10 +41,20 @@ function fromNode(node: ASTnode): SourceLocation {
 	}
 }
 
+function getLast<T>(array: T[]): T {
+	return array[array.length-1];
+}
+
 export type ResolveMode = "none" | "types" | "all" | "force";
 
+export class LocalBuilderContext {
+	// aliases: ASTnode_alias[] = [];
+	// objects: ASTnode_object[] = [];
+	scopes: ASTnode[][] = [];
+}
+
 export class BuilderContext {
-	aliases: ASTnode_alias[] = [];
+	local = new LocalBuilderContext();
 	setUnalias: boolean = false;
 	
 	/**
@@ -116,10 +126,23 @@ export class BuilderContext {
 	}
 	
 	getAlias(name: string): ASTnode_alias | null {
-		for (let i = this.aliases.length-1; i >= 0; i--) {
-			const alias = this.aliases[i];
-			if (alias.left instanceof ASTnode_identifier && alias.left.name == name) {
-				return alias;
+		if (name == "#import") {
+			const alias = builtinModule.root.getMember("import");
+			if (alias == null) utilities.unreachable();
+			return alias;
+		}
+		
+		for (let i = this.local.scopes.length-1; i >= 0; i--) {
+			const scope = this.local.scopes[i];
+			for (let j = 0; j < scope.length; j++) {
+				const alias = scope[j];
+				if (
+					alias instanceof ASTnode_alias &&
+					alias.left instanceof ASTnode_identifier &&
+					alias.left.name == name
+				) {
+					return alias;
+				}
 			}
 		}
 		
@@ -390,7 +413,7 @@ export class ASTnode_object extends ASTnode {
 		));
 	}
 	
-	getMember(name: string): ASTnode | null {
+	getMember(name: string): ASTnode_alias | null {
 		for (let i = 0; i < this.members.length; i++) {
 			const member = this.members[i];
 			if (!(member instanceof ASTnode_alias) || !(member.left instanceof ASTnode_identifier)) {
@@ -448,7 +471,31 @@ export class ASTnode_object extends ASTnode {
 	}
 	
 	evaluate(context: BuilderContext): ASTnode {
-		return this;
+		context.local.scopes.push(this.members);
+		function done() {
+			context.local.scopes.pop();
+		}
+		
+		const members: ASTnode[] = [];
+		for (let i = 0; i < this.members.length; i++) {
+			const member = this.members[i];
+			if (!(member instanceof ASTnode_alias)) {
+				continue;
+			}
+			const valueType = member.getType(context);
+			if (valueType instanceof ASTnode_error) {
+				done();
+				return valueType;
+			}
+			// const name = member.left.print();
+			
+			const value = member.evaluate(context);
+			
+			members.push(value);
+		}
+		
+		done();
+		return new ASTnode_object(this.location, this.prototype, members);
 	}
 }
 
@@ -744,12 +791,12 @@ export class ASTnode_identifier extends ASTnode {
 			}
 		}
 		
-		const oldAliases = context.aliases;
-		context.aliases = [];
+		// const oldAliases = context.local.aliases;
+		// context.local.aliases = [];
 		context.pushEvalStack(this);
 		const output = value.getType(context);
 		context.popEvalStack();
-		context.aliases = oldAliases;
+		// context.local.aliases = oldAliases;
 		
 		return output;
 	}
@@ -845,16 +892,16 @@ export class ASTnode_function extends ASTnode {
 		if (!argumentType.isType()) {
 			argumentType = getBuiltinType("Any");
 		}
-		context.aliases.push(makeAliasWithType(arg.location, arg.name, argumentType as ASTnodeType));
+		context.local.scopes.push([makeAliasWithType(arg.location, arg.name, argumentType as ASTnodeType)]);
 		context.pushEvalStack(this);
 		const actualResultType = getTypeFromList(context, this.body);
 		context.popEvalStack();
-		context.aliases.pop();
+		context.local.scopes.pop();
 		if (actualResultType instanceof ASTnode_error) {
 			return actualResultType;
 		}
 		
-		return new ASTnodeType_functionType(fromNode(this), argumentType, actualResultType);
+		return new ASTnodeType_functionType(fromNode(this), argumentType, getLast(actualResultType));
 	}
 	
 	evaluate(context: BuilderContext): ASTnode {
@@ -870,14 +917,18 @@ export class ASTnode_function extends ASTnode {
 		let body = this.body;
 		
 		if (!context.isOnEvalStack(this)) {
-			context.aliases.push(new ASTnode_alias(arg.location, new ASTnode_identifier(arg.location, arg.name), argValue));
+			context.local.scopes.push([
+				new ASTnode_alias(arg.location, new ASTnode_identifier(arg.location, arg.name), argValue)
+			]);
+			
 			const oldSetUnalias = context.setUnalias;
 			context.setUnalias = false;
 			context.pushEvalStack(this);
 			body = evaluateList(context, this.body);
 			context.popEvalStack();
 			context.setUnalias = oldSetUnalias;
-			context.aliases.pop();
+			
+			context.local.scopes.pop();
 		}
 		
 		const newFunction = new ASTnode_function(fromNode(this), new ASTnode_argument(arg.location, arg.name, argumentType), body);
@@ -979,9 +1030,9 @@ export class ASTnode_call extends ASTnode {
 		} else {
 			const newAlias = makeAliasWithType(arg.location, functionToCall.arg.name, functionToCallArgType);
 			newAlias.unalias = true;
-			context.aliases.push(newAlias);
+			context.local.scopes.push([newAlias]);
 			const returnType = resolved.getType(context);
-			context.aliases.pop();
+			context.local.scopes.pop();
 			
 			return returnType;
 		}
@@ -1019,12 +1070,12 @@ export class ASTnode_call extends ASTnode {
 			const arg = functionToCall.arg;
 			const newAlias = new ASTnode_alias(arg.location, new ASTnode_identifier(arg.location, arg.name), argValue);
 			newAlias.unalias = true;
-			context.aliases.push(newAlias);
+			context.local.scopes.push([newAlias]);
 			if (!resolve) context.pushEvalStack(functionToCall);
 			const resultList = evaluateList(context, functionToCall.body);
 			let result = resultList[resultList.length-1];
 			if (!resolve) context.popEvalStack();
-			context.aliases.pop();
+			context.local.scopes.pop();
 			context.setUnalias = oldSetUnalias;
 			
 			if (resolve) {
@@ -1381,8 +1432,16 @@ export class ASTnode_if extends ASTnode {
 			}
 		}
 		
-		const trueType = getTypeFromList(context, this.trueBody);
-		const falseType = getTypeFromList(context, this.falseBody);
+		const trueList = getTypeFromList(context, this.trueBody);
+		if (trueList instanceof ASTnode_error) {
+			return trueList;
+		}
+		const trueType = getLast(trueList);
+		const falseList = getTypeFromList(context, this.falseBody);
+		if (falseList instanceof ASTnode_error) {
+			return falseList;
+		}
+		const falseType = getLast(trueList);
 		
 		if (trueType instanceof ASTnode_unknown && falseType instanceof ASTnode_unknown) {
 			utilities.TODO_addError();
@@ -1392,13 +1451,6 @@ export class ASTnode_if extends ASTnode {
 		}
 		if (falseType instanceof ASTnode_unknown) {
 			return trueType;
-		}
-		
-		if (trueType instanceof ASTnode_error) {
-			return trueType;
-		}
-		if (falseType instanceof ASTnode_error) {
-			return falseType;
 		}
 		
 		{
@@ -1514,6 +1566,7 @@ export class ASTnode_unknown extends ASTnode_error {
 		public type: ASTnodeType | null,
 	) {
 		super(location, null);
+		this.deadEnd = true;
 	}
 	
 	_print(context = new CodeGenContext()): string {
@@ -1581,9 +1634,15 @@ export class ASTnode_builtinTask extends ASTnode {
 			
 			for (let i = 0; i < this.dependencies.length; i++) {
 				const dependency = this.dependencies[i];
+				
+				let value = dependency.value.evaluate(context);
+				if (value.deadEnd) {
+					value = dependency.value;
+				}
+				
 				newTask.dependencies.push({
 					name: dependency.name,
-					value: dependency.value.evaluate(context),
+					value: value,
 				});
 			}
 			
@@ -1728,55 +1787,58 @@ export function printAST(context: CodeGenContext, AST: ASTnode[]): string[] {
 	return textList;
 }
 
-export function getTypeFromList(context: BuilderContext, AST: ASTnode[]): ASTnodeType | ASTnode_error {
-	let outNode = null;
-	for (let i = 0; i < AST.length; i++) {
-		const ASTnode = AST[i];
-		if (ASTnode instanceof ASTnode_alias) {
-			utilities.TODO();
-			// const valueType = ASTnode.getType(context);
-			// if (valueType instanceof ASTnode_error) {
-			// 	return valueType;
-			// }
-			// const name = ASTnode.left.print();
-			// context.aliases.push(makeAliasWithType(ASTnode.location, name, valueType));
-		} else {
-			outNode = ASTnode.getType(context);
-		}
+export function getTypeFromList(context: BuilderContext, AST: ASTnode[]): ASTnodeType[] | ASTnode_error {
+	context.local.scopes.push(AST);
+	function done() {
+		context.local.scopes.pop();
 	}
 	
+	const outNodes: ASTnodeType[] = [];
 	for (let i = 0; i < AST.length; i++) {
-		const ASTnode = AST[i];
-		if (ASTnode instanceof ASTnode_alias) {
-			context.aliases.pop();
+		const node = AST[i];
+		// if (node instanceof ASTnode_alias) {
+		// 	const valueType = node.getType(context);
+		// 	if (valueType instanceof ASTnode_error) {
+		// 		done();
+		// 		return valueType;
+		// 	}
+		// 	const name = node.left.print();
+		// 	context.local.aliases.push(makeAliasWithType(node.location, name, valueType));
+		// } else {
+		const value = node.getType(context);
+		if (value instanceof ASTnode_error) {
+			done();
+			return value;
 		}
+		outNodes.push(value);
+		// }
 	}
 	
-	if (!outNode) utilities.TODO_addError();
-	return outNode;
+	done();
+	return outNodes;
 }
 
 export function evaluateList(context: BuilderContext, AST: ASTnode[]): ASTnode[] {
-	let aliasCount = 0;
+	context.local.scopes.push(AST);
+	function done() {
+		context.local.scopes.pop();
+	}
 	
 	let output: ASTnode[] = [];
 	for (let i = 0; i < AST.length; i++) {
-		const ASTnode = AST[i];
-		const result: ASTnode = ASTnode.evaluate(context);
-		if (result instanceof ASTnode_alias) {
-			if (context.setUnalias) {
-				result.unalias = true;
-			}
-			context.aliases.push(result);
-			aliasCount++;
-		}
-		output.push(result);
+		const node = AST[i];
+		const value = node.evaluate(context);
+		// if (result instanceof ASTnode_alias) {
+		// 	if (context.setUnalias) {
+		// 		result.unalias = true;
+		// 	}
+		// 	context.local.aliases.push(result);
+		// 	aliasCount++;
+		// }
+		output.push(value);
 	}
 	
-	for (let i = 0; i < aliasCount; i++) {
-		context.aliases.pop();
-	}
-	
+	done();
 	return output;
 }
 

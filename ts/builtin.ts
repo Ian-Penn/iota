@@ -9,6 +9,7 @@ import {
 	ASTnode_identifier,
 	ASTnode_object,
 	ASTnode_string,
+	ASTnode_unknown,
 	ASTnodeType,
 	withResolve,
 } from "./ASTnodes.js";
@@ -36,6 +37,7 @@ function makeBuiltinTypeAlias(name: string): BuiltinType {
 
 let TypeType: ASTnode_object;
 export let builtinTypes: BuiltinType[] = [];
+export let builtinModule: Module;
 
 // export function makeListType(T: ASTnodeType): ASTnodeType {
 // 	return new ASTnodeType_struct(
@@ -79,14 +81,14 @@ export function setUpBuiltins() {
 		makeBuiltinTypeAlias("__Unknown__"),
 	);
 	
-	const builtinModule = new Module(null, "builtin",
+	builtinModule = new Module(null, "builtin",
 		new ASTnode_object("builtin", null, [])
 	);
 	
 	for (let i = 0; i < builtinTypes.length; i++) {
 		const type = builtinTypes[i];
-		const name = builtinPrefix + type.left.name;
-		builtinModule.root.addMember(name, type.value);
+		// const name = builtinPrefix + type.left.name;
+		builtinModule.root.addMember(type.left.name, type.value);
 	}
 	// function makeType(argType: ASTnodeType, returnType: ASTnodeType): ASTnodeType_functionType {
 	// 	return new ASTnodeType_functionType(
@@ -98,8 +100,8 @@ export function setUpBuiltins() {
 	// }
 	
 	function makeBuiltin(name: string, value: ASTnode) {
-		const nameWithPrefix = builtinPrefix + name;
-		builtinModule.root.addMember(nameWithPrefix, value);
+		// const nameWithPrefix = builtinPrefix + name;
+		builtinModule.root.addMember(name, value);
 	}
 	
 	function makeFunction(name: string, args: [string, ASTnodeType][], task: ASTnode_builtinTask) {
@@ -124,8 +126,9 @@ export function setUpBuiltins() {
 			return getBuiltinType("Any");
 		}, (context, task): ASTnode => {
 			return withResolve(context, () => {
+				debugger;
 				const path = task.getDependency(context, "path");
-				if (path.deadEnd) {
+				if (path.deadEnd || path instanceof ASTnode_unknown) {
 					return task;
 				}
 				if (!(path instanceof ASTnode_string)) {

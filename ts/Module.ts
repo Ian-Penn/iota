@@ -390,7 +390,29 @@ export class Module {
 				const name = node.left.name;
 				this.root.addMember(name, node.value);
 			} else {
-				utilities.TODO();
+				logger.log(LogType.module, `found top level evaluation`);
+				
+				const location = node.location;
+				{
+					const error = node.getType(new BuilderContext(this));
+					if (error instanceof ASTnode_error) {
+						if (!error.compileError) {
+							debugger;
+							logger.log(LogType.module, `!error.compileError`);
+							break;
+						}
+						this.errors.push(error.compileError);
+						continue;
+					}
+				}
+				
+				const result = node.evaluate(new BuilderContext(this));
+				const codeGenContext = new CodeGenContext();
+				codeGenContext.fprintOrigin = false;
+				codeGenContext.simplifyObjects = true;
+				const resultText = result.print(codeGenContext);
+				
+				this.topLevelEvaluations.push({ location: location, msg: `${resultText}` });
 			}
 			
 			// if (ASTnode instanceof ASTnode_command) {
@@ -436,6 +458,18 @@ export class Module {
 				
 			// 	this.topLevelEvaluations.push({ location: location, msg: `${resultText}` });
 			// }
+		}
+		
+		{
+			const context = new BuilderContext(this);
+			// context.resolve = "none";
+			context.resolve = "all";
+			const newRoot = this.root.evaluate(context);
+			console.log("newRoot", newRoot.print());
+			if (!(newRoot instanceof ASTnode_object)) {
+				utilities.TODO();
+			}
+			this.root = newRoot;
 		}
 	}
 	
@@ -487,13 +521,9 @@ export class Module {
 		}
 	}
 	
-	// dumpDebug() {
-	// 	console.log(`name: ${this.name}`);
-	// 	console.log(`basePath: ${this.fsBasePath}`);
-	// 	console.log(`currentDirectory: ${this.currentDirectory}`);
-	// 	console.log(`printDefs:\n${this.printDefs(true, true)}`);
-	// 	for (let i = 0; i < this.imports.length; i++) {
-	// 		moduleList[this.imports[i].moduleIndex].dumpDebug();
-	// 	}
-	// }
+	dumpDebug() {
+		console.log(`name: ${this.name}`);
+		console.log(`basePath: ${this.fsBasePath}`);
+		console.log(`root: ${this.root.print()}`);
+	}
 }
