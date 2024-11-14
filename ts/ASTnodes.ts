@@ -443,7 +443,7 @@ export class ASTnode_object extends ASTnode {
 			// 		return `"${this.data.replaceAll("\n", "\\n").replaceAll("\"", "\\\"")}"`;
 			// 	}
 			// }
-			prototype = `{${this.prototype.print(context)}}`;
+			prototype = `&(${this.prototype.print(context)})`;
 		}
 		
 		let memberText = joinBody(printAST(context, this.members)) + "\n";
@@ -813,11 +813,11 @@ export class ASTnode_identifier extends ASTnode {
 			return value;
 		}
 		
-		// if (value instanceof ASTnode_unknowable || value instanceof ASTnodeType_selfType) {
-		// 	const newIdentifier = new ASTnode_identifier(this.location, this.name);
-		// 	newIdentifier.deadEnd = true;
-		// 	return newIdentifier;
-		// }
+		if (value.deadEnd) {
+			const newIdentifier = new ASTnode_identifier(this.location, this.name);
+			newIdentifier.deadEnd = true;
+			return newIdentifier;
+		}
 		
 		if (context.doResolve() || unalias) {
 			logger.log(LogType.resolve, `resolved ${this.name} to ${value.print()}`);
@@ -1349,6 +1349,11 @@ export class ASTnode_memberAccess extends ASTnode {
 		super(location);
 	}
 	
+	_print(context = new CodeGenContext()): string {
+		const left = this.left.print(context);
+		return `${left}.${this.name}`;
+	}
+	
 	getType(context: BuilderContext): ASTnodeType | ASTnode_error {
 		const left = this.left.evaluate(context);
 		if (left.deadEnd) {
@@ -1369,7 +1374,7 @@ export class ASTnode_memberAccess extends ASTnode {
 	
 	evaluate(context: BuilderContext): ASTnode {
 		const left = this.left.evaluate(context);
-		debugger;
+		
 		if (left.deadEnd) {
 			const output = new ASTnode_memberAccess(fromNode(this), left, this.name);
 			if (context.doResolve()) {
@@ -1632,7 +1637,11 @@ export class ASTnode_unknown extends ASTnode_error {
 	}
 	
 	_print(context = new CodeGenContext()): string {
-		return `__ASTnode_unknown__`;
+		let type = "";
+		if (this.type != null) {
+			type = `(${this.type.print(context)})`;
+		}
+		return `__ASTnode_unknown__${type}`;
 	}
 	
 	getType(context: BuilderContext): ASTnodeType | ASTnode_error {

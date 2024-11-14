@@ -4,9 +4,11 @@ import { Token, TokenKind } from "./lexer.js";
 import {
 	ASTnode,
 	ASTnode_alias,
+	ASTnode_argument,
 	ASTnode_bool,
 	ASTnode_call,
 	ASTnode_command,
+	ASTnode_function,
 	ASTnode_identifier,
 	ASTnode_if,
 	ASTnode_memberAccess,
@@ -577,48 +579,48 @@ export function parse(context: ParserContext, mode: ParserMode, indentation: num
 				// 	ASTnodes.push(new ASTnode_list(token.location, elements));
 				// }
 				
-				// else if (token.text == "@") {
-				// 	const name = forward(context);
-				// 	if (name.kind != TokenKind.word) {
-				// 		throw new CompileError("expected name for function argument").indicator(token.location, "here");
-				// 	}
-					
-				// 	const openingParentheses = forward(context);
-				// 	if (openingParentheses.kind != TokenKind.separator || openingParentheses.text != "(") {
-				// 		throw new CompileError("expected openingParentheses").indicator(openingParentheses.location, "here");
-				// 	}
-					
-				// 	const type = parse(context, ParserMode.normal, nextIndentation, ")")[0];
-				// 	if (!type) {
-				// 		throw new CompileError("function argument without a type").indicator(name.location, "here");
-				// 	}
-					
-				// 	const body = parse(context, ParserMode.normal, nextIndentation, null);
-				// 	ASTnodes.push(new ASTnode_function(
-				// 		token.location, 
-				// 		new ASTnode_argument(token.location, name.text, type),
-				// 		body
-				// 	));
-				// }
-				
-				else if (token.text == "&") {
-					let prototype = null;
-					if (getNext(context).kind != TokenKind.separator || getNext(context).text != "{") {
-						prototype = parse(context, ParserMode.single, nextIndentation, null)[0];
-						if (!prototype || !(prototype instanceof ASTnode_object)) {
-							utilities.TODO_addError();
-						}
+				else if (token.text == "@") {
+					const name = forward(context);
+					if (name.kind != TokenKind.word) {
+						throw new CompileError("expected name for function argument").indicator(token.location, "here");
 					}
 					
-					const openingBracket = forward(context);
-					if (openingBracket.kind != TokenKind.separator || openingBracket.text != "{") {
-						throw new CompileError("expected openingBracket for field list")
-							.indicator(openingBracket.location, "here");
+					const openingParentheses = forward(context);
+					if (openingParentheses.kind != TokenKind.separator || openingParentheses.text != "(") {
+						throw new CompileError("expected openingParentheses").indicator(openingParentheses.location, "here");
 					}
-					const members = parse(context, ParserMode.normal, nextIndentation, "}");
 					
-					ASTnodes.push(new ASTnode_object(token.location, prototype, members));
+					const type = parse(context, ParserMode.normal, nextIndentation, ")")[0];
+					if (!type) {
+						throw new CompileError("function argument without a type").indicator(name.location, "here");
+					}
+					
+					const body = parse(context, ParserMode.normal, nextIndentation, null);
+					ASTnodes.push(new ASTnode_function(
+						token.location, 
+						new ASTnode_argument(token.location, name.text, type),
+						body
+					));
 				}
+				
+				// else if (token.text == "&") {
+				// 	let prototype = null;
+				// 	if (getNext(context).kind != TokenKind.separator || getNext(context).text != "{") {
+				// 		prototype = parse(context, ParserMode.single, nextIndentation, null)[0];
+				// 		if (!prototype || !(prototype instanceof ASTnode_object)) {
+				// 			utilities.TODO_addError();
+				// 		}
+				// 	}
+					
+				// 	const openingBracket = forward(context);
+				// 	if (openingBracket.kind != TokenKind.separator || openingBracket.text != "{") {
+				// 		throw new CompileError("expected openingBracket for field list")
+				// 			.indicator(openingBracket.location, "here");
+				// 	}
+				// 	const members = parse(context, ParserMode.normal, nextIndentation, "}");
+					
+				// 	ASTnodes.push(new ASTnode_object(token.location, prototype, members));
+				// }
 				
 				// else if (token.text == "\\") {
 				// 	const openingParentheses = forward(context);
@@ -644,9 +646,9 @@ export function parse(context: ParserContext, mode: ParserMode, indentation: num
 				// 	));
 				// }
 				
-				else if (token.text == ":") {
-					throw new CompileError("unexpected separator ':'").indicator(token.location, "here");
-				}
+				// else if (token.text == ":") {
+				// 	throw new CompileError("unexpected separator ':'").indicator(token.location, "here");
+				// }
 				
 				// else if (token.text == "{") {
 				// 	const members = parse(context, ParserMode.normal, nextIndentation, "}");

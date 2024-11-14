@@ -19,10 +19,14 @@ export const builtinPrefix = "builtin:";
 
 type BuiltinType = ASTnode_alias & { left: ASTnode_identifier, value: ASTnodeType };
 
+function newString(text: string): ASTnode_string {
+	return new ASTnode_string("builtin", text);
+}
+
 function makeBuiltinType(name: string): ASTnodeType {
 	const object = new ASTnode_object("builtin", TypeType, []);
-	// object.addMember("tag", String_new("builtin", name));
 	object.name = `builtin.${name}`;
+	object.addMember("builtinTag", newString(`${name}`));
 	
 	return object as ASTnodeType;
 }
@@ -78,7 +82,7 @@ export function setUpBuiltins() {
 		makeBuiltinTypeAlias("Function"),
 		makeBuiltinTypeAlias("Any"),
 		makeBuiltinTypeAlias("Void"),
-		makeBuiltinTypeAlias("__Unknown__"),
+		// makeBuiltinTypeAlias("__Unknown__"),
 	);
 	
 	builtinModule = new Module(null, "builtin",

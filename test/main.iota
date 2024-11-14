@@ -1,6 +1,11 @@
 builtin = #import "builtin"
-builtin.Float64
-// I = @x(builtin.Number) x
+
+// @a(Any) @b(typeof a)
+
+mul = @a(builtin.Float64) @b(builtin.Float64)
+	a * b // -> (typeof a).* a b
+
+mul 5 -1
 
 // string = "Hello, World"
 // string
