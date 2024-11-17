@@ -7,6 +7,7 @@ import {
 	ASTnode_error,
 	ASTnode_function,
 	ASTnode_identifier,
+	ASTnode_number,
 	ASTnode_object,
 	ASTnode_string,
 	ASTnode_unknown,
@@ -19,8 +20,16 @@ export const builtinPrefix = "builtin:";
 
 type BuiltinType = ASTnode_alias & { left: ASTnode_identifier, value: ASTnodeType };
 
+function use(name: string): ASTnode_identifier {
+	return new ASTnode_identifier("builtin", name);
+}
+
 function newString(text: string): ASTnode_string {
 	return new ASTnode_string("builtin", text);
+}
+
+function newNumber(number: number): ASTnode_number {
+	return new ASTnode_number("builtin", number);
 }
 
 function makeBuiltinType(name: string): ASTnodeType {
@@ -108,7 +117,7 @@ export function setUpBuiltins() {
 		builtinModule.root.addMember(name, value);
 	}
 	
-	function makeFunction(name: string, args: [string, ASTnodeType][], task: ASTnode_builtinTask) {
+	function makeFunction(args: [string, ASTnode][], task: ASTnode_builtinTask): ASTnode_function {
 		let last: ASTnode = task;
 		for (let i = args.length - 1; i >= 0; i--) {
 			const arg = args[i];
@@ -122,10 +131,18 @@ export function setUpBuiltins() {
 			);
 		}
 		
-		makeBuiltin(name, last);
+		if (!(last instanceof ASTnode_function)) {
+			utilities.unreachable();
+		}
+		
+		return last;
 	}
 	
-	makeFunction("import", [["path", getBuiltinType("String")]],
+	function setFunction(name: string, args: [string, ASTnodeType][], task: ASTnode_builtinTask) {
+		makeBuiltin(name, makeFunction(args, task));
+	}
+	
+	setFunction("import", [["path", getBuiltinType("String")]],
 		new ASTnode_builtinTask("", (context): ASTnodeType | ASTnode_error => {
 			return getBuiltinType("Any");
 		}, (context, task): ASTnode => {
@@ -246,29 +263,30 @@ export function setUpBuiltins() {
 	
 	//#region operators
 	
-	// function makeOperatorBuiltin_Float64(
-	// 	name: string,
-	// 	callBack: (left: ASTnode_number, right: ASTnode_number) => ASTnode_number
-	// ) {
-	// 	makeFunction(name, [["left", getBuiltinType("Float64")], ["right", getBuiltinType("Float64")]],
-	// 		new ASTnode_builtinTask(name, (context): ASTnodeType | ASTnode_error => {
-	// 			return getBuiltinType("Float64");
-	// 		}, (context, task): ASTnode => {
-	// 			return withResolve(context, () => {
-	// 				const left = task.getDependency(context, "left");
-	// 				const right = task.getDependency(context, "right");
-	// 				if (left instanceof ASTnode_number && right instanceof ASTnode_number && context.doResolve()) {
-	// 					return callBack(left, right);
-	// 				}
-	// 				return task;
-	// 			});
-	// 		})
-	// 	);
-	// }
-	
-	// function newNumber(number: number): ASTnode_number {
-	// 	return new ASTnode_number("builtin", number);
-	// }
+	function makeOperatorBuiltin(
+		location: ASTnodeType,
+		name: string,
+		callBack: (left: ASTnode_number, right: ASTnode_number) => ASTnode_number
+	) {
+		if (!(location instanceof ASTnode_object)) {
+			utilities.unreachable();
+		}
+		const fn = makeFunction([["left", getBuiltinType("Float64")], ["right", getBuiltinType("Float64")]],
+			new ASTnode_builtinTask(name, (context): ASTnodeType | ASTnode_error => {
+				return getBuiltinType("Float64");
+			}, (context, task): ASTnode => {
+				return withResolve(context, () => {
+					const left = task.getDependency(context, "left");
+					const right = task.getDependency(context, "right");
+					if (left instanceof ASTnode_number && right instanceof ASTnode_number && context.doResolve()) {
+						return callBack(left, right);
+					}
+					return task;
+				});
+			})
+		);
+		location.addMember(name, fn);
+	}
 	
 	// makeOperatorBuiltin_Float64(
 	// 	"Float64_+",
@@ -284,12 +302,13 @@ export function setUpBuiltins() {
 	// 	}
 	// );
 	
-	// makeOperatorBuiltin_Float64(
-	// 	"Float64_*",
-	// 	(left: ASTnode_number, right: ASTnode_number) => {
-	// 		return newNumber(left.value * right.value);
-	// 	}
-	// );
+	makeOperatorBuiltin(
+		getBuiltinType("Float64"),
+		"*",
+		(left: ASTnode_number, right: ASTnode_number) => {
+			return newNumber(left.value * right.value);
+		}
+	);
 	
 	// makeOperatorBuiltin_Float64(
 	// 	"Float64_/",

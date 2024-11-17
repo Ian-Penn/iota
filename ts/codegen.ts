@@ -6,10 +6,11 @@ import {
 import { Module } from "./Module.js";
 
 export class CodeGenContext {
-	fprintOrigin = false;
+	stack: ASTnode[] = [];
+	
+	forceLastAliasName = false;
 	softLineMax = 10;
 	noParenthesesForFloatingOperators = false;
-	simplifyObjects = false;
 };
 
 export type CodegenJsSettings = {

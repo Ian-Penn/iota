@@ -14,6 +14,7 @@ import {
 	ASTnode_memberAccess,
 	ASTnode_number,
 	ASTnode_object,
+	ASTnode_operator,
 	ASTnode_string,
 } from "./ASTnodes.js";
 
@@ -180,16 +181,16 @@ function parseOperators(context: ParserContext, left: ASTnode, lastPrecedence: n
 				}
 				return new ASTnode_memberAccess(nextOperator.location, left, right.name);
 			} else {
-				// return new ASTnode_operator(nextOperator.location, nextOperator.text, left, right);
-				return new ASTnode_call(
-					nextOperator.location,
-					new ASTnode_call(
-						nextOperator.location,
-						new ASTnode_identifier(nextOperator.location, nextOperator.text),
-						left,
-					),
-					right,
-				);
+				return new ASTnode_operator(nextOperator.location, nextOperator.text, left, right);
+				// return new ASTnode_call(
+				// 	nextOperator.location,
+				// 	new ASTnode_call(
+				// 		nextOperator.location,
+				// 		new ASTnode_identifier(nextOperator.location, nextOperator.text),
+				// 		left,
+				// 	),
+				// 	right,
+				// );
 			}
 		}
 	}
