@@ -288,12 +288,13 @@ export function setUpBuiltins() {
 		location.addMember(name, fn);
 	}
 	
-	// makeOperatorBuiltin_Float64(
-	// 	"Float64_+",
-	// 	(left: ASTnode_number, right: ASTnode_number) => {
-	// 		return newNumber(left.value + right.value);
-	// 	}
-	// );
+	makeOperatorBuiltin(
+		getBuiltinType("Float64"),
+		"+",
+		(left: ASTnode_number, right: ASTnode_number) => {
+			return newNumber(left.value + right.value);
+		}
+	);
 	
 	// makeOperatorBuiltin_Float64(
 	// 	"Float64_-",

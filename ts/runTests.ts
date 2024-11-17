@@ -37,6 +37,11 @@ function testFailure(msg: string) {
 	process.exitCode = 1;
 }
 
+const builtinImportNode = parse({
+	tokens: lex("__builtinImportNode__", `builtin = #import "builtin"`),
+	i: 0,
+}, ParserMode.normal, 0, null)[0];
+
 function testFile(filePath: string) {
 	filePath = path.normalize(filePath);
 	
@@ -54,7 +59,7 @@ function testFile(filePath: string) {
 	};
 	
 	const module = new Module(null, "main", new ASTnode_object("builtin", null, []));
-	module.addText("__none__", "builtin = #import \"builtin\"");
+	// module.addText("__none__", "builtin = #import \"builtin\"");
 	
 	try {
 		const text = utilities.readFile(options.filePath);
@@ -80,6 +85,8 @@ function testFile(filePath: string) {
 			i: 0,
 		}, ParserMode.normal, 0, null);
 		logger.addTime("parsing", Date.now() - parseStart);
+		
+		AST.unshift(builtinImportNode);
 
 		module.addAST(AST);
 	} catch (error) {

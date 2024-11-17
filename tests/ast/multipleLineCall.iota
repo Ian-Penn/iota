@@ -1,10 +1,12 @@
 // compOut
-// line:7 -> 6
+// line:6 -> 15
 
-Number = builtin_Float64
-sum = @x(Number) @y(Number) @z(Number) x + y + z
+sum = @x(builtin.Float64) @y(builtin.Float64) @z(builtin.Float64) x + y + z
 
 sum
 	1
-	2
-	3
+	sum
+		2
+		3
+		4
+	5
