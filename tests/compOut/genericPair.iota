@@ -3,8 +3,8 @@
 // line:14 -> "hello"
 // line:15 -> "world"
 
-Type = builtin_Type
-String = builtin_String
+Type = builtin.Type
+String = builtin.String
 
 pair = @T(Type) @x(T) @y(T) @f(\(T) -> \(T) -> T) f x y
 first = @T(Type) @x(T) @y(T) x

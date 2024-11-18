@@ -10,4 +10,4 @@
 
 \("") -> 2
 
-\(builtin_Float64) -> 2
+\(builtin.Float64) -> 2

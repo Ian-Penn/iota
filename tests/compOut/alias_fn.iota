@@ -1,9 +1,9 @@
 // compOut
 // line:10 -> 3
 
-test = @x(builtin_Float64)
+test = @x(builtin.Float64)
 	a = x
-	@y(builtin_Float64)
+	@y(builtin.Float64)
 		b = y
 		a + b
 

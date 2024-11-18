@@ -5,7 +5,7 @@
 // 	else
 // 		0
 
-@bool(builtin_Bool)
+@bool(builtin.Bool)
 	if bool then
 		1
 	else

@@ -10,7 +10,7 @@
 // line:27 -> 34
 // line:28 -> 55
 
-fib = @n(builtin_Float64)
+fib = @n(builtin.Float64)
 	if n <= 1 then
 		n
 	else

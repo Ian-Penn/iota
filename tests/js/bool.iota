@@ -12,8 +12,8 @@
 // 	};
 // }
 
-Number = builtin_Float64
-Bool = builtin_Bool
+Number = builtin.Float64
+Bool = builtin.Bool
 maybeAdd1 = @n(Number) @bool(Bool)
 	if bool then
 		n + 1

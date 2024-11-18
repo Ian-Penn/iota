@@ -4,8 +4,8 @@
 // line:24 -> 25
 // line:25 -> 0.5
 
-Number = builtin_Float64
-String = builtin_String
+Number = builtin.Float64
+String = builtin.String
 
 operator = @string(String) @left(Number) @right(Number)
 	if string == "+" then

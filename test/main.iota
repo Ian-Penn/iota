@@ -21,7 +21,7 @@ builtin.numberToString 3
 
 // Vec2 = {
 // 	__traits__ = {
-// 		builtin_typedValue = {
+// 		builtin.typedValue = {
 // 			getType = @value(Vec2) Vec2
 // 		}
 // 	}

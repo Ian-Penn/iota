@@ -22,13 +22,13 @@
 // }
 // var g4 = () => {return document.body.innerHTML};
 
-Bool = builtin_Bool
-Number = builtin_Float64
-String = builtin_String
-Function = builtin_Function
-Effect = builtin_Effect
-Any = builtin_Any
-Void = builtin_Void
+Bool = builtin.Bool
+Number = builtin.Float64
+String = builtin.String
+Function = builtin.Function
+Effect = builtin.Effect
+Any = builtin.Any
+Void = builtin.Void
 
 and = @a(Effect Any) @b(Effect Any)
 	unsafeEffect "%%0%%(); %%1%%()" [a, b] Void

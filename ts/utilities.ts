@@ -8,8 +8,7 @@ import { CompileError } from "./report.js";
 export function unreachable(): never {
 	debugger;
 	console.trace();
-	console.error("unreachable code reached");
-	exit(1);
+	throw "unreachable code reached";
 }
 
 export function assert(condition: boolean, msg?: string): asserts condition {

@@ -8,6 +8,6 @@
 // line:13 -> (this argument)
 // line:11 -> function from here
 
-add1 = @x(builtin_Float64) x + 1
+add1 = @x(builtin.Float64) x + 1
 add1 "text"
 add1 true

@@ -7,10 +7,10 @@
 // line:22 -> @x(struct builtin:String{}) x
 // line:23 -> "Bye, World?"
 
-Type = builtin_Type
-String = builtin_String
-Number = builtin_Float64
-Function = builtin_Function
+Type = builtin.Type
+String = builtin.String
+Number = builtin.Float64
+Function = builtin.Function
 
 makeIdentity = @T(Type) @x(T) x
 

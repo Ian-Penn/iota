@@ -1,7 +1,7 @@
 // compOut
 // line:7 -> "World!"
 
-Number = builtin_Float64
+Number = builtin.Float64
 getBool = @x(Number) x > 4
 
 if getBool 1 then

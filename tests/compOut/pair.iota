@@ -3,7 +3,7 @@
 // line:14 -> "hello"
 // line:15 -> "world"
 
-String = builtin_String
+String = builtin.String
 
 pair = @x(String) @y(String) @f(\(String) -> \(String) -> String) f x y
 first = @x(String) @y(String) x

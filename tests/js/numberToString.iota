@@ -4,4 +4,4 @@
 // }
 // var main = g0;
 
-main = builtin_numberToString
+main = builtin.numberToString

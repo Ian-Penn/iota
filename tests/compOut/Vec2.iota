@@ -21,7 +21,7 @@
 // 	y = 3
 // }
 
-Number = builtin_Float64
+Number = builtin.Float64
 Vec2 = struct {
 	x Number,
 	y Number

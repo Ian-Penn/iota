@@ -9,9 +9,9 @@
 // line:17 -> (this argument)
 // line:16 -> function from here
 
-List = builtin_List
-String = builtin_String
-Number = builtin_Float64
+List = builtin.List
+String = builtin.String
+Number = builtin.Float64
 
 I = @x(List String) x
 I [1]

@@ -4,8 +4,8 @@
 >cd ~builtin
 >import builtin
 >cd ~
-// [builtin_Float64, math_sum]
-math_sum = @n(builtin_Float64)
+// [builtin.Float64, math_sum]
+math_sum = @n(builtin.Float64)
 	if (n <= 0) then
 		0
 	else

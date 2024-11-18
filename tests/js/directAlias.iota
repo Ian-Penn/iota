@@ -4,5 +4,5 @@
 // }
 // var main = g0;
 
-I = @x(builtin_Float64) x
+I = @x(builtin.Float64) x
 main = I

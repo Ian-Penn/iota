@@ -2,7 +2,7 @@
 // line:17 -> 0
 // line:18 -> 0
 
-Number = builtin_Float64
+Number = builtin.Float64
 a = @x(Number)
 	if x <= 0 then
 		0

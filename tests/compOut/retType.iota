@@ -2,8 +2,8 @@
 // line:8 -> struct builtin:String{}
 // line:9 -> "Hello, World"
 
-getType = @T(builtin_Type) T
-test = @x(getType builtin_String) x
+getType = @T(builtin.Type) T
+test = @x(getType builtin.String) x
 
-(getType builtin_String)
+(getType builtin.String)
 test "Hello, World"
