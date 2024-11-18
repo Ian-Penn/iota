@@ -263,17 +263,17 @@ export function setUpBuiltins() {
 	
 	//#region operators
 	
-	function makeOperatorBuiltin(
-		location: ASTnodeType,
+	function makeOperatorBuiltin_number(
+		type: ASTnodeType,
 		name: string,
 		callBack: (left: ASTnode_number, right: ASTnode_number) => ASTnode_number
 	) {
-		if (!(location instanceof ASTnode_object)) {
+		if (!(type instanceof ASTnode_object)) {
 			utilities.unreachable();
 		}
-		const fn = makeFunction([["left", getBuiltinType("Float64")], ["right", getBuiltinType("Float64")]],
+		const fn = makeFunction([["left", type], ["right", type]],
 			new ASTnode_builtinTask(name, (context): ASTnodeType | ASTnode_error => {
-				return getBuiltinType("Float64");
+				return type;
 			}, (context, task): ASTnode => {
 				return withResolve(context, () => {
 					const left = task.getDependency(context, "left");
@@ -285,10 +285,35 @@ export function setUpBuiltins() {
 				});
 			})
 		);
-		location.addMember(name, fn);
+		type.addMember(name, fn);
 	}
 	
-	makeOperatorBuiltin(
+	function makeOperatorBuiltin_string(
+		type: ASTnodeType,
+		name: string,
+		callBack: (left: ASTnode_string, right: ASTnode_string) => ASTnode_string
+	) {
+		if (!(type instanceof ASTnode_object)) {
+			utilities.unreachable();
+		}
+		const fn = makeFunction([["left", type], ["right", type]],
+			new ASTnode_builtinTask(name, (context): ASTnodeType | ASTnode_error => {
+				return type;
+			}, (context, task): ASTnode => {
+				return withResolve(context, () => {
+					const left = task.getDependency(context, "left");
+					const right = task.getDependency(context, "right");
+					if (left instanceof ASTnode_string && right instanceof ASTnode_string && context.doResolve()) {
+						return callBack(left, right);
+					}
+					return task;
+				});
+			})
+		);
+		type.addMember(name, fn);
+	}
+	
+	makeOperatorBuiltin_number(
 		getBuiltinType("Float64"),
 		"+",
 		(left: ASTnode_number, right: ASTnode_number) => {
@@ -303,7 +328,7 @@ export function setUpBuiltins() {
 	// 	}
 	// );
 	
-	makeOperatorBuiltin(
+	makeOperatorBuiltin_number(
 		getBuiltinType("Float64"),
 		"*",
 		(left: ASTnode_number, right: ASTnode_number) => {
@@ -317,6 +342,14 @@ export function setUpBuiltins() {
 	// 		return newNumber(left.value / right.value);
 	// 	}
 	// );
+	
+	makeOperatorBuiltin_string(
+		getBuiltinType("String"),
+		"+",
+		(left: ASTnode_string, right: ASTnode_string) => {
+			return newString(left.value + right.value);
+		}
+	);
 	
 	//#endregion operators
 }

@@ -1,8 +1,7 @@
 builtin = #import "builtin"
-// builtin.Float64
 
-// builtin.Float64.* 3 3
-3 * 3
+// builtin.String.+
+"Hello, " + "World!"
 
 // ---------------
 
