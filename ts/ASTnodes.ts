@@ -909,7 +909,6 @@ export class ASTnode_call extends ASTnode {
 		
 		const arg = this.arg;
 		
-		debugger;
 		const resolved = withResolve(context, () => this.evaluate(context));
 		if (resolved.deadEnd) {
 			const functionToCallType = functionToCall.getType(context);

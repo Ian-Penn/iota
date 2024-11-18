@@ -231,21 +231,20 @@ export function setUpBuiltins() {
 	// 	);
 	// }
 	
-	// {
-	// 	makeFunction("Float64ToString", [["number", getBuiltinType("Float64")]], 
-	// 		new ASTnode_builtinTask("numberToString", (context): ASTnodeType | ASTnode_error => {
-	// 			return getBuiltinType("String");
-	// 		}, (context, task): ASTnode => {
-	// 			return withResolve(context, () => {
-	// 				const number = task.getDependency(context, "number");
-	// 				if (!(number instanceof ASTnode_number)) {
-	// 					return task;
-	// 				}
-	// 				return new ASTnode_string("builtin", number.value.toString());
-	// 			});
-	// 		})
-	// 	);
-	// }
+	// TODO: Should probably be more generic than Float64.
+	setFunction("numberToString", [["number", getBuiltinType("Float64")]],
+		new ASTnode_builtinTask("numberToString", (context): ASTnodeType | ASTnode_error => {
+			return getBuiltinType("String");
+		}, (context, task): ASTnode => {
+			return withResolve(context, () => {
+				const number = task.getDependency(context, "number");
+				if (!(number instanceof ASTnode_number)) {
+					return task;
+				}
+				return new ASTnode_string("builtin", number.value.toString());
+			});
+		})
+	);
 	
 	// builtins.set("List:map", {
 	// 	value: makeFunction("fn", makeType,

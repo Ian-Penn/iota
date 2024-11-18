@@ -1,7 +1,6 @@
 builtin = #import "builtin"
 
-// builtin.String.+
-"Hello, " + "World!"
+builtin.numberToString 3
 
 // ---------------
 
