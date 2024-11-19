@@ -1,6 +1,10 @@
 builtin = #import "builtin"
 
-builtin.numberToString 3
+a = 1
+b = @x(builtin.Float64) x + a
+a = 2
+
+b 2 // 4
 
 // ---------------
 

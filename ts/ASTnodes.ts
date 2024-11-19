@@ -410,6 +410,15 @@ export class ASTnode_object extends ASTnode {
 		this.members.push(alias);
 	}
 	
+	setMember(name: string, value: ASTnode) {
+		const member = this.getMember(name);
+		if (member != null) {
+			member.value = value;
+		} else {
+			this.addMember(name, value);
+		}
+	}
+	
 	getMember(name: string): ASTnode_alias | null {
 		for (let i = 0; i < this.members.length; i++) {
 			const member = this.members[i];
@@ -732,13 +741,9 @@ export class ASTnode_identifier extends ASTnode {
 			return value;
 		}
 		
-		let newName = this.name;
-		
-		// if (defPair != null) {
-		// 	newName = defPair[0].toString();
-		// }
-		
-		return new ASTnode_identifier(this.location, newName);
+		const newIdentifier = new ASTnode_identifier(this.location, this.name);
+		newIdentifier.deadEnd = true;
+		return newIdentifier;
 	}
 }
 
@@ -799,7 +804,7 @@ export class ASTnode_function extends ASTnode {
 	evaluate(context: BuilderContext): ASTnode {
 		const arg = this.arg;
 		
-		const argumentType = arg.type.evaluate(context);
+		const argumentType = withResolve(context, () => arg.type.evaluate(context));
 		
 		let argValue: ASTnode = new ASTnode_unknown(arg.location, null);
 		if (argumentType.isType(context)) {

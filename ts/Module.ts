@@ -388,12 +388,12 @@ export class Module {
 					utilities.TODO();
 				}
 				const name = node.left.name;
-				this.root.addMember(name, node.value);
+				this.root.setMember(name, node.value);
 			} else {
 				logger.log(LogType.module, `found top level evaluation`);
 				
 				const builderContext = new BuilderContext(this);
-				builderContext.local.scopes.push(AST);
+				builderContext.local.scopes.push(this.root.members);
 				
 				const location = node.location;
 				{
@@ -461,17 +461,17 @@ export class Module {
 			// }
 		}
 		
-		{
-			const context = new BuilderContext(this);
-			// context.resolve = "none";
-			context.resolve = "all";
-			const newRoot = this.root.evaluate(context);
-			// console.log("newRoot", newRoot.print());
-			if (!(newRoot instanceof ASTnode_object)) {
-				utilities.TODO();
-			}
-			this.root = newRoot;
-		}
+		// {
+		// 	const context = new BuilderContext(this);
+		// 	context.resolve = "none";
+		// 	// context.resolve = "all";
+		// 	const newRoot = this.root.evaluate(context);
+		// 	// console.log("newRoot", newRoot.print());
+		// 	if (!(newRoot instanceof ASTnode_object)) {
+		// 		utilities.TODO();
+		// 	}
+		// 	this.root = newRoot;
+		// }
 	}
 	
 	addText(filePath: string, text: string) {
