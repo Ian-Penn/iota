@@ -317,14 +317,14 @@ export function setUpBuiltins() {
 		type.addMember(name, fn);
 	}
 	
-	makeOperatorBuiltin_number(
-		getBuiltinType("Float64"),
-		getBuiltinType("Float64"),
-		"+",
-		(left: ASTnode_number, right: ASTnode_number) => {
-			return newNumber(left.value + right.value);
-		}
-	);
+	// makeOperatorBuiltin_number(
+	// 	getBuiltinType("Float64"),
+	// 	getBuiltinType("Float64"),
+	// 	"+",
+	// 	(left: ASTnode_number, right: ASTnode_number) => {
+	// 		return newNumber(left.value + right.value);
+	// 	}
+	// );
 	makeOperatorBuiltin_number(
 		getBuiltinType("Float64"),
 		getBuiltinType("Float64"),
@@ -333,46 +333,46 @@ export function setUpBuiltins() {
 			return newNumber(left.value - right.value);
 		}
 	);
-	makeOperatorBuiltin_number(
-		getBuiltinType("Float64"),
-		getBuiltinType("Float64"),
-		"*",
-		(left: ASTnode_number, right: ASTnode_number) => {
-			return newNumber(left.value * right.value);
-		}
-	);
-	makeOperatorBuiltin_number(
-		getBuiltinType("Float64"),
-		getBuiltinType("Float64"),
-		"/",
-		(left: ASTnode_number, right: ASTnode_number) => {
-			return newNumber(left.value / right.value);
-		}
-	);
-	makeOperatorBuiltin_number(
-		getBuiltinType("Float64"),
-		getBuiltinType("Bool"),
-		"==",
-		(left: ASTnode_number, right: ASTnode_number) => {
-			return newBool(left.value == right.value);
-		}
-	);
-	makeOperatorBuiltin_number(
-		getBuiltinType("Float64"),
-		getBuiltinType("Bool"),
-		">",
-		(left: ASTnode_number, right: ASTnode_number) => {
-			return newBool(left.value > right.value);
-		}
-	);
-	makeOperatorBuiltin_number(
-		getBuiltinType("Float64"),
-		getBuiltinType("Bool"),
-		"<",
-		(left: ASTnode_number, right: ASTnode_number) => {
-			return newBool(left.value < right.value);
-		}
-	);
+	// makeOperatorBuiltin_number(
+	// 	getBuiltinType("Float64"),
+	// 	getBuiltinType("Float64"),
+	// 	"*",
+	// 	(left: ASTnode_number, right: ASTnode_number) => {
+	// 		return newNumber(left.value * right.value);
+	// 	}
+	// );
+	// makeOperatorBuiltin_number(
+	// 	getBuiltinType("Float64"),
+	// 	getBuiltinType("Float64"),
+	// 	"/",
+	// 	(left: ASTnode_number, right: ASTnode_number) => {
+	// 		return newNumber(left.value / right.value);
+	// 	}
+	// );
+	// makeOperatorBuiltin_number(
+	// 	getBuiltinType("Float64"),
+	// 	getBuiltinType("Bool"),
+	// 	"==",
+	// 	(left: ASTnode_number, right: ASTnode_number) => {
+	// 		return newBool(left.value == right.value);
+	// 	}
+	// );
+	// makeOperatorBuiltin_number(
+	// 	getBuiltinType("Float64"),
+	// 	getBuiltinType("Bool"),
+	// 	">",
+	// 	(left: ASTnode_number, right: ASTnode_number) => {
+	// 		return newBool(left.value > right.value);
+	// 	}
+	// );
+	// makeOperatorBuiltin_number(
+	// 	getBuiltinType("Float64"),
+	// 	getBuiltinType("Bool"),
+	// 	"<",
+	// 	(left: ASTnode_number, right: ASTnode_number) => {
+	// 		return newBool(left.value < right.value);
+	// 	}
+	// );
 	makeOperatorBuiltin_number(
 		getBuiltinType("Float64"),
 		getBuiltinType("Bool"),

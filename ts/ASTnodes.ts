@@ -1,5 +1,5 @@
-import * as utilities from "./utilities.js";
 import logger, { LogType } from "./logger.js";
+import { Hash, TODO, TODO_addError, unreachable } from "./utilities.js";
 import { Module } from "./Module.js";
 import { CompileError } from "./report.js";
 import { builtinModule, builtinPrefix, getBuiltinType } from "./builtin.js";
@@ -133,7 +133,7 @@ export class BuilderContext {
 	getAlias(name: string): ASTnode_alias | null {
 		if (name == "#import") {
 			const alias = builtinModule.root.getMember("import");
-			if (alias == null) utilities.unreachable();
+			if (alias == null) unreachable();
 			return alias;
 		}
 		
@@ -157,7 +157,7 @@ export class BuilderContext {
 	// getDef(name: string): [ModulePath, TopLevelDef] | null {
 	// 	if (name == "#import") {
 	// 		const def = builtins.get(builtinPrefix + "import");
-	// 		if (def == undefined) utilities.unreachable();
+	// 		if (def == undefined) unreachable();
 	// 		return [new ModulePath([name]), def];
 	// 	}
 		
@@ -196,7 +196,11 @@ export class ASTnode {
 	}
 	
 	_print(context = new CodeGenContext()): string {
-		utilities.unreachable();
+		unreachable();
+	}
+	
+	makeHash(): Hash {
+		return new Hash(this.print());
 	}
 	
 	/**
@@ -230,7 +234,7 @@ export class ASTnode {
 	}
 	
 	getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
-		utilities.unreachable();
+		unreachable();
 	}
 	
 	evaluate(context: BuilderContext): ASTnode {
@@ -251,11 +255,11 @@ export class ASTnode_command extends ASTnode {
 	}
 	
 	getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
-		utilities.unreachable();
+		unreachable();
 	}
 	
 	evaluate(context: BuilderContext): ASTnode {
-		utilities.unreachable();
+		unreachable();
 	}
 }
 
@@ -386,7 +390,7 @@ export class ASTnode_object extends ASTnode {
 		
 		const prototype = this.prototype;//.evaluate(context);
 		if (!(prototype instanceof ASTnode_object)) {
-			utilities.unreachable();
+			unreachable();
 		}
 		
 		return prototype.equals(other) || prototype.hasPrototype(context, other);
@@ -414,6 +418,7 @@ export class ASTnode_object extends ASTnode {
 	setMember(name: string, value: ASTnode) {
 		const member = this.getMember(name);
 		if (member != null) {
+			// TODO: will be bad soon
 			member.value = value;
 		} else {
 			this.addMember(name, value);
@@ -440,12 +445,12 @@ export class ASTnode_object extends ASTnode {
 		debugger;
 		const argType = this.getMember("returnType");
 		if (argType == null) {
-			utilities.TODO_addError();
+			TODO_addError();
 		}
 		
 		const returnType = this.getMember("returnType");
 		if (returnType == null) {
-			utilities.TODO_addError();
+			TODO_addError();
 		}
 		
 		return {
@@ -457,7 +462,7 @@ export class ASTnode_object extends ASTnode {
 	_print(context = new CodeGenContext()): string {
 		// if (context.forceLastAliasName || (context.stack.includes(this) && this.lastAliasName != null)) {
 		// 	if (this.lastAliasName == null) {
-		// 		utilities.unreachable();
+		// 		unreachable();
 		// 	}
 		// 	return this.lastAliasName;
 		// }
@@ -510,11 +515,17 @@ export class ASTnode_object extends ASTnode {
 			if (!(member instanceof ASTnode_alias)) {
 				continue;
 			}
+			if (!(member.left instanceof ASTnode_identifier)) {
+				TODO();
+			}
 			// const name = member.left.print();
 			
 			const value = member.value.evaluate(context);
 			
-			members.push(value);
+			members.push(new ASTnode_alias(member.location,
+				new ASTnode_identifier(member.left.location, member.left.name),
+				value,
+			));
 		}
 		
 		done();
@@ -714,7 +725,7 @@ export class ASTnode_identifier extends ASTnode {
 					unalias = true;
 				}
 			} else {
-				utilities.unreachable();
+				unreachable();
 				// defPair = context.getDef(this.name);
 				// if (defPair != null) {
 				// 	value = defPair[1].value.evaluate(context);
@@ -722,7 +733,7 @@ export class ASTnode_identifier extends ASTnode {
 				// 		context.currentDef.dependencies.push(this.name);
 				// 	}
 				// } else {
-				// 	utilities.unreachable();
+				// 	unreachable();
 				// }
 			}
 		}
@@ -875,7 +886,7 @@ export class ASTnode_call extends ASTnode {
 	
 	getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
 		const leftType = this.left.getType(context);
-		if (leftType instanceof ASTnode_error) {
+		if (!leftType.isType(context)) {
 			return leftType;
 		}
 		if (!(leftType instanceof ASTnodeType_functionType)) {
@@ -895,7 +906,7 @@ export class ASTnode_call extends ASTnode {
 		
 		const functionToCallArgType = withResolve(context, () => functionToCall.arg.type.evaluate(context));
 		if (!(functionToCallArgType.isType(context))) {
-			utilities.TODO_addError();
+			TODO_addError();
 		}
 		
 		const actualArgType = this.arg.getType(context);
@@ -919,10 +930,10 @@ export class ASTnode_call extends ASTnode {
 		if (resolved.deadEnd) {
 			const functionToCallType = functionToCall.getType(context);
 			if (!(functionToCallType instanceof ASTnodeType_functionType)) {
-				utilities.unreachable();
+				unreachable();
 			}
 			if (!(functionToCallType.returnType.isType(context))) {
-				utilities.unreachable();
+				unreachable();
 			}
 			return functionToCallType.returnType;
 		} else {
@@ -1024,11 +1035,11 @@ export class ASTnode_operator extends ASTnode {
 			return leftType;
 		}
 		if (!(leftType instanceof ASTnode_object)) {
-			utilities.TODO_addError();
+			TODO_addError();
 		}
 		const operatorFnMember = leftType.getMember(this.operatorText);
 		if (operatorFnMember == null || !(operatorFnMember.value instanceof ASTnode_function)) {
-			utilities.TODO_addError();
+			TODO_addError();
 		}
 		
 		const operatorFnCall = new ASTnode_call(
@@ -1086,12 +1097,12 @@ export class ASTnode_memberAccess extends ASTnode {
 		if (left instanceof ASTnode_object) {
 			const alias = left.getMember(this.name);
 			if (!alias) {
-				utilities.TODO_addError();
+				TODO_addError();
 			}
 			
 			return alias.value.getType(context);
 		} else {
-			utilities.TODO();
+			TODO();
 		}
 	}
 	
@@ -1109,7 +1120,7 @@ export class ASTnode_memberAccess extends ASTnode {
 		if (left instanceof ASTnode_object) {
 			const alias = left.getMember(this.name);
 			if (!alias) {
-				utilities.unreachable();
+				unreachable();
 			}
 			
 			return alias.value;
@@ -1117,7 +1128,7 @@ export class ASTnode_memberAccess extends ASTnode {
 		// else if (left instanceof ASTnodeType_enum) {
 		// 	const enumCase = left.getCase(name);
 		// 	if (enumCase == null) {
-		// 		utilities.unreachable();
+		// 		unreachable();
 		// 	}
 		// 	const task = new ASTnode_builtinTask("", (context): ASTnodeType | ASTnode_error => {
 		// 		return left;
@@ -1130,7 +1141,7 @@ export class ASTnode_memberAccess extends ASTnode {
 		// 			const instance = new ASTnode_instance(this.location, left, input.codeBlock);
 		// 			// instance.caseName = left.getCaseIndex(name);
 		// 			// if (instance.caseName == null) {
-		// 			// 	utilities.unreachable();
+		// 			// 	unreachable();
 		// 			// }
 		// 			instance.caseName = name;
 		// 			return instance;
@@ -1146,7 +1157,7 @@ export class ASTnode_memberAccess extends ASTnode {
 		// 	return enumConstructor;
 		// }
 		else {
-			utilities.unreachable();
+			unreachable();
 		}
 	}
 }
@@ -1218,7 +1229,7 @@ export class ASTnode_if extends ASTnode {
 		{
 			const error = expectType(context, conditionType, getBuiltinType("Bool"));
 			if (error) {
-				utilities.TODO_addError();
+				TODO_addError();
 			}
 		}
 		
@@ -1234,7 +1245,7 @@ export class ASTnode_if extends ASTnode {
 		const falseType = getLast(trueList);
 		
 		if (trueType instanceof ASTnode_unknown && falseType instanceof ASTnode_unknown) {
-			utilities.TODO_addError();
+			TODO_addError();
 		}
 		if (trueType instanceof ASTnode_unknown) {
 			return falseType;
@@ -1307,7 +1318,7 @@ export class ASTnode_if extends ASTnode {
 		
 // 		let type = withResolve(context, () => this.type.evaluate(context));
 // 		if (!type.isType()) {
-// 			utilities.unreachable();
+// 			unreachable();
 // 		}
 		
 // 		return makeEffectType(type);
@@ -1360,7 +1371,7 @@ export class ASTnode_unknown extends ASTnode {
 	
 	getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
 		if (this.type == null) {
-			utilities.TODO();
+			TODO();
 		}
 		return this.type;
 	}
@@ -1396,7 +1407,7 @@ export class ASTnode_builtinTask extends ASTnode {
 				return dependency.value.evaluate(context);
 			}
 		}
-		utilities.unreachable();
+		unreachable();
 	}
 	
 	_print(context = new CodeGenContext()): string {
@@ -1476,7 +1487,7 @@ export function getAliasFromList(AST: ASTnode[], name: string): ASTnode_alias | 
 	for (let i = 0; i < AST.length; i++) {
 		const alias = AST[i];
 		if (!(alias instanceof ASTnode_alias)) {
-			utilities.unreachable();
+			unreachable();
 		}
 		if (alias.left instanceof ASTnode_identifier && alias.left.name == name) {
 			return alias;
@@ -1511,7 +1522,7 @@ function expectType(
 	// 		!(expectedType.returnType instanceof ASTnodeType) ||
 	// 		!(actualType.returnType instanceof ASTnodeType)
 	// 	) {
-	// 		utilities.unreachable();
+	// 		unreachable();
 	// 	}
 	// 	const error = expectType(context, expectedType.returnType, actualType.returnType);
 	// 	if (error != null) {
@@ -1535,10 +1546,10 @@ function expectType(
 	// 		const expectedField = expectedType.fields[i];
 	// 		const actualField = actualType.getField(expectedField.name);
 	// 		if (!actualField) {
-	// 			utilities.TODO_addError();
+	// 			TODO_addError();
 	// 		}
 	// 		if (!(expectedField.type instanceof ASTnodeType) || !(actualField.type instanceof ASTnodeType)) {
-	// 			utilities.unreachable();
+	// 			unreachable();
 	// 		}
 	// 		const error = expectType(context, expectedField.type, actualField.type);
 	// 		if (error != null) {
@@ -1553,7 +1564,7 @@ function expectType(
 	// 		const actualField = actualType.fields[i];
 	// 		const expectedField = expectedType.getField(actualField.name);
 	// 		if (expectedField == null) {
-	// 			utilities.TODO_addError();
+	// 			TODO_addError();
 	// 		}
 	// 	}
 	// }

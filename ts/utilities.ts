@@ -1,6 +1,6 @@
 import * as fs from "fs";
-import { exit } from "process";
 import path from "path";
+import crypto from "crypto";
 
 import logger from "./logger.js";
 import { CompileError } from "./report.js";
@@ -71,4 +71,30 @@ export function makeDir(dirPath: string) {
 
 export function getClassName(x: any): string {
 	return Object.getPrototypeOf(x).constructor.name;
+}
+
+export class Hash {
+	hashText: string;
+	
+	constructor(text: string) {
+		this.hashText = crypto.createHash("sha256").update(text).digest("hex");
+	}
+	
+	toString() {
+		return `Hash<${this.hashText}>`
+	}
+}
+
+function makeUUID(): string {
+	const byteSize = 10;
+	const bytes = crypto.getRandomValues(new Uint8Array(byteSize));
+	let string = "";
+	for (let i = 0; i < bytes.length; i++) {
+		const byteString = bytes[i].toString(16).toUpperCase();
+		if (byteString.length == 1) {
+			string += "0";
+		}
+		string += byteString;
+	}
+	return string;
 }
