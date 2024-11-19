@@ -1,11 +1,9 @@
-import path from "path";
-
-import * as utilities from "./utilities.js";
+import { HashCache, readFile, TODO_addError } from "./utilities.js";
 import logger from "./logger.js";
 import { Module } from "./Module.js";
 import { setUpBuiltins } from "./builtin.js";
 import { startREPL } from "./REPL.js";
-import { ASTnode_object } from "./ASTnodes.js";
+import { ASTnode, ASTnode_number, ASTnode_object } from "./ASTnodes.js";
 
 function nextArg(): string {
 	return process.argv[i++];
@@ -28,7 +26,10 @@ let i = 2;
 if (process.argv[i] == undefined) {
 	console.log(helpText);
 } else {
-	main();
+	// main();
+	const hashCache = new HashCache<ASTnode>();
+	hashCache.add(new ASTnode_number("builtin", 1));
+	debugger;
 }
 
 function main() {
@@ -37,7 +38,7 @@ function main() {
 		if (flag == "-log") {
 			logger.enableLogs();
 		} else {
-			utilities.TODO_addError();
+			TODO_addError();
 		}
 	}
 	
@@ -63,8 +64,8 @@ function main() {
 			
 			const module = new Module("", "runFileMain", new ASTnode_object("builtin", null, []));
 			// module.loadFromFileSystem();
-			const text = utilities.readFile(filePath);
-			if (text == null) utilities.TODO_addError();
+			const text = readFile(filePath);
+			if (text == null) TODO_addError();
 			module.addText(filePath, text);
 			// module.runEvalQueue();
 			module.outputErrorsAndEvaluations(true);
@@ -85,7 +86,7 @@ function main() {
 		// }
 	
 		default: {
-			utilities.TODO_addError();
+			TODO_addError();
 		}
 	}
 }

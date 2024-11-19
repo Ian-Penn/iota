@@ -199,7 +199,7 @@ export class ASTnode {
 		unreachable();
 	}
 	
-	makeHash(): Hash {
+	getHash(): Hash {
 		return new Hash(this.print());
 	}
 	

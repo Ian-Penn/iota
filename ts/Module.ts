@@ -200,7 +200,7 @@ export class Module {
 				const resultText = result.print(codeGenContext);
 				
 				this.topLevelEvaluations.push({ location: location, msg: `${resultText}` });
-				console.log(result.makeHash());
+				console.log(result.getHash());
 			}
 		}
 		

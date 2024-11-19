@@ -73,19 +73,7 @@ export function getClassName(x: any): string {
 	return Object.getPrototypeOf(x).constructor.name;
 }
 
-export class Hash {
-	hashText: string;
-	
-	constructor(text: string) {
-		this.hashText = crypto.createHash("sha256").update(text).digest("hex");
-	}
-	
-	toString() {
-		return `Hash<${this.hashText}>`
-	}
-}
-
-function makeUUID(): string {
+export function makeUUID(): string {
 	const byteSize = 10;
 	const bytes = crypto.getRandomValues(new Uint8Array(byteSize));
 	let string = "";
@@ -97,4 +85,53 @@ function makeUUID(): string {
 		string += byteString;
 	}
 	return string;
+}
+
+type HashInternalType = string
+export class Hash {
+	/**
+	 * private
+	 */
+	_hashText: HashInternalType;
+	
+	constructor(text: string) {
+		this._hashText = crypto.createHash("sha256").update(text).digest("hex");
+	}
+	
+	toString() {
+		return `Hash<${this._hashText}>`
+	}
+	
+	equals(otherHash: Hash) {
+		this._hashText === otherHash._hashText;
+	}
+}
+
+export interface Hashable {
+	getHash(): Hash;
+}
+
+export class HashCache<T extends Hashable> {
+	map = new Map<HashInternalType, T>();
+	
+	constructor() {
+		
+	}
+	
+	add(value: T) {
+		this.map.set(value.getHash()._hashText, value);
+	}
+	
+	get(hash: Hash): T | null {
+		const inCache = this.map.get(hash._hashText);
+		if (inCache != null) {
+			return inCache;
+		} else {
+			return null;
+		}
+	}
+	
+	clear() {
+		TODO();
+	}
 }
