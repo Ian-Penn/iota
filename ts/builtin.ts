@@ -3,6 +3,7 @@ import {
 	ASTnode,
 	ASTnode_alias,
 	ASTnode_argument,
+	ASTnode_bool,
 	ASTnode_builtinTask,
 	ASTnode_error,
 	ASTnode_function,
@@ -20,16 +21,16 @@ export const builtinPrefix = "builtin:";
 
 type BuiltinType = ASTnode_alias & { left: ASTnode_identifier, value: ASTnodeType };
 
-function use(name: string): ASTnode_identifier {
-	return new ASTnode_identifier("builtin", name);
-}
-
 function newString(text: string): ASTnode_string {
 	return new ASTnode_string("builtin", text);
 }
 
 function newNumber(number: number): ASTnode_number {
 	return new ASTnode_number("builtin", number);
+}
+
+function newBool(bool: boolean): ASTnode_bool {
+	return new ASTnode_bool("builtin", bool);
 }
 
 function makeBuiltinType(name: string): ASTnodeType {
@@ -263,16 +264,20 @@ export function setUpBuiltins() {
 	//#region operators
 	
 	function makeOperatorBuiltin_number(
-		type: ASTnodeType,
+		inputType: ASTnodeType,
+		outputType: ASTnodeType,
 		name: string,
-		callBack: (left: ASTnode_number, right: ASTnode_number) => ASTnode_number
+		callBack: (left: ASTnode_number, right: ASTnode_number) => ASTnode
 	) {
-		if (!(type instanceof ASTnode_object)) {
+		if (!(inputType instanceof ASTnode_object)) {
 			utilities.unreachable();
 		}
-		const fn = makeFunction([["left", type], ["right", type]],
+		if (!(outputType instanceof ASTnode_object)) {
+			utilities.unreachable();
+		}
+		const fn = makeFunction([["left", inputType], ["right", inputType]],
 			new ASTnode_builtinTask(name, (context): ASTnodeType | ASTnode_error => {
-				return type;
+				return outputType;
 			}, (context, task): ASTnode => {
 				return withResolve(context, () => {
 					const left = task.getDependency(context, "left");
@@ -284,7 +289,7 @@ export function setUpBuiltins() {
 				});
 			})
 		);
-		type.addMember(name, fn);
+		inputType.addMember(name, fn);
 	}
 	
 	function makeOperatorBuiltin_string(
@@ -314,33 +319,76 @@ export function setUpBuiltins() {
 	
 	makeOperatorBuiltin_number(
 		getBuiltinType("Float64"),
+		getBuiltinType("Float64"),
 		"+",
 		(left: ASTnode_number, right: ASTnode_number) => {
 			return newNumber(left.value + right.value);
 		}
 	);
-	
-	// makeOperatorBuiltin_Float64(
-	// 	"Float64_-",
-	// 	(left: ASTnode_number, right: ASTnode_number) => {
-	// 		return newNumber(left.value - right.value);
-	// 	}
-	// );
-	
 	makeOperatorBuiltin_number(
+		getBuiltinType("Float64"),
+		getBuiltinType("Float64"),
+		"-",
+		(left: ASTnode_number, right: ASTnode_number) => {
+			return newNumber(left.value - right.value);
+		}
+	);
+	makeOperatorBuiltin_number(
+		getBuiltinType("Float64"),
 		getBuiltinType("Float64"),
 		"*",
 		(left: ASTnode_number, right: ASTnode_number) => {
 			return newNumber(left.value * right.value);
 		}
 	);
-	
-	// makeOperatorBuiltin_Float64(
-	// 	"Float64_/",
-	// 	(left: ASTnode_number, right: ASTnode_number) => {
-	// 		return newNumber(left.value / right.value);
-	// 	}
-	// );
+	makeOperatorBuiltin_number(
+		getBuiltinType("Float64"),
+		getBuiltinType("Float64"),
+		"/",
+		(left: ASTnode_number, right: ASTnode_number) => {
+			return newNumber(left.value / right.value);
+		}
+	);
+	makeOperatorBuiltin_number(
+		getBuiltinType("Float64"),
+		getBuiltinType("Bool"),
+		"==",
+		(left: ASTnode_number, right: ASTnode_number) => {
+			return newBool(left.value == right.value);
+		}
+	);
+	makeOperatorBuiltin_number(
+		getBuiltinType("Float64"),
+		getBuiltinType("Bool"),
+		">",
+		(left: ASTnode_number, right: ASTnode_number) => {
+			return newBool(left.value > right.value);
+		}
+	);
+	makeOperatorBuiltin_number(
+		getBuiltinType("Float64"),
+		getBuiltinType("Bool"),
+		"<",
+		(left: ASTnode_number, right: ASTnode_number) => {
+			return newBool(left.value < right.value);
+		}
+	);
+	makeOperatorBuiltin_number(
+		getBuiltinType("Float64"),
+		getBuiltinType("Bool"),
+		">=",
+		(left: ASTnode_number, right: ASTnode_number) => {
+			return newBool(left.value >= right.value);
+		}
+	);
+	makeOperatorBuiltin_number(
+		getBuiltinType("Float64"),
+		getBuiltinType("Bool"),
+		"<=",
+		(left: ASTnode_number, right: ASTnode_number) => {
+			return newBool(left.value <= right.value);
+		}
+	);
 	
 	makeOperatorBuiltin_string(
 		getBuiltinType("String"),

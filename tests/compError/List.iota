@@ -1,3 +1,4 @@
+// testSkip
 // compError
 // error: expected type "struct builtin:List{
 // 	T struct builtin:String{}

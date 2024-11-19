@@ -395,6 +395,7 @@ export class ASTnode_object extends ASTnode {
 	equals(other: ASTnode_object): boolean {
 		return (
 			this.name == other.name &&
+			// TODO: Bad for performance because print is recursive!
 			this.print() == other.print()
 		);
 	}
