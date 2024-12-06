@@ -185,7 +185,6 @@ export class Module {
 					const error = node.getType(builderContext);
 					if (error instanceof ASTnode_error) {
 						if (!error.compileError) {
-							debugger;
 							logger.log(LogType.module, `!error.compileError`);
 							break;
 						}
@@ -198,6 +197,7 @@ export class Module {
 				const codeGenContext = new CodeGenContext();
 				codeGenContext.forceLastAliasName = false;
 				const resultText = result.print(codeGenContext);
+				debugger;
 				
 				this.topLevelEvaluations.push({ location: location, msg: `${resultText}` });
 				console.log(result.getHash());

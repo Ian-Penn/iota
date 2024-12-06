@@ -26,10 +26,7 @@ let i = 2;
 if (process.argv[i] == undefined) {
 	console.log(helpText);
 } else {
-	// main();
-	const hashCache = new HashCache<ASTnode>();
-	hashCache.add(new ASTnode_number("builtin", 1));
-	debugger;
+	main();
 }
 
 function main() {

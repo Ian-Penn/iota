@@ -17,7 +17,7 @@ import {
 } from "./ASTnodes.js";
 import { Module, ModulePath } from "./Module.js";
 
-export const builtinPrefix = "builtin:";
+export const builtinPrefix = "__builtin__.";
 
 type BuiltinType = ASTnode_alias & { left: ASTnode_identifier, value: ASTnodeType };
 
@@ -33,10 +33,14 @@ function newBool(bool: boolean): ASTnode_bool {
 	return new ASTnode_bool("builtin", bool);
 }
 
+function newAlias(name: string, value: ASTnode): ASTnode_alias {
+	return new ASTnode_alias("builtin", new ASTnode_identifier("builtin", name), value);
+}
+
 function makeBuiltinType(name: string): ASTnodeType {
-	const object = new ASTnode_object("builtin", TypeType, []);
-	object.name = `builtin.${name}`;
-	object.addMember("builtinTag", newString(`${name}`));
+	const object = new ASTnode_object("builtin", TypeType, [
+		newAlias("builtinTag", newString(`${name}`)),
+	], `${builtinPrefix}${name}`);
 	
 	return object as ASTnodeType;
 }
@@ -96,7 +100,7 @@ export function setUpBuiltins() {
 	);
 	
 	builtinModule = new Module(null, "builtin",
-		new ASTnode_object("builtin", null, [])
+		new ASTnode_object("builtin", null, [], builtinPrefix)
 	);
 	
 	for (let i = 0; i < builtinTypes.length; i++) {
@@ -149,11 +153,8 @@ export function setUpBuiltins() {
 		}, (context, task): ASTnode => {
 			return withResolve(context, () => {
 				const path = task.getDependency(context, "path");
-				if (path.deadEnd || path instanceof ASTnode_unknown) {
-					return task;
-				}
 				if (!(path instanceof ASTnode_string)) {
-					utilities.unreachable();
+					return task;
 				}
 				
 				if (path.value == "builtin") {
@@ -269,6 +270,7 @@ export function setUpBuiltins() {
 		name: string,
 		callBack: (left: ASTnode_number, right: ASTnode_number) => ASTnode
 	) {
+		const fullName = `${inputType.id}.${name}`;
 		if (!(inputType instanceof ASTnode_object)) {
 			utilities.unreachable();
 		}
@@ -276,7 +278,7 @@ export function setUpBuiltins() {
 			utilities.unreachable();
 		}
 		const fn = makeFunction([["left", inputType], ["right", inputType]],
-			new ASTnode_builtinTask(name, (context): ASTnodeType | ASTnode_error => {
+			new ASTnode_builtinTask(fullName, (context): ASTnodeType | ASTnode_error => {
 				return outputType;
 			}, (context, task): ASTnode => {
 				return withResolve(context, () => {
@@ -289,6 +291,7 @@ export function setUpBuiltins() {
 				});
 			})
 		);
+		fn.id = fullName;
 		inputType.addMember(name, fn);
 	}
 	

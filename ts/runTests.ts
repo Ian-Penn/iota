@@ -195,7 +195,7 @@ function testDir(dirPath: string) {
 	// console.log(files);
 	files.forEach((file) => {
 		testFile(path.join(dirPath, file));
-	})
+	});
 }
 
 setUpBuiltins();

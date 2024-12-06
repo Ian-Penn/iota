@@ -1,21 +1,29 @@
 builtin = #import "builtin"
 
-Number = builtin.Float64
-a = @x(Number)
-	if x <= 0 then
-		0
+// @n(builtin.Float64) n - 1
+
+fib = @n(builtin.Float64)
+	if n <= 1 then
+		n
 	else
-		b x - 1
-b = @x(Number)
-	if x <= 0 then
-		0
-	else
-		a x - 1
+		(fib n - 1) + (fib n - 2)
+
+fib 2
+
+// Number = builtin.Float64
+// a = @x(Number)
+// 	if x <= 0 then
+// 		0
+// 	else
+// 		b x - 1
+// b = @x(Number)
+// 	if x <= 0 then
+// 		0
+// 	else
+// 		a x - 1
 
 // a 1
 // b 2
-
-1
 
 // ---------------
 

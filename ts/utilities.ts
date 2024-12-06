@@ -20,6 +20,7 @@ export function assert(condition: boolean, msg?: string): asserts condition {
 
 export function TODO(): never {
 	debugger;
+	console.trace();
 	throw "TODO reached";
 }
 
@@ -99,11 +100,11 @@ export class Hash {
 	}
 	
 	toString() {
-		return `Hash<${this._hashText}>`
+		return `<${this._hashText}>`
 	}
 	
-	equals(otherHash: Hash) {
-		this._hashText === otherHash._hashText;
+	equals(otherHash: Hash): boolean {
+		return this._hashText === otherHash._hashText;
 	}
 }
 
