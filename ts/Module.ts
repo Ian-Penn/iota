@@ -3,7 +3,7 @@ import { join as joinPath, dirname, basename, relative as relativePath } from "p
 
 import * as utilities from "./utilities.js";
 import logger, { LogType } from "./logger.js";
-import { CompileError, getIndicatorText, Indicator, removeDuplicateErrors } from "./report.js";
+import { Report, getIndicatorText, Indicator, removeDuplicateErrors } from "./report.js";
 import {
 	ASTnode,
 	ASTnode_alias,
@@ -15,7 +15,7 @@ import {
 	printAST,
 } from "./ASTnodes.js";
 import { CodeGenContext } from "./codegen.js";
-import { isOperator, lex } from "./lexer.js";
+import { lex } from "./lexer.js";
 import { parse, ParserMode } from "./parser.js";
 import { runCommand } from "./commands.js";
 
@@ -128,7 +128,7 @@ export class ModulePath {
 
 export class Module {
 	topLevelEvaluations: Indicator[] = [];
-	errors: CompileError[] = [];
+	errors: Report[] = [];
 	// currentDirectory = new ModulePath([]);
 	// private imports: Import[] = [];
 	readonly moduleIndex: number;
@@ -181,26 +181,31 @@ export class Module {
 				builderContext.local.scopes.push(this.root.members);
 				
 				const location = node.location;
-				{
-					const error = node.getType(builderContext);
-					if (error instanceof ASTnode_error) {
-						if (!error.compileError) {
-							logger.log(LogType.module, `!error.compileError`);
-							break;
-						}
-						this.errors.push(error.compileError);
-						continue;
-					}
-				}
+				// {
+				// 	const error = node.getType(builderContext);
+				// 	if (error instanceof ASTnode_error) {
+				// 		if (!error.compileError) {
+				// 			logger.log(LogType.module, `!error.compileError`);
+				// 			break;
+				// 		}
+				// 		this.errors.push(error.compileError);
+				// 		continue;
+				// 	}
+				// }
+				
+				console.log("getType debug:");
+				builderContext.debug();
+				builderContext.debuggerRecords = [];
 				
 				const result = node.evaluate(builderContext);
 				const codeGenContext = new CodeGenContext();
 				codeGenContext.forceLastAliasName = false;
 				const resultText = result.print(codeGenContext);
-				debugger;
+				
+				console.log("evaluate debug:");
+				builderContext.debug();
 				
 				this.topLevelEvaluations.push({ location: location, msg: `${resultText}` });
-				console.log(result.getHash());
 			}
 		}
 		
@@ -235,7 +240,7 @@ export class Module {
 			
 			this.addAST(AST);
 		} catch (error) {
-			if (error instanceof CompileError) {
+			if (error instanceof Report) {
 				this.errors.push(error);
 			} else {
 				throw error;
@@ -248,7 +253,7 @@ export class Module {
 
 		for (let i = 0; i < errors.length; i++) {
 			const error = errors[i];
-			console.log(error.getText(true, fancyErrors));
+			console.log(error.getText("\x1B[31merror: ", true, fancyErrors));
 		}
 
 		if (errors.length == 0) {

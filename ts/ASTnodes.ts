@@ -1,10 +1,10 @@
-import logger, { LogType } from "./logger.js";
 import { getClassName, Hash, TODO, TODO_addError, unreachable } from "./utilities.js";
 import { Module } from "./Module.js";
-import { CompileError } from "./report.js";
+import { Report } from "./report.js";
 import { builtinModule, builtinPrefix, getBuiltinType } from "./builtin.js";
 import { CodeGenContext } from "./codegen.js";
 import { isOperator } from "./lexer.js";
+import logger, { LogType } from "./logger.js";
 
 export type SourceLocation = "builtin" | {
 	path: string,
@@ -53,6 +53,16 @@ export class LocalBuilderContext {
 	scopes: ASTnode[][] = [];
 }
 
+export type DebuggerRecordType = "evaluate_start" | "evaluate_end" | "getType_start" | "getType_end";
+
+export class DebuggerRecord {
+	constructor(
+		public type: DebuggerRecordType,
+		public location: SourceLocation,
+		public text: string,
+	) {}
+}
+
 export class BuilderContext {
 	local = new LocalBuilderContext();
 	setUnalias: boolean = false;
@@ -62,13 +72,13 @@ export class BuilderContext {
 	 * 
 	 * ```@x(Number) x + (1 + 1)```
 	 * 
-	 * If the function is a evaluated at top level, I want the AST to stay the same.
+	 * If the function is at top level, I want the AST to stay the same.
 	 * If resolve always happened the output of that expression would be:
 	 * 
 	 * ```@x(Number) x + 2```
 	 * 
 	 * Which is probably fine in this case, but for more complex expressions,
-	 * having everything be simplified can make things completely unreadable.
+	 * having everything be reduced can make things completely unreadable.
 	 * And can ruin the point of abstraction!
 	 */
 	resolve: ResolveMode = "all";
@@ -96,7 +106,7 @@ export class BuilderContext {
 			if (!(onStack instanceof ASTnode_identifier)) {
 				return false;
 			}
-			if (SourceLocation_same(node.location, onStack.location)) {
+			if (node.equals(onStack)) {
 				return true;
 			}
 		}
@@ -111,7 +121,7 @@ export class BuilderContext {
 					return true;
 				}
 			}
-			if (SourceLocation_same(node.location, onStack.location)) {
+			if (node.equals(onStack)) {
 				return true;
 			}
 		}
@@ -176,6 +186,33 @@ export class BuilderContext {
 		
 	// 	return null;
 	// }
+	
+	debuggerRecords: DebuggerRecord[] = [];
+	debug() {
+		let indent = 0;
+		console.log(this.debuggerRecords.map((record) => {
+			let text = "";
+			let currentIndent = indent;
+			if (record.type == "evaluate_start") {
+				indent++;
+				text += "-> ";
+			} else if (record.type == "evaluate_end") {
+				indent--;
+				currentIndent--;
+				text += "<- ";
+			} else if (record.type == "getType_start") {
+				indent++;
+				text += "type-> ";
+			} else if (record.type == "getType_end") {
+				indent--;
+				currentIndent--;
+				text += "type<- ";
+			}
+			text += "  ".repeat(currentIndent);
+			
+			return text + record.text;
+		}).join("\n"));
+	}
 }
 
 class makeHashContext {
@@ -235,10 +272,6 @@ export class ASTnode {
 		return this instanceof ASTnode_error || this instanceof ASTnode_unknown;
 	}
 	
-	_print(context = new CodeGenContext()): string {
-		unreachable();
-	}
-	
 	getHash(context = new makeHashContext()): Hash {
 		if (this.__cashedHash__ != null) {
 			return this.__cashedHash__;
@@ -258,6 +291,7 @@ export class ASTnode {
 			
 			return [makeHash(context, value)];
 		}).join();
+		
 		// console.log("hashInput:", getClassName(this), Object.keys(this), hashInput);
 		const hash = new Hash(hashInput);
 		
@@ -301,12 +335,81 @@ export class ASTnode {
 		// context.forceLastAliasName = oldNoPrintOrigin;
 		return text;
 	}
-	
-	getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
+	_print(context = new CodeGenContext()): string {
 		unreachable();
 	}
 	
+	/**
+	 * Should not be over written by a subclass!
+	 */
+	getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
+		context.debuggerRecords.push(new DebuggerRecord(
+			"getType_start",
+			this.location,
+			`${this.print()}`,
+		));
+		
+		const output = this._getType(context);
+		
+		context.debuggerRecords.push(new DebuggerRecord(
+			"getType_start",
+			this.location,
+			`${this.print()}`,
+		));
+		
+		return output;
+	}
+	_getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
+		unreachable();
+	}
+	
+	/**
+	 * Should not be over written by a subclass!
+	 */
 	evaluate(context: BuilderContext): ASTnode {
+		
+		const thisText = this.print();
+		// console.log(`${evaluateDebugIndent}${"  ".repeat(evaluateDebugIndent)} > ${thisText}`);
+		
+		context.debuggerRecords.push(new DebuggerRecord(
+			"evaluate_start",
+			this.location,
+			`${thisText}`,
+		));
+		
+		if (this.print() == "__builtin__.Float64") {
+			debugger;
+		}
+		
+		// const outerRecords = context.debuggerRecords;
+		// context.debuggerRecords = [];
+		const output = this._evaluate(context);
+		// const innerRecords = context.debuggerRecords;
+		// context.debuggerRecords = outerRecords;
+		
+		context.debuggerRecords.push(new DebuggerRecord(
+			"evaluate_end",
+			this.location,
+			`${output.print()}`,
+		));
+		
+		if (this.equals(output)) {
+			logger.log(LogType.resolve, "evaluation did not do anything");
+		} else {
+			// context.debuggerRecords.push(...innerRecords);
+		}
+		
+		// if (this.location == "builtin") {
+		// 	console.log(text);
+		// } else {
+		// 	const notError = new Report(text).indicator(this.location, "");
+		// 	console.log(notError.getText("", false, true));
+		// }
+		
+		return output;
+	}
+	_evaluate(context: BuilderContext): ASTnode {
+		// unreachable();
 		return this;
 	}
 }
@@ -323,11 +426,11 @@ export class ASTnode_command extends ASTnode {
 		return `>${this.text}`;
 	}
 	
-	getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
+	_getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
 		unreachable();
 	}
 	
-	evaluate(context: BuilderContext): ASTnode {
+	_evaluate(context: BuilderContext): ASTnode {
 		unreachable();
 	}
 }
@@ -350,7 +453,7 @@ export class ASTnode_bool extends ASTnode {
 		}
 	}
 	
-	getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
+	_getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
 		return getBuiltinType("Bool");
 	}
 }
@@ -366,7 +469,7 @@ export class ASTnode_number extends ASTnode {
 		return `${this.value}`;
 	}
 	
-	getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
+	_getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
 		return getBuiltinType("Float64");
 	}
 }
@@ -382,7 +485,7 @@ export class ASTnode_string extends ASTnode {
 		return `"${this.value.replaceAll("\n", "\\n").replaceAll("\"", "\\\"")}"`;
 	}
 	
-	getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
+	_getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
 		return getBuiltinType("String");
 	}
 }
@@ -400,7 +503,7 @@ export class ASTnode_string extends ASTnode {
 // 		return `[${elements}]`;
 // 	}
 	
-// 	getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
+// 	_getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
 // 		let type = getBuiltinType("__Unknown__");
 // 		for (let i = 0; i < this.elements.length; i++) {
 // 			const element = this.elements[i];
@@ -421,7 +524,7 @@ export class ASTnode_string extends ASTnode {
 // 		return makeListType(type);
 // 	}
 	
-// 	evaluate(context: BuilderContext): ASTnode {
+// 	_evaluate(context: BuilderContext): ASTnode {
 // 		const elements: ASTnode[] = [];
 // 		for (let i = 0; i < this.elements.length; i++) {
 // 			const element = this.elements[i];
@@ -441,9 +544,10 @@ export class ASTnode_object extends ASTnode {
 		location: SourceLocation,
 		readonly prototype: ASTnode | null,
 		readonly members: ASTnode[],
-		readonly id: string = "",
+		id: string = "",
 	) {
 		super(location);
+		this.id = id;
 	}
 	
 	hasPrototype(context: BuilderContext, other: ASTnodeType): boolean {
@@ -526,7 +630,7 @@ export class ASTnode_object extends ASTnode {
 		return `${this.id}${prototype}{${memberText}}`;
 	}
 	
-	getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
+	_getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
 		// TODO: typecheck members
 		// const valueType = member.value.getType(context);
 		// if (valueType instanceof ASTnode_error) {
@@ -536,9 +640,9 @@ export class ASTnode_object extends ASTnode {
 		return getBuiltinType("Any");
 	}
 	
-	evaluate(context: BuilderContext): ASTnode {
+	_evaluate(context: BuilderContext): ASTnode {
 		if (context.isOnEvalStack(this)) {
-			const object = new ASTnode_object(this.location, this.prototype, this.members);
+			const object = new ASTnode_object(this.location, this.prototype, this.members, this.id);
 			// object.lastAliasName = this.lastAliasName;
 			return object;
 		}
@@ -595,7 +699,7 @@ export class ASTnodeType_functionType extends ASTnode {
 		return `\\(${argType}) -> ${returnType}`;
 	}
 	
-	getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
+	_getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
 		{
 			const argType = this.argType.getType(context);
 			if (!argType.isType(context)) {
@@ -624,7 +728,7 @@ export class ASTnodeType_functionType extends ASTnode {
 		return getBuiltinType("Type");
 	}
 	
-	evaluate(context: BuilderContext): ASTnode {
+	_evaluate(context: BuilderContext): ASTnode {
 		const argType = this.argType.evaluate(context);
 		const returnType = this.returnType.evaluate(context);
 		return new ASTnodeType_functionType(fromNode(this), argType, returnType);
@@ -659,7 +763,7 @@ export class ASTnode_alias extends ASTnode {
 	/**
 	 * Currently this gets the type of `value`.
 	 */
-	getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
+	_getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
 		// const leftType = this.left.getType(context);
 		// // If the left side does not give an error, then that means left is already defined.
 		// if (!(leftType instanceof ASTnode_error)) {
@@ -682,7 +786,7 @@ export class ASTnode_alias extends ASTnode {
 		return valueType;
 	}
 	
-	evaluate(context: BuilderContext): ASTnode {
+	_evaluate(context: BuilderContext): ASTnode {
 		const value = withResolve(context, () => this.value.evaluate(context));
 		// value.lastAliasName = this.left.print();
 		
@@ -708,13 +812,13 @@ export class ASTnode_identifier extends ASTnode {
 		}
 	}
 	
-	getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
+	_getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
 		if (context.isOnEvalStackOnlyIdentifiers(this)) {
 			// TODO: This is better than the compiler stack overflowing.
 			// But this is still not a very good error message.
 			return new ASTnode_error(
 				this.location,
-				new CompileError("recursive definition!")
+				new Report("recursive definition!")
 					.indicator(this.location, "here")
 			);
 		}
@@ -726,7 +830,7 @@ export class ASTnode_identifier extends ASTnode {
 				value = alias.value;
 			} else {
 				return new ASTnode_error(fromNode(this),
-					new CompileError(`alias '${this.name}' does not exist`)
+					new Report(`alias '${this.name}' does not exist`)
 						.indicator(this.location, `here`)
 				);
 				// const pair = context.getDef(this.name);
@@ -754,7 +858,7 @@ export class ASTnode_identifier extends ASTnode {
 		return output;
 	}
 	
-	evaluate(context: BuilderContext): ASTnode {
+	_evaluate(context: BuilderContext): ASTnode {
 		let unalias = false;
 		let value: ASTnode;
 		// let defPair: [ModulePath, TopLevelDef] | null = null;
@@ -819,7 +923,7 @@ export class ASTnode_function extends ASTnode {
 		}
 	}
 	
-	getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
+	_getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
 		if (context.isOnEvalStack(this)) {
 			return new ASTnode_unknown(fromNode(this), null);
 		}
@@ -847,33 +951,36 @@ export class ASTnode_function extends ASTnode {
 		}
 	}
 	
-	evaluate(context: BuilderContext): ASTnode {
+	// Be very careful with early returns from this function.
+	_evaluate(context: BuilderContext): ASTnode {
+		if (context.isOnEvalStack(this)) {
+			return new ASTnode_unknown(this.location, null);
+		}
+		
 		const arg = this.arg;
 		
+		context.pushEvalStack(this);
 		const argumentType = withResolve(context, () => arg.type.evaluate(context));
+		context.popEvalStack();
 		
 		let argValue: ASTnode = new ASTnode_unknown(arg.location, null);
 		if (argumentType.isType(context)) {
 			argValue = new ASTnode_unknown(arg.location, argumentType);
 		}
 		
-		let body = this.body;
-		if (!context.isOnEvalStack(this)) {
-			context.local.scopes.push([
-				new ASTnode_alias(arg.location, new ASTnode_identifier(arg.location, arg.name), argValue)
-			]);
-			const oldSetUnalias = context.setUnalias;
-			context.setUnalias = false;
-			context.pushEvalStack(this);
-			const newBody = evaluateList(context, this.body);
-			context.popEvalStack();
-			context.setUnalias = oldSetUnalias;
-			context.local.scopes.pop();
-			
-			if (!(newBody instanceof Array)) {
-				return newBody; // deadEnd
-			}
-			body = newBody;
+		context.local.scopes.push([
+			new ASTnode_alias(arg.location, new ASTnode_identifier(arg.location, arg.name), argValue)
+		]);
+		const oldSetUnalias = context.setUnalias;
+		context.setUnalias = false;
+		context.pushEvalStack(this);
+		const body = evaluateList(context, this.body);
+		context.popEvalStack();
+		context.setUnalias = oldSetUnalias;
+		context.local.scopes.pop();
+		
+		if (!(body instanceof Array)) {
+			return body; // deadEnd
 		}
 		
 		const newFunction = new ASTnode_function(fromNode(this), new ASTnode_argument(arg.location, arg.name, argumentType), body);
@@ -921,7 +1028,7 @@ export class ASTnode_call extends ASTnode {
 		return `(${left} ${arg})`;
 	}
 	
-	getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
+	_getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
 		const leftType = this.left.getType(context);
 		if (leftType instanceof ASTnode_error) {
 			return leftType;
@@ -930,7 +1037,7 @@ export class ASTnode_call extends ASTnode {
 			return new ASTnode_unknown(this.location, null);
 		}
 		if (!(leftType instanceof ASTnodeType_functionType)) {
-			const error = new CompileError(`can not call type ${leftType.print()}`)
+			const error = new Report(`can not call type ${leftType.print()}`)
 				.indicator(this.left.location, `here`);
 			return new ASTnode_error(fromNode(this), error);
 		}
@@ -987,7 +1094,7 @@ export class ASTnode_call extends ASTnode {
 		}
 	}
 	
-	evaluate(context: BuilderContext): ASTnode {
+	_evaluate(context: BuilderContext): ASTnode {
 		let functionToCall = this.left.evaluate(context);
 		let argValue = this.arg.evaluate(context);
 		let resolve = context.doResolve();
@@ -1097,7 +1204,7 @@ export class ASTnode_operator extends ASTnode {
 		return operatorFnCall;
 	}
 	
-	getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
+	_getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
 		const operatorFnCall = this.getAsCall(context);
 		if (operatorFnCall instanceof ASTnode_error) {
 			return operatorFnCall;
@@ -1109,10 +1216,9 @@ export class ASTnode_operator extends ASTnode {
 		return operatorFnCall.getType(context);
 	}
 	
-	evaluate(context: BuilderContext): ASTnode {
+	_evaluate(context: BuilderContext): ASTnode {
 		// const oldEvalStack = context.evalStack;
 		// context.evalStack = [];
-		debugger;
 		const operatorFnCall = this.getAsCall(context);
 		// context.evalStack = oldEvalStack;
 		
@@ -1141,7 +1247,7 @@ export class ASTnode_memberAccess extends ASTnode {
 		return `${left}.${this.name}`;
 	}
 	
-	getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
+	_getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
 		const left = this.left.evaluate(context);
 		if (left.isDeadEnd()) {
 			return left;
@@ -1159,7 +1265,7 @@ export class ASTnode_memberAccess extends ASTnode {
 		}
 	}
 	
-	evaluate(context: BuilderContext): ASTnode {
+	_evaluate(context: BuilderContext): ASTnode {
 		const left = this.left.evaluate(context);
 		if (left.isDeadEnd()) {
 			const output = new ASTnode_memberAccess(fromNode(this), left, this.name);
@@ -1269,7 +1375,7 @@ export class ASTnode_if extends ASTnode {
 		return `if ${condition} then${trueBody}\nelse${falseBody}`;
 	}
 	
-	getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
+	_getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
 		const conditionType = this.condition.getType(context);
 		if (!conditionType.isType(context)) {
 			return conditionType;
@@ -1329,7 +1435,7 @@ export class ASTnode_if extends ASTnode {
 		return trueType;
 	}
 	
-	evaluate(context: BuilderContext): ASTnode {
+	_evaluate(context: BuilderContext): ASTnode {
 		const condition = this.condition.evaluate(context);
 		if (!(condition instanceof ASTnode_bool)) {
 			let trueBody = evaluateList(context, this.trueBody);
@@ -1370,7 +1476,7 @@ export class ASTnode_if extends ASTnode {
 // 		return `unsafeEffect "${this.source.replaceAll("\"", "\\\"")}" ${list} ${type}`;
 // 	}
 	
-// 	getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
+// 	_getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
 // 		{
 // 			const error = this.type.getType(context);
 // 			if (error instanceof ASTnode_error) {
@@ -1386,7 +1492,7 @@ export class ASTnode_if extends ASTnode {
 // 		return makeEffectType(type);
 // 	}
 	
-// 	evaluate(context: BuilderContext): ASTnode {
+// 	_evaluate(context: BuilderContext): ASTnode {
 // 		return new ASTnode_unsafeEffect(fromNode(this), this.source, this.list.evaluate(context), this.type.evaluate(context));
 // 	}
 // }
@@ -1405,7 +1511,7 @@ type ASTdeadEnd = ASTnode_error | ASTnode_unknown;
 export class ASTnode_error extends ASTnode {
 	constructor(
 		location: SourceLocation,
-		readonly compileError: CompileError | null,
+		readonly compileError: Report | null,
 	) {
 		super(location);
 	}
@@ -1446,7 +1552,7 @@ export class ASTnode_unknown extends ASTnode {
 		return `__ASTnode_unknown__${type}`;
 	}
 	
-	getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
+	_getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
 		if (this.type == null) {
 			unreachable();
 		}
@@ -1464,8 +1570,8 @@ export class ASTnode_builtinTask extends ASTnode {
 	constructor(
 		readonly codegenId: string,
 		// dependencies: string[],
-		private _getType: (context: BuilderContext) => ASTnodeType | ASTnode_error,
-		private _evaluate: (context: BuilderContext, task: ASTnode_builtinTask) => ASTnode,
+		private task_getType: (context: BuilderContext) => ASTnodeType | ASTnode_error,
+		private task_evaluate: (context: BuilderContext, task: ASTnode_builtinTask) => ASTnode,
 	) {
 		super("builtin");
 		// for (let i = 0; i < dependencies.length; i++) {
@@ -1491,18 +1597,18 @@ export class ASTnode_builtinTask extends ASTnode {
 		return "__builtinTask__";
 	}
 	
-	getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
-		return this._getType(context);
+	_getType(context: BuilderContext): ASTnodeType | ASTdeadEnd {
+		return this.task_getType(context);
 	}
 	
-	evaluate(context: BuilderContext): ASTnode {
-		const output = this._evaluate(context, this);
+	_evaluate(context: BuilderContext): ASTnode {
+		const output = this.task_evaluate(context, this);
 		if (output == this) {
 			const newTask = new ASTnode_builtinTask(
 				this.codegenId,
 				// [],
-				this._getType,
-				this._evaluate,
+				this.task_getType,
+				this.task_evaluate,
 			);
 			
 			for (let i = 0; i < this.dependencies.length; i++) {
@@ -1581,7 +1687,7 @@ function expectType(
 	context: BuilderContext,
 	expectedType: ASTnodeType,
 	actualType: ASTnodeType,
-): CompileError | null {
+): Report | null {
 	// if (expectedType instanceof ASTnodeType_selfType) {
 	// 	return null;
 	// }

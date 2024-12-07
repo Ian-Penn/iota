@@ -3,7 +3,7 @@ import path from "path";
 import crypto from "crypto";
 
 import logger from "./logger.js";
-import { CompileError } from "./report.js";
+import { Report } from "./report.js";
 
 export function unreachable(): never {
 	debugger;
@@ -55,7 +55,7 @@ export function writeFile(filePath: string, text: string) {
 			byteSize: byteSize(text),
 		});
 	} catch (error) {
-		throw new CompileError(`could not write file at path '${filePath}'`);
+		throw new Report(`could not write file at path '${filePath}'`);
 	}
 }
 

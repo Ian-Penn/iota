@@ -1,5 +1,5 @@
 import * as utilities from "./utilities.js";
-import { CompileError } from "./report.js";
+import { Report } from "./report.js";
 import { Token, TokenKind } from "./lexer.js";
 import {
 	ASTnode,
@@ -139,7 +139,7 @@ function getNext(context: ParserContext): Token {
 	}
 	
 	if (!token) {
-		throw new CompileError("unexpected end of file").indicator(context.tokens[i-1].location, "last token here");
+		throw new Report("unexpected end of file").indicator(context.tokens[i-1].location, "last token here");
 	}
 	
 	return token;
@@ -169,7 +169,7 @@ function parseOperators(context: ParserContext, left: ASTnode, lastPrecedence: n
 			
 			const _r = parse(context, mode, getIndentation(nextOperator), null)[0];
 			if (_r == undefined) {
-				throw new CompileError("nothing on right side of operator").indicator(nextOperator.location, "here");
+				throw new Report("nothing on right side of operator").indicator(nextOperator.location, "here");
 			}
 			right = parseOperators(context, _r, nextPrecedence);
 			
@@ -355,7 +355,7 @@ export function parse(context: ParserContext, mode: ParserMode, indentation: num
 						context.i++;
 						return ASTnodes;
 					} else {
-						throw new CompileError("unexpected separator")
+						throw new Report("unexpected separator")
 							.indicator(nextToken.location, `expected '${endAt} but got '${nextToken.text}'`);
 					}
 				}
@@ -474,17 +474,17 @@ export function parse(context: ParserContext, mode: ParserMode, indentation: num
 				else if (token.text == "if") {
 					const condition = parse(context, ParserMode.normal, nextIndentation, null)[0];
 					if (!condition) {
-						throw new CompileError("if expression is missing a condition").indicator(token.location, "here");
+						throw new Report("if expression is missing a condition").indicator(token.location, "here");
 					}
 					const then = forward(context);
 					if (then.kind != TokenKind.word || then.text != "then") {
-						throw new CompileError("expected then").indicator(then.location, "here");
+						throw new Report("expected then").indicator(then.location, "here");
 					}
 					
 					const trueBody = parse(context, ParserMode.normal, nextIndentation, null);
 					const _else = forward(context);
 					if (_else.kind != TokenKind.word || _else.text != "else") {
-						throw new CompileError("expected else").indicator(_else.location, "here");
+						throw new Report("expected else").indicator(_else.location, "here");
 					}
 					
 					const falseBody = parse(context, ParserMode.normal, nextIndentation, null);
@@ -583,17 +583,17 @@ export function parse(context: ParserContext, mode: ParserMode, indentation: num
 				else if (token.text == "@") {
 					const name = forward(context);
 					if (name.kind != TokenKind.word) {
-						throw new CompileError("expected name for function argument").indicator(token.location, "here");
+						throw new Report("expected name for function argument").indicator(token.location, "here");
 					}
 					
 					const openingParentheses = forward(context);
 					if (openingParentheses.kind != TokenKind.separator || openingParentheses.text != "(") {
-						throw new CompileError("expected openingParentheses").indicator(openingParentheses.location, "here");
+						throw new Report("expected openingParentheses").indicator(openingParentheses.location, "here");
 					}
 					
 					const type = parse(context, ParserMode.normal, nextIndentation, ")")[0];
 					if (!type) {
-						throw new CompileError("function argument without a type").indicator(name.location, "here");
+						throw new Report("function argument without a type").indicator(name.location, "here");
 					}
 					
 					const body = parse(context, ParserMode.normal, nextIndentation, null);
@@ -662,7 +662,7 @@ export function parse(context: ParserContext, mode: ParserMode, indentation: num
 						context.i--;
 						return ASTnodes;
 					} else {
-						throw new CompileError("unexpected separator").indicator(token.location, "here");
+						throw new Report("unexpected separator").indicator(token.location, "here");
 					}
 				}
 				break;
@@ -732,7 +732,7 @@ export function parse(context: ParserContext, mode: ParserMode, indentation: num
 		if (mode == ParserMode.comma) {
 			const comma = forward(context);
 			if (comma.kind != TokenKind.separator || comma.text != ",") {
-				throw new CompileError("expected a comma").indicator(comma.location, "here");
+				throw new Report("expected a comma").indicator(comma.location, "here");
 			}
 		}
 	}

@@ -5,7 +5,7 @@ import * as utilities from "./utilities.js";
 import logger from "./logger.js";
 import { CompilerOptions, Module, ModulePath } from "./Module.js";
 import { lex, TokenKind } from "./lexer.js";
-import { CompileError, getIndicatorText, removeDuplicateErrors } from "./report.js";
+import { Report, getIndicatorText, removeDuplicateErrors } from "./report.js";
 import { parse, ParserMode } from "./parser.js";
 import { setUpBuiltins } from "./builtin.js";
 import { codegen_js, CodegenJsSettings } from "./codegen.js";
@@ -93,7 +93,7 @@ function testFile(filePath: string) {
 		if (error == "__testSkip__") {
 			testSkip();
 			return;
-		} else if (error instanceof CompileError) {
+		} else if (error instanceof Report) {
 			module.errors.push(error);
 		} else {
 			testFailure(`error: ${error}`);
@@ -173,7 +173,7 @@ function testFile(filePath: string) {
 			if (errorText != "") {
 				errorText += "\n";
 			}
-			errorText += error.getText(false, false);
+			errorText += error.getText("error: ", false, false);
 		}
 		
 		if (mode == "compError") {

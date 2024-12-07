@@ -125,7 +125,7 @@ export function getIndicatorText(indicator: Indicator, printPath: boolean, fancy
 	return outputText;
 }
 
-export class CompileError {
+export class Report {
 	msg: string
 	private indicators: Indicator[]
 	
@@ -134,7 +134,7 @@ export class CompileError {
 		this.indicators = [];
 	}
 	
-	public indicator(location: SourceLocation, msg: string): CompileError {
+	public indicator(location: SourceLocation, msg: string): Report {
 		this.indicators.push({
 			location: location,
 			msg: msg,
@@ -142,15 +142,12 @@ export class CompileError {
 		return this;
 	}
 	
-	public getText(printPath: boolean, fancyIndicators: boolean): string {
-		const addColor = fancyIndicators;
-		const c_red = "\x1B[31m"
+	public getText(prefix: string, printPath: boolean, fancyIndicators: boolean): string {
+		const c_red = "\x1B[31m";
 		const c_reset = "\x1B[0m";
 		
 		let text = "";
-		if (addColor) text += c_red;
-		text += `error: ${this.msg}\n`;
-		if (addColor) text += c_reset;
+		text += `${prefix}${this.msg}${c_reset}\n`;
 		
 		for (let i = 0; i < this.indicators.length; i++) {
 			const indicator = this.indicators[i];
@@ -166,14 +163,14 @@ export class CompileError {
 	}
 }
 
-export function removeDuplicateErrors(list: CompileError[]): CompileError[] {
-	const newList: CompileError[] = [];
+export function removeDuplicateErrors(list: Report[]): Report[] {
+	const newList: Report[] = [];
 	for (let i = 0; i < list.length; i++) {
 		const error = list[i];
 		let isDuplicate = false;
 		for (let j = i+1; j < list.length; j++) {
 			const otherError = list[j];
-			if (error.getText(false, false) == otherError.getText(false, false)) {
+			if (error.getText("", false, false) == otherError.getText("", false, false)) {
 				isDuplicate = true;
 				break;
 			}

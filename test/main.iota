@@ -1,14 +1,18 @@
-builtin = #import "builtin"
+// builtin = #import "builtin"
+// builtin
 
-// @n(builtin.Float64) n - 1
+1 + 1
 
-fib = @n(builtin.Float64)
-	if n <= 1 then
-		n
-	else
-		(fib n - 1) + (fib n - 2)
+// add1 = @x(builtin.Float64) x + 1
+// add1 2
 
-fib 2
+// fib = @n(builtin.Float64)
+// 	if n <= 1 then
+// 		n
+// 	else
+// 		(fib n - 1) + (fib n - 2)
+
+// fib 2
 
 // Number = builtin.Float64
 // a = @x(Number)
