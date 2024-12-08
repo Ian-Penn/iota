@@ -1,7 +1,9 @@
 // builtin = #import "builtin"
 // builtin
 
-a = 1
+1 + 1
+
+// add1 = @x(builtin.Float64) x + 1
 
 // add = @a(builtin.Float64) @b(builtin.Float64) a + b
 // add 1
