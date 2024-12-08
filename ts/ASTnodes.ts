@@ -45,7 +45,7 @@ function getLast<T>(array: T[]): T {
 	return array[array.length-1];
 }
 
-export type ResolveMode = "none" | "types" | "all" | "force";
+export type ResolveMode = "none" | "types" | "all";
 
 export class LocalBuilderContext {
 	// aliases: ASTnode_alias[] = [];
@@ -133,11 +133,7 @@ export class BuilderContext {
 	}
 	
 	doResolve(): boolean {
-		return this.resolve == "all" || this.forceResolve();
-	}
-	
-	forceResolve(): boolean {
-		return this.resolve == "force";
+		return this.resolve == "all";
 	}
 	
 	getAlias(name: string): ASTnode_alias | null {
@@ -883,9 +879,9 @@ export class ASTnode_identifier extends ASTnode {
 			}
 		}
 		
-		if (context.forceResolve()) {
-			return value;
-		}
+		// if (context.forceResolve()) {
+		// 	return value;
+		// }
 		
 		if ((context.doResolve() || unalias) && !value.isDeadEnd()) {
 			// logger.log(LogType.resolve, `resolved ${this.name} to ${value.print()}`);
@@ -1095,6 +1091,14 @@ export class ASTnode_call extends ASTnode {
 	}
 	
 	_evaluate(context: BuilderContext): ASTnode {
+		debugger;
+		
+		if (context.doResolve()) {
+			
+		} else {
+			
+		}
+		
 		let functionToCall = this.left.evaluate(context);
 		let argValue = this.arg.evaluate(context);
 		let resolve = context.doResolve();

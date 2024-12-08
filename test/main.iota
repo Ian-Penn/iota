@@ -1,10 +1,10 @@
 // builtin = #import "builtin"
 // builtin
 
-1 + 1
+a = 1
 
-// add1 = @x(builtin.Float64) x + 1
-// add1 2
+// add = @a(builtin.Float64) @b(builtin.Float64) a + b
+// add 1
 
 // fib = @n(builtin.Float64)
 // 	if n <= 1 then

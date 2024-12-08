@@ -18,6 +18,7 @@ import { CodeGenContext } from "./codegen.js";
 import { lex } from "./lexer.js";
 import { parse, ParserMode } from "./parser.js";
 import { runCommand } from "./commands.js";
+import { makeBytecodeTextFormat } from "./bytecode.js";
 
 export type IdeOptions = {
 	mode: "compileFile",
@@ -165,49 +166,52 @@ export class Module {
 	}
 	
 	addAST(AST: ASTnode[]) {
-		for (let index = 0; index < AST.length; index++) {
-			const node = AST[index];
+		const text = makeBytecodeTextFormat(AST);
+		console.log("\nmakeBytecodeTextFormat:\n" + text + "\n");
+		
+		// for (let index = 0; index < AST.length; index++) {
+		// 	const node = AST[index];
 			
-			if (node instanceof ASTnode_alias) {
-				if (!(node.left instanceof ASTnode_identifier)) {
-					utilities.TODO();
-				}
-				const name = node.left.name;
-				this.root.setMember(name, node.value);
-			} else {
-				logger.log(LogType.module, `found top level evaluation`);
+		// 	if (node instanceof ASTnode_alias) {
+		// 		if (!(node.left instanceof ASTnode_identifier)) {
+		// 			utilities.TODO();
+		// 		}
+		// 		const name = node.left.name;
+		// 		this.root.setMember(name, node.value);
+		// 	} else {
+		// 		logger.log(LogType.module, `found top level evaluation`);
 				
-				const builderContext = new BuilderContext(this);
-				builderContext.local.scopes.push(this.root.members);
+		// 		const builderContext = new BuilderContext(this);
+		// 		builderContext.local.scopes.push(this.root.members);
 				
-				const location = node.location;
-				// {
-				// 	const error = node.getType(builderContext);
-				// 	if (error instanceof ASTnode_error) {
-				// 		if (!error.compileError) {
-				// 			logger.log(LogType.module, `!error.compileError`);
-				// 			break;
-				// 		}
-				// 		this.errors.push(error.compileError);
-				// 		continue;
-				// 	}
-				// }
+		// 		const location = node.location;
+		// 		// {
+		// 		// 	const error = node.getType(builderContext);
+		// 		// 	if (error instanceof ASTnode_error) {
+		// 		// 		if (!error.compileError) {
+		// 		// 			logger.log(LogType.module, `!error.compileError`);
+		// 		// 			break;
+		// 		// 		}
+		// 		// 		this.errors.push(error.compileError);
+		// 		// 		continue;
+		// 		// 	}
+		// 		// }
 				
-				console.log("getType debug:");
-				builderContext.debug();
-				builderContext.debuggerRecords = [];
+		// 		console.log("getType debug:");
+		// 		builderContext.debug();
+		// 		builderContext.debuggerRecords = [];
 				
-				const result = node.evaluate(builderContext);
-				const codeGenContext = new CodeGenContext();
-				codeGenContext.forceLastAliasName = false;
-				const resultText = result.print(codeGenContext);
+		// 		const result = node.evaluate(builderContext);
+		// 		const codeGenContext = new CodeGenContext();
+		// 		codeGenContext.forceLastAliasName = false;
+		// 		const resultText = result.print(codeGenContext);
 				
-				console.log("evaluate debug:");
-				builderContext.debug();
+		// 		console.log("evaluate debug:");
+		// 		builderContext.debug();
 				
-				this.topLevelEvaluations.push({ location: location, msg: `${resultText}` });
-			}
-		}
+		// 		this.topLevelEvaluations.push({ location: location, msg: `${resultText}` });
+		// 	}
+		// }
 		
 		// {
 		// 	const context = new BuilderContext(this);
