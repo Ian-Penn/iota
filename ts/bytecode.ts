@@ -1,5 +1,5 @@
 import { ASTnode, ASTnode_alias, ASTnode_function, ASTnode_identifier, ASTnode_number, ASTnode_operator } from "./ASTnodes.js";
-import { getClassName, TODO, unreachable } from "./utilities.js";
+import { getClassName, TODO, TODO_addError, unreachable } from "./utilities.js";
 
 export enum BytecodeOp {
 	nop = 0x00,
@@ -135,8 +135,23 @@ export class Environment {
 		this.stack = new Uint8Array(maxStackSize);
 	}
 	
+	debug(): string {
+		let text = "";
+		
+		for (let i = this.stackTop - 1; i >= 0; i--) {
+			const byte = this.stack[i];
+			text += `${i}   0x${byte.toString(16)}\n`;
+		}
+		
+		return text;
+	}
+	
 	run(program: Uint8Array) {
 		const self = this;
+		
+		function error() {
+			TODO_addError();
+		}
 		
 		function pushByte(byte: number) {
 			self.stack[self.stackTop] = byte;
@@ -148,6 +163,19 @@ export class Environment {
 			return byte;
 		}
 		
+		// TODO: not one byte
+		function push_f32(number: number) {
+			pushByte(number);
+			pushByte(BytecodeOp.f32_new);
+		}
+		// TODO: not one byte
+		function pop_f32(): number {
+			const op = popByte();
+			if (op != BytecodeOp.f32_new) error();
+			const number = popByte();
+			return number;
+		}
+		
 		let pc = 0;
 		while (pc < program.length) {
 			const opCode = program[pc];
@@ -155,18 +183,17 @@ export class Environment {
 				case BytecodeOp.f32_new: {
 					pc++
 					const number = program[pc];
-					console.log("number", number);
-					pushByte(number);
+					push_f32(number);
 					
 					break;
 				}
 				
 				case BytecodeOp.f32_add: {
 					debugger;
-					const left = popByte();
-					const right = popByte();
+					const left = pop_f32();
+					const right = pop_f32();
 					
-					pushByte(left + right);
+					push_f32(left + right);
 					break;
 				}
 				

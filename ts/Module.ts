@@ -176,7 +176,7 @@ export class Module {
 		
 		environment.run(bytecode);
 		debugger;
-		console.log("\noutput:\n" + bytecode_debug(environment.stack, environment.stackTop) + "\n");
+		console.log("\noutput:\n" + environment.debug() + "\n");
 		
 		// for (let index = 0; index < AST.length; index++) {
 		// 	const node = AST[index];
