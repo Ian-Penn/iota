@@ -604,24 +604,24 @@ export function parse(context: ParserContext, mode: ParserMode, indentation: num
 					));
 				}
 				
-				// else if (token.text == "&") {
-				// 	let prototype = null;
-				// 	if (getNext(context).kind != TokenKind.separator || getNext(context).text != "{") {
-				// 		prototype = parse(context, ParserMode.single, nextIndentation, null)[0];
-				// 		if (!prototype || !(prototype instanceof ASTnode_object)) {
-				// 			utilities.TODO_addError();
-				// 		}
-				// 	}
+				else if (token.text == "&") {
+					let prototype = null;
+					if (getNext(context).kind != TokenKind.separator || getNext(context).text != "{") {
+						prototype = parse(context, ParserMode.single, nextIndentation, null)[0];
+						if (!prototype || !(prototype instanceof ASTnode_object)) {
+							utilities.TODO_addError();
+						}
+					}
 					
-				// 	const openingBracket = forward(context);
-				// 	if (openingBracket.kind != TokenKind.separator || openingBracket.text != "{") {
-				// 		throw new CompileError("expected openingBracket for field list")
-				// 			.indicator(openingBracket.location, "here");
-				// 	}
-				// 	const members = parse(context, ParserMode.normal, nextIndentation, "}");
+					const openingBracket = forward(context);
+					if (openingBracket.kind != TokenKind.separator || openingBracket.text != "{") {
+						throw new Report("expected openingBracket for field list")
+							.indicator(openingBracket.location, "here");
+					}
+					const members = parse(context, ParserMode.normal, nextIndentation, "}");
 					
-				// 	ASTnodes.push(new ASTnode_object(token.location, prototype, members));
-				// }
+					ASTnodes.push(new ASTnode_object(token.location, prototype, members));
+				}
 				
 				// else if (token.text == "\\") {
 				// 	const openingParentheses = forward(context);

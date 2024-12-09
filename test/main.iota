@@ -1,9 +1,18 @@
 // builtin = #import "builtin"
 // builtin
 
-1 + 1
+getType = @T(Type) T
+
+add1 = @x(getType Float64) x + 1
+add1 4
+
+// test = &{
+// 	a = 1
+// 	b = 2
+// }
 
 // add1 = @x(builtin.Float64) x + 1
+// add1 4
 
 // add = @a(builtin.Float64) @b(builtin.Float64) a + b
 // add 1

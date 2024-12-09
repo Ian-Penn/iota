@@ -172,7 +172,7 @@ export class Module {
 		const bytecode = bytecode_compileTextFormat(text);
 		console.log("\nbytecode:\n" + bytecode_debug(bytecode) + "\n");
 		
-		const environment = new Environment(1000);
+		const environment = new Environment(1000, 1000);
 		
 		environment.run(bytecode);
 		debugger;
