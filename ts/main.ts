@@ -1,6 +1,6 @@
 import { HashCache, readFile, TODO_addError } from "./utilities.js";
 import logger from "./logger.js";
-import { Module } from "./Module.js";
+import { Module, setupWebAssembly } from "./Module.js";
 import { setUpBuiltins } from "./builtin.js";
 import { startREPL } from "./REPL.js";
 import { ASTnode, ASTnode_number, ASTnode_object } from "./ASTnodes.js";
@@ -60,7 +60,7 @@ async function main() {
 			const filePath = nextArg();
 			
 			const module = new Module("", "runFileMain", new ASTnode_object("builtin", null, []));
-			await module.setupWebAssembly();
+			await setupWebAssembly();
 			
 			// module.loadFromFileSystem();
 			const text = readFile(filePath);

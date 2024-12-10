@@ -5,8 +5,9 @@ import crypto from "crypto";
 import logger from "./logger.js";
 import { Report } from "./report.js";
 
-export function unreachable(): never {
+export function unreachable(...data: any[]): never {
 	debugger;
+	console.error(...data);
 	console.trace();
 	throw "unreachable code reached";
 }
