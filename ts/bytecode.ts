@@ -91,122 +91,122 @@ export function bytecode_makeTextFormat(topAST: ASTnode[]): string {
 	return "(table_new)\n" + printAST(topAST).join("\n");
 }
 
-export function bytecode_compileTextFormat(text: string): DataView {
-	const extraGrowSize = 256;
+// export function bytecode_compileTextFormat(text: string): DataView {
+// 	const extraGrowSize = 256;
 	
-	let program = new DataView(new ArrayBuffer(extraGrowSize));
-	let programSize = 0;
+// 	let program = new DataView(new ArrayBuffer(extraGrowSize));
+// 	let programSize = 0;
 	
-	function growTo(n: number) {
-		if (n > program.byteLength) {
-			const newBuffer = new ArrayBuffer(n + extraGrowSize);
-			const newProgram = new Uint8Array(n + extraGrowSize);
-			newProgram.set(program);
-			program = newProgram;
-		}
-	}
+// 	function growTo(n: number) {
+// 		if (n > program.byteLength) {
+// 			const newBuffer = new ArrayBuffer(n + extraGrowSize);
+// 			const newProgram = new Uint8Array(n + extraGrowSize);
+// 			newProgram.set(program);
+// 			program = newProgram;
+// 		}
+// 	}
 	
-	function addRawByte(bytes: number) {
-		growTo(programSize + 1);
-		program.setUint8(bytes, programSize);
-		programSize += 1;
-	}
-	function addRawBytes(bytes: number[]) {
-		growTo(programSize + bytes.length);
-		bytes.forEach(byte => {
-			program.setUint8(byte, programSize);
-			programSize += 1;
-		});
-	}
+// 	function addRawByte(bytes: number) {
+// 		growTo(programSize + 1);
+// 		program.setUint8(bytes, programSize);
+// 		programSize += 1;
+// 	}
+// 	function addRawBytes(bytes: number[]) {
+// 		growTo(programSize + bytes.length);
+// 		bytes.forEach(byte => {
+// 			program.setUint8(byte, programSize);
+// 			programSize += 1;
+// 		});
+// 	}
 	
-	function addf32(number: number) {
-		const byteSize = 4;
-		growTo(programSize + byteSize);
-		program.setUint8(programSize, number);
-		programSize += byteSize;
-	}
+// 	function addf32(number: number) {
+// 		const byteSize = 4;
+// 		growTo(programSize + byteSize);
+// 		program.setUint8(programSize, number);
+// 		programSize += byteSize;
+// 	}
 	
-	function addString(text: string) {
-		const programView = program.buffer.
-		const encoder = new TextEncoder();
-		growTo(programSize + buffer.byteLength);
-		buffer.forEach(byte => {
-			program.setUint8(byte, programSize);
-			programSize += 1;
-		});
-	}
+// 	function addString(text: string) {
+// 		const programView = program.buffer.
+// 		const encoder = new TextEncoder();
+// 		growTo(programSize + buffer.byteLength);
+// 		buffer.forEach(byte => {
+// 			program.setUint8(byte, programSize);
+// 			programSize += 1;
+// 		});
+// 	}
 	
-	let index = 0;
+// 	let index = 0;
 	
-	function readThing(): string {
-		index++;
+// 	function readThing(): string {
+// 		index++;
 		
-		let isString = false;
+// 		let isString = false;
 		
-		let op = "";
-		while (index < text.length) {
-			if (!isString) {
-				if (text[index] == " " || text[index] == ")") {
-					break;
-				}
-			}
+// 		let op = "";
+// 		while (index < text.length) {
+// 			if (!isString) {
+// 				if (text[index] == " " || text[index] == ")") {
+// 					break;
+// 				}
+// 			}
 			
-			if (text[index] == '"') {
-				isString = !isString;
-			} else {
-				op += text[index];
-			}
+// 			if (text[index] == '"') {
+// 				isString = !isString;
+// 			} else {
+// 				op += text[index];
+// 			}
 			
-			index++;
-		}
+// 			index++;
+// 		}
 		
-		return op
-	}
+// 		return op
+// 	}
 	
-	function parse() {
-		while (index < text.length) {
-			if (text[index] == "(") {
-				const op = readThing();
-				const instruction = Instruction[op as any] as any as number;
+// 	function parse() {
+// 		while (index < text.length) {
+// 			if (text[index] == "(") {
+// 				const op = readThing();
+// 				const instruction = Instruction[op as any] as any as number;
 				
-				console.log("op", op, instruction);
+// 				console.log("op", op, instruction);
 				
-				if (op == "table_new") {
-					addRawBytes([instruction]);
-				}
+// 				if (op == "table_new") {
+// 					addRawBytes([instruction]);
+// 				}
 				
-				else if (op == "table_set") {
-					const name = readThing();
+// 				else if (op == "table_set") {
+// 					const name = readThing();
 					
-					addRawBytes([instruction, name.length]);
-					addString(name);
-				}
+// 					addRawBytes([instruction, name.length]);
+// 					addString(name);
+// 				}
 				
-				else if (op == "f32_new") {
-					const number = Number(readThing());
-					addRawBytes([instruction, number]); // TODO: Number can be larger than one byte.
-				}
+// 				else if (op == "f32_new") {
+// 					const number = Number(readThing());
+// 					addRawBytes([instruction, number]); // TODO: Number can be larger than one byte.
+// 				}
 				
-				else if (op == "f32_add") {
-					addRawBytes([instruction]);
-				}
+// 				else if (op == "f32_add") {
+// 					addRawBytes([instruction]);
+// 				}
 				
-				else {
-					unreachable();
-				}
-			}
-			index++;
-		}
-	}
+// 				else {
+// 					unreachable();
+// 				}
+// 			}
+// 			index++;
+// 		}
+// 	}
 	
-	parse();
+// 	parse();
 	
-	{
-		const output = new Uint8Array(programSize);
-		output.set(program.subarray(0, programSize));
-		return output;
-	}
-}
+// 	{
+// 		const output = new Uint8Array(programSize);
+// 		output.set(program.subarray(0, programSize));
+// 		return output;
+// 	}
+// }
 
 function printByte(byte: number): string {
 	const hex = byte.toString(16).padStart(2, "0");
@@ -228,121 +228,121 @@ export function bytecode_debug(byteCode: Uint8Array, top: number = Infinity): st
 	return text;
 }
 
-export type RuntimeHeapPointer = number;
-export class Runtime {
-	stackTop = 0;
-	stack: DataView;
-	heap: DataView;
+// export type RuntimeHeapPointer = number;
+// export class Runtime {
+// 	stackTop = 0;
+// 	stack: DataView;
+// 	heap: DataView;
 	
-	constructor(
-		stackSize: number,
-		heapSize: number,
-	) {
-		this.stack = new DataView(new ArrayBuffer(stackSize));
-		this.heap = new DataView(new ArrayBuffer(heapSize));
-	}
+// 	constructor(
+// 		stackSize: number,
+// 		heapSize: number,
+// 	) {
+// 		this.stack = new DataView(new ArrayBuffer(stackSize));
+// 		this.heap = new DataView(new ArrayBuffer(heapSize));
+// 	}
 	
-	debug(): string {
-		let text = "";
+// 	debug(): string {
+// 		let text = "";
 		
-		for (let i = this.stackTop - 1; i >= 0; i--) {
-			const byte = this.stack.getUint8(i);
-			text += `${`${i}`.padEnd(2, " ")}  ${printByte(byte)}\n`;
-		}
+// 		for (let i = this.stackTop - 1; i >= 0; i--) {
+// 			const byte = this.stack.getUint8(i);
+// 			text += `${`${i}`.padEnd(2, " ")}  ${printByte(byte)}\n`;
+// 		}
 		
-		return text;
-	}
+// 		return text;
+// 	}
 	
-	error(...data: any[]): never {
-		console.error("run time error:", ...data);
-		debugger;
-		throw "runTimeError";
-	}
+// 	error(...data: any[]): never {
+// 		console.error("run time error:", ...data);
+// 		debugger;
+// 		throw "runTimeError";
+// 	}
 	
-	// malloc(size: number): RuntimeHeapPointer {
+// 	// malloc(size: number): RuntimeHeapPointer {
 		
-	// }
+// 	// }
 	
-	// free(ptr: RuntimeHeapPointer) {
+// 	// free(ptr: RuntimeHeapPointer) {
 		
-	// }
+// 	// }
 	
-	// makeTable(): RuntimeHeapPointer {
+// 	// makeTable(): RuntimeHeapPointer {
 		
-	// }
+// 	// }
 	
-	popCount(count: number) {
-		this.stackTop -= count;
-		if (this.stackTop < 0) {
-			this.error("this.stackTop", this.stackTop);
-		}
-	}
+// 	popCount(count: number) {
+// 		this.stackTop -= count;
+// 		if (this.stackTop < 0) {
+// 			this.error("this.stackTop", this.stackTop);
+// 		}
+// 	}
 	
-	push_rawByte(byte: number) {
-		this.stack.setUint8(this.stackTop, byte);
-		this.stackTop += 1;
-	}
-	pop_rawByte() {
-		this.popCount(1);
-		const byte = this.stack.getUint8(this.stackTop);
-		return byte;
-	}
+// 	push_rawByte(byte: number) {
+// 		this.stack.setUint8(this.stackTop, byte);
+// 		this.stackTop += 1;
+// 	}
+// 	pop_rawByte() {
+// 		this.popCount(1);
+// 		const byte = this.stack.getUint8(this.stackTop);
+// 		return byte;
+// 	}
 	
-	push_f32(number: number) {
-		this.stack.setFloat32(this.stackTop, number);
-		this.stackTop += 4;
-		this.push_rawByte(Instruction.f32_new);
-	}
-	pop_f32(): number {
-		const op = this.pop_rawByte();
-		if (op != Instruction.f32_new) this.error();
+// 	push_f32(number: number) {
+// 		this.stack.setFloat32(this.stackTop, number);
+// 		this.stackTop += 4;
+// 		this.push_rawByte(Instruction.f32_new);
+// 	}
+// 	pop_f32(): number {
+// 		const op = this.pop_rawByte();
+// 		if (op != Instruction.f32_new) this.error();
 		
-		debugger;
+// 		debugger;
 		
-		this.popCount(4);
-		const number = this.stack.getFloat32(this.stackTop);
-		return number;
-	}
+// 		this.popCount(4);
+// 		const number = this.stack.getFloat32(this.stackTop);
+// 		return number;
+// 	}
 	
-	/**
-	 * Returns the table ID
-	 */
-	// makeTable(): number {
+// 	/**
+// 	 * Returns the table ID
+// 	 */
+// 	// makeTable(): number {
 		
-	// }
+// 	// }
 	
-	run(program: Uint8Array) {
-		let pc = 0;
-		while (pc < program.length) {
-			const instruction = program[pc];
-			switch (instruction) {
-				case Instruction.table_new: {
+// 	run(program: Uint8Array) {
+// 		let pc = 0;
+// 		while (pc < program.length) {
+// 			const instruction = program[pc];
+// 			switch (instruction) {
+// 				case Instruction.table_new: {
 					
-					break;
-				}
-				case Instruction.table_set: {
-					break;
-				}
+// 					break;
+// 				}
+// 				case Instruction.table_set: {
+// 					break;
+// 				}
 				
-				case Instruction.f32_new: {
-					pc++
-					const number = program[pc];
-					this.push_f32(number);
+// 				case Instruction.f32_new: {
+// 					pc++
+// 					const number = program[pc];
+// 					this.push_f32(number);
 					
-					break;
-				}
-				case Instruction.f32_add: {
-					const right = this.pop_f32();
-					const left = this.pop_f32();
+// 					break;
+// 				}
+// 				case Instruction.f32_add: {
+// 					const right = this.pop_f32();
+// 					const left = this.pop_f32();
 					
-					this.push_f32(left + right);
-					break;
-				}
+// 					this.push_f32(left + right);
+// 					break;
+// 				}
 				
-				default:
-					this.error("unknown instruction", instruction, Instruction[instruction]);
-			}
-			pc++;
-		}
-	}
-}
+// 				default:
+// 					this.error("unknown instruction", instruction, Instruction[instruction]);
+// 			}
+// 			pc++;
+// 		}
+// 	}
+// }

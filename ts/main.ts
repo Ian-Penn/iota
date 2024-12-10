@@ -29,7 +29,7 @@ if (process.argv[i] == undefined) {
 	main();
 }
 
-function main() {
+async function main() {
 	while (process.argv[i].startsWith("-")) {
 		const flag = nextArg();
 		if (flag == "-log") {
@@ -60,6 +60,8 @@ function main() {
 			const filePath = nextArg();
 			
 			const module = new Module("", "runFileMain", new ASTnode_object("builtin", null, []));
+			await module.setupWebAssembly();
+			
 			// module.loadFromFileSystem();
 			const text = readFile(filePath);
 			if (text == null) TODO_addError();

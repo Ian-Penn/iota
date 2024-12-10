@@ -1,7 +1,6 @@
-import crypto from "crypto";
+import fs from "fs";
 import { join as joinPath, dirname, basename, relative as relativePath } from "path";
 
-import * as utilities from "./utilities.js";
 import logger, { LogType } from "./logger.js";
 import { Report, getIndicatorText, Indicator, removeDuplicateErrors } from "./report.js";
 import {
@@ -18,7 +17,8 @@ import { CodeGenContext } from "./codegen.js";
 import { lex } from "./lexer.js";
 import { parse, ParserMode } from "./parser.js";
 import { runCommand } from "./commands.js";
-import { bytecode_compileTextFormat, bytecode_debug, bytecode_makeTextFormat, Runtime } from "./bytecode.js";
+import { bytecode_debug, bytecode_makeTextFormat } from "./bytecode.js";
+import { readFile, unreachable } from "./utilities.js";
 
 export type IdeOptions = {
 	mode: "compileFile",
@@ -137,6 +137,8 @@ export class Module {
 	// private defEvalQueue: TopLevelDef[] = [];
 	// private topLevelEvalQueue: TopLevelDef[] = [];
 	
+	bytecodeGen: WebAssembly.Instance | null = null;
+	
 	/**
 	 * adds this to moduleList
 	 */
@@ -149,6 +151,13 @@ export class Module {
 		this.moduleIndex = moduleList.push(this)-1;
 	}
 	
+	async setupWebAssembly() {
+		{
+			const { instance } = await WebAssembly.instantiate(fs.readFileSync("out/bytecodeGen.wasm"));
+			this.bytecodeGen = instance;
+		}
+	}
+	
 	getFullFsPath() {
 		let fsBasePath = this.fsBasePath
 		if (fsBasePath == null) {
@@ -159,23 +168,30 @@ export class Module {
 	
 	getDefsPath(): string {
 		if (this.fsBasePath == null) {
-			utilities.unreachable();
+			unreachable();
 		}
 		
 		return joinPath(this.fsBasePath, this.name, "defs.iota");
 	}
 	
 	addAST(AST: ASTnode[]) {
+		if (this.bytecodeGen == null) {
+			unreachable();
+		}
+		
 		const text = bytecode_makeTextFormat(AST);
 		console.log("\nmakeBytecodeTextFormat:\n" + text + "\n");
 		
-		const bytecode = bytecode_compileTextFormat(text);
-		console.log("\nbytecode:\n" + bytecode_debug(bytecode) + "\n");
+		console.log((this.bytecodeGen.exports.main as any)(4));
 		
-		const runtime = new Runtime(1000, 1000);
 		
-		runtime.run(bytecode);
-		console.log("\noutput:\n" + runtime.debug() + "\n");
+		// const bytecode = bytecode_compileTextFormat(text);
+		// console.log("\nbytecode:\n" + bytecode_debug(bytecode) + "\n");
+		
+		// const runtime = new Runtime(1000, 1000);
+		
+		// runtime.run(bytecode);
+		// console.log("\noutput:\n" + runtime.debug() + "\n");
 		
 		// for (let index = 0; index < AST.length; index++) {
 		// 	const node = AST[index];
