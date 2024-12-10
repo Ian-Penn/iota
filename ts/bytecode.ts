@@ -159,7 +159,6 @@ export function bytecode_compileTextFormat(text: string): Uint8Array {
 				else if (op == "table_set") {
 					const name = readThing();
 					
-					debugger;
 					addBytes([instruction, name.length]);
 					addString(name);
 				}
@@ -184,7 +183,6 @@ export function bytecode_compileTextFormat(text: string): Uint8Array {
 	parse();
 	
 	{
-		debugger;
 		const output = new Uint8Array(programSize);
 		output.set(program.subarray(0, programSize));
 		return output;
@@ -204,39 +202,41 @@ export function bytecode_debug(byteCode: Uint8Array, top: number = Infinity): st
 
 export class Environment {
 	stackTop = 0;
-	stack: Uint8Array;
-	heap: Uint8Array;
+	stack: DataView;
+	heap: DataView;
 	
 	constructor(
 		stackSize: number,
 		heapSize: number,
 	) {
-		this.stack = new Uint8Array(stackSize);
-		this.stack.buffer
-		this.heap = new Uint8Array(heapSize);
+		this.stack = new DataView(new ArrayBuffer(stackSize));
+		this.heap = new DataView(new ArrayBuffer(heapSize));
+		debugger;
 	}
 	
 	debug(): string {
 		let text = "";
 		
 		for (let i = this.stackTop - 1; i >= 0; i--) {
-			const byte = this.stack[i];
+			const byte = this.stack.getUint8(i);
 			text += `${i}   0x${byte.toString(16)}\n`;
 		}
 		
 		return text;
 	}
 	
-	error() {
-		TODO_addError();
+	error(...data: any[]): never {
+		console.error("run time error:", ...data);
+		debugger;
+		throw "runTimeError";
 	}
 	
 	pushByte(byte: number) {
-		this.stack[this.stackTop] = byte;
+		this.stack.setUint8(this.stackTop, byte);
 		this.stackTop += 1;
 	}
 	popByte() {
-		const byte = this.stack[this.stackTop - 1];
+		const byte = this.stack.getUint8(this.stackTop - 1);
 		this.stackTop -= 1;
 		return byte;
 	}
@@ -267,6 +267,7 @@ export class Environment {
 			const instruction = program[pc];
 			switch (instruction) {
 				case Instruction.table_new: {
+					
 					break;
 				}
 				case Instruction.table_set: {
@@ -289,8 +290,7 @@ export class Environment {
 				}
 				
 				default:
-					console.error(instruction, Instruction[instruction]);
-					unreachable();
+					this.error("unknown instruction", instruction, Instruction[instruction]);
 			}
 			pc++;
 		}

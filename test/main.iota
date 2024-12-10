@@ -1,10 +1,12 @@
 // builtin = #import "builtin"
 // builtin
 
-getType = @T(Type) T
+a = 1
 
-add1 = @x(getType Float64) x + 1
-add1 4
+// getType = @T(Type) T
+
+// add1 = @x(getType Float64) x + 1
+// add1 4
 
 // test = &{
 // 	a = 1
