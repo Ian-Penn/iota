@@ -1,7 +1,8 @@
 // builtin = #import "builtin"
 // builtin
 
-a = 1
+1 + 1
+// a = 1
 
 // getType = @T(Type) T
 

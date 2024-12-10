@@ -3,7 +3,7 @@
 // The text format exists largely because I don't want to cashe binary data. (That sounds hard to debug.)
 
 import { ASTnode, ASTnode_alias, ASTnode_function, ASTnode_identifier, ASTnode_number, ASTnode_object, ASTnode_operator } from "./ASTnodes.js";
-import { getClassName, TODO, TODO_addError, unreachable } from "./utilities.js";
+import { getClassName, TODO, unreachable } from "./utilities.js";
 
 // In () means arguments to the instruction
 // In [] means on the stack. (top is on the left)
@@ -91,30 +91,49 @@ export function bytecode_makeTextFormat(topAST: ASTnode[]): string {
 	return "(table_new)\n" + printAST(topAST).join("\n");
 }
 
-export function bytecode_compileTextFormat(text: string): Uint8Array {
+export function bytecode_compileTextFormat(text: string): DataView {
 	const extraGrowSize = 256;
 	
-	let program = new Uint8Array(extraGrowSize);
+	let program = new DataView(new ArrayBuffer(extraGrowSize));
 	let programSize = 0;
 	
 	function growTo(n: number) {
-		if (programSize > program.length) {
+		if (n > program.byteLength) {
+			const newBuffer = new ArrayBuffer(n + extraGrowSize);
 			const newProgram = new Uint8Array(n + extraGrowSize);
 			newProgram.set(program);
 			program = newProgram;
 		}
 	}
 	
-	function addBytes(bytes: number[]) {
-		growTo(program.length + bytes.length);
-		program.set(bytes, programSize);
-		programSize += bytes.length;
+	function addRawByte(bytes: number) {
+		growTo(programSize + 1);
+		program.setUint8(bytes, programSize);
+		programSize += 1;
+	}
+	function addRawBytes(bytes: number[]) {
+		growTo(programSize + bytes.length);
+		bytes.forEach(byte => {
+			program.setUint8(byte, programSize);
+			programSize += 1;
+		});
+	}
+	
+	function addf32(number: number) {
+		const byteSize = 4;
+		growTo(programSize + byteSize);
+		program.setUint8(programSize, number);
+		programSize += byteSize;
 	}
 	
 	function addString(text: string) {
-		growTo(program.length + text.length);
-		program.set(Buffer.from(text), programSize);
-		programSize += text.length;
+		const programView = program.buffer.
+		const encoder = new TextEncoder();
+		growTo(programSize + buffer.byteLength);
+		buffer.forEach(byte => {
+			program.setUint8(byte, programSize);
+			programSize += 1;
+		});
 	}
 	
 	let index = 0;
@@ -153,23 +172,23 @@ export function bytecode_compileTextFormat(text: string): Uint8Array {
 				console.log("op", op, instruction);
 				
 				if (op == "table_new") {
-					addBytes([instruction]);
+					addRawBytes([instruction]);
 				}
 				
 				else if (op == "table_set") {
 					const name = readThing();
 					
-					addBytes([instruction, name.length]);
+					addRawBytes([instruction, name.length]);
 					addString(name);
 				}
 				
 				else if (op == "f32_new") {
 					const number = Number(readThing());
-					addBytes([instruction, number]); // TODO: Number can be larger than one byte.
+					addRawBytes([instruction, number]); // TODO: Number can be larger than one byte.
 				}
 				
 				else if (op == "f32_add") {
-					addBytes([instruction]);
+					addRawBytes([instruction]);
 				}
 				
 				else {
@@ -189,18 +208,28 @@ export function bytecode_compileTextFormat(text: string): Uint8Array {
 	}
 }
 
+function printByte(byte: number): string {
+	const hex = byte.toString(16).padStart(2, "0");
+	const instruction = `(${Instruction[byte]})`.padEnd(12);
+	const char = String.fromCharCode(byte)
+		.replace("\n", "\\n")
+		.replace("\t", "\\t");
+	return `0x${hex}    ${instruction} '${char}'`;
+}
+
 export function bytecode_debug(byteCode: Uint8Array, top: number = Infinity): string {
 	let text = "";
 	
 	for (let i = 0; i < Math.min(byteCode.length, top); i++) {
 		const byte = byteCode[i];
-		text += `   0x${byte.toString(16).padStart(2, "0")}    ${`(${Instruction[byte]})`.padEnd(12)} '${String.fromCharCode(byte)}'\n`;
+		text += `    ${printByte(byte)}\n`;
 	}
 	
 	return text;
 }
 
-export class Environment {
+export type RuntimeHeapPointer = number;
+export class Runtime {
 	stackTop = 0;
 	stack: DataView;
 	heap: DataView;
@@ -211,7 +240,6 @@ export class Environment {
 	) {
 		this.stack = new DataView(new ArrayBuffer(stackSize));
 		this.heap = new DataView(new ArrayBuffer(heapSize));
-		debugger;
 	}
 	
 	debug(): string {
@@ -219,7 +247,7 @@ export class Environment {
 		
 		for (let i = this.stackTop - 1; i >= 0; i--) {
 			const byte = this.stack.getUint8(i);
-			text += `${i}   0x${byte.toString(16)}\n`;
+			text += `${`${i}`.padEnd(2, " ")}  ${printByte(byte)}\n`;
 		}
 		
 		return text;
@@ -231,26 +259,48 @@ export class Environment {
 		throw "runTimeError";
 	}
 	
-	pushByte(byte: number) {
+	// malloc(size: number): RuntimeHeapPointer {
+		
+	// }
+	
+	// free(ptr: RuntimeHeapPointer) {
+		
+	// }
+	
+	// makeTable(): RuntimeHeapPointer {
+		
+	// }
+	
+	popCount(count: number) {
+		this.stackTop -= count;
+		if (this.stackTop < 0) {
+			this.error("this.stackTop", this.stackTop);
+		}
+	}
+	
+	push_rawByte(byte: number) {
 		this.stack.setUint8(this.stackTop, byte);
 		this.stackTop += 1;
 	}
-	popByte() {
-		const byte = this.stack.getUint8(this.stackTop - 1);
-		this.stackTop -= 1;
+	pop_rawByte() {
+		this.popCount(1);
+		const byte = this.stack.getUint8(this.stackTop);
 		return byte;
 	}
 	
-	// TODO: not one byte
 	push_f32(number: number) {
-		this.pushByte(number);
-		this.pushByte(Instruction.f32_new);
+		this.stack.setFloat32(this.stackTop, number);
+		this.stackTop += 4;
+		this.push_rawByte(Instruction.f32_new);
 	}
-	// TODO: not one byte
 	pop_f32(): number {
-		const op = this.popByte();
+		const op = this.pop_rawByte();
 		if (op != Instruction.f32_new) this.error();
-		const number = this.popByte();
+		
+		debugger;
+		
+		this.popCount(4);
+		const number = this.stack.getFloat32(this.stackTop);
 		return number;
 	}
 	

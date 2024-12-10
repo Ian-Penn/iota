@@ -18,7 +18,7 @@ import { CodeGenContext } from "./codegen.js";
 import { lex } from "./lexer.js";
 import { parse, ParserMode } from "./parser.js";
 import { runCommand } from "./commands.js";
-import { bytecode_compileTextFormat, bytecode_debug, bytecode_makeTextFormat, Environment } from "./bytecode.js";
+import { bytecode_compileTextFormat, bytecode_debug, bytecode_makeTextFormat, Runtime } from "./bytecode.js";
 
 export type IdeOptions = {
 	mode: "compileFile",
@@ -172,11 +172,10 @@ export class Module {
 		const bytecode = bytecode_compileTextFormat(text);
 		console.log("\nbytecode:\n" + bytecode_debug(bytecode) + "\n");
 		
-		const environment = new Environment(1000, 1000);
+		const runtime = new Runtime(1000, 1000);
 		
-		environment.run(bytecode);
-		debugger;
-		console.log("\noutput:\n" + environment.debug() + "\n");
+		runtime.run(bytecode);
+		console.log("\noutput:\n" + runtime.debug() + "\n");
 		
 		// for (let index = 0; index < AST.length; index++) {
 		// 	const node = AST[index];
