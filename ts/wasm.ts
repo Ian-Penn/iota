@@ -11,18 +11,32 @@ export class WebAssemblyInterface<Exports> {
 	}
 	
 	static async fromBytes(bytes: BufferSource): Promise<WebAssemblyInterface<any>> {
-		const { instance } = await WebAssembly.instantiate(bytes);
+		const imports = {
+			wasm_log: (startPtr: number, length: number) => {
+				const decoder = new TextDecoder();
+				const bytecode = new Uint8Array(
+					(instance.exports.memory as WebAssembly.Memory).buffer,
+					startPtr,
+					length,
+				);
+				const text = decoder.decode(bytecode);
+				console.log("[WASM]", text);
+			},
+		};
+		
+		const { instance, module } = await WebAssembly.instantiate(bytes, { env: imports });
+		// console.log("WebAssembly.Module.imports(module)", WebAssembly.Module.imports(module));
 		return new WebAssemblyInterface(instance);
 	}
 	
 	fillString(string: string): { ptr: number, size: number } {
-		var encoder = new TextEncoder()
+		const encoder = new TextEncoder();
 		const stringBuffer = encoder.encode(string);
 		
 		const exports = this.exports as any;
 		
 		const ptr = exports.malloc(stringBuffer.length);
-		const cArray = new Uint32Array(
+		const cArray = new Uint8Array(
 			exports.memory.buffer,
 			ptr,
 			stringBuffer.length,

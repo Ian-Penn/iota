@@ -7,33 +7,33 @@ import { getClassName, TODO, unreachable } from "./utilities.js";
 
 // In () means arguments to the instruction
 // In [] means on the stack. (top is on the left)
-export enum Instruction {
-	nop = 0x00,
+// export enum Instruction {
+// 	nop = 0x00,
 	
-	func_new, // () [argType] -> [func]
-	func_call,
+// 	func_new, // () [argType] -> [func]
+// 	func_call,
 	
-	local_get,
-	local_set,
+// 	local_get,
+// 	local_set,
 	
-	type_new,
+// 	type_new,
 	
-	table_new,
-	table_set, // (size: u8 name: char[size]) [value, table] -> [table]
-	table_get,
+// 	table_new,
+// 	table_set, // (size: u8 name: char[size]) [value, table] -> [table]
+// 	table_get,
 	
-	// i32_add,
-	// i32_sub,
-	// i32_mul,
-	// i32_div,
+// 	// i32_add,
+// 	// i32_sub,
+// 	// i32_mul,
+// 	// i32_div,
 	
-	// same as JavaScript "number"
-	f32_new, // (value: f32) []
-	f32_add, // () [right: f32, left: f32]
-	f32_sub, // () [right: f32, left: f32]
-	f32_mul, // () [right: f32, left: f32]
-	f32_div, // () [right: f32, left: f32]
-}
+// 	// same as JavaScript "number"
+// 	f32_new, // (value: f32) []
+// 	f32_add, // () [right: f32, left: f32]
+// 	f32_sub, // () [right: f32, left: f32]
+// 	f32_mul, // () [right: f32, left: f32]
+// 	f32_div, // () [right: f32, left: f32]
+// }
 
 export function bytecode_makeTextFormat(topAST: ASTnode[]): string {
 	function joinBody(body: string[]): string {
@@ -59,7 +59,8 @@ export function bytecode_makeTextFormat(topAST: ASTnode[]): string {
 			const body = joinBody(printAST(node.body));
 			// return `(func ((arg "${node.arg.name}" ${print(node.arg.type)})) (${body}))`;
 			// return `(func ("${node.arg.name}" ${print(node.arg.type)}) (${body} + "\n"))`;
-			return `${print(node.arg.type)}\n(func (${body + "\n"}))`;
+			// return `${print(node.arg.type)}\n(func (${body + "\n"}))`;
+			return `${print(node.arg.type)}\n(func_start)${body}\n\t(func_end)`;
 		} else if (node instanceof ASTnode_operator) {
 			const left = print(node.left);
 			const right = print(node.right);
@@ -208,25 +209,25 @@ export function bytecode_makeTextFormat(topAST: ASTnode[]): string {
 // 	}
 // }
 
-function printByte(byte: number): string {
-	const hex = byte.toString(16).padStart(2, "0");
-	const instruction = `(${Instruction[byte]})`.padEnd(12);
-	const char = String.fromCharCode(byte)
-		.replace("\n", "\\n")
-		.replace("\t", "\\t");
-	return `0x${hex}    ${instruction} '${char}'`;
-}
+// function printByte(byte: number): string {
+// 	const hex = byte.toString(16).padStart(2, "0");
+// 	const instruction = `(${Instruction[byte]})`.padEnd(12);
+// 	const char = String.fromCharCode(byte)
+// 		.replace("\n", "\\n")
+// 		.replace("\t", "\\t");
+// 	return `0x${hex}    ${instruction} '${char}'`;
+// }
 
-export function bytecode_debug(byteCode: Uint8Array, top: number = Infinity): string {
-	let text = "";
+// export function bytecode_debug(byteCode: Uint8Array, top: number = Infinity): string {
+// 	let text = "";
 	
-	for (let i = 0; i < Math.min(byteCode.length, top); i++) {
-		const byte = byteCode[i];
-		text += `    ${printByte(byte)}\n`;
-	}
+// 	for (let i = 0; i < Math.min(byteCode.length, top); i++) {
+// 		const byte = byteCode[i];
+// 		text += `    ${printByte(byte)}\n`;
+// 	}
 	
-	return text;
-}
+// 	return text;
+// }
 
 // export type RuntimeHeapPointer = number;
 // export class Runtime {

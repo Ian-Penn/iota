@@ -18,7 +18,7 @@ import { CodeGenContext } from "./codegen.js";
 import { lex } from "./lexer.js";
 import { parse, ParserMode } from "./parser.js";
 import { runCommand } from "./commands.js";
-import { bytecode_debug, bytecode_makeTextFormat } from "./bytecode.js";
+import { bytecode_makeTextFormat } from "./bytecode.js";
 import { readFile, unreachable } from "./utilities.js";
 import { WebAssemblyInterface } from "./wasm.js";
 
@@ -130,7 +130,7 @@ export class ModulePath {
 // }
 
 let bytecodeGen: WebAssemblyInterface<{
-	bytecodeGen: (string: number, stringLength: number) => number,
+	bytecodeGen: (string: number, string_length: number) => number,
 }> | null = null;
 
 let virtualMachine: WebAssemblyInterface<{
@@ -186,8 +186,8 @@ export class Module {
 			unreachable();
 		}
 		
-		// const text = bytecode_makeTextFormat(AST);
-		const text = "(f32_new)";
+		const text = bytecode_makeTextFormat(AST);
+		// const text = "(f32_new)";
 		console.log("\nmakeBytecodeTextFormat:\n" + text + "\n");
 		
 		bytecodeGen.freeAll();

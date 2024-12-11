@@ -2,6 +2,8 @@
 
 // #define WASM_EXPORT __attribute__((visibility("default")))
 
+// #define WASM_IMPORT __attribute__((import_module("env"), import_name("externalFunction")))
+
 typedef enum Bool {
 	true = 1,
 	false = 0,
@@ -21,10 +23,15 @@ int min(int a, int b) {
 
 #define NULL (void *)0
 
-int memcmp(const void *a, const void *b, int size) {
-	for (int i = 0; i < size; i++) {
-		if (a != b) {
-			return i;
+void wasm_log(const char *string, int length);
+
+int memcmp(const void *a_in, const void *b_in, int size) {
+	const unsigned char *a = (const unsigned char *)a_in;
+	const unsigned char *b = (const unsigned char *)b_in;
+	
+	for (int i = 0; i < size; i++, a++, b++) {
+		if (*a != *b) {
+			return 1;
 		}
 	}
 	
@@ -63,9 +70,18 @@ void freeAll() {
 	bump_pointer = &__heap_base;
 }
 
+#define log wasm_log
+
 #else
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+
+void wasm_log(const char *string, int length) {
+	printf("[LOG]\n");
+}
+
+#define log wasm_log
+
 #endif

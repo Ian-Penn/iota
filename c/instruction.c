@@ -1,5 +1,7 @@
 #include "wasm.c"
 
+// In () means arguments to the instruction
+// In [] means on the stack. (top is on the left)
 typedef enum Instruction {
 	Instruction_nop = 0x00,
 	
