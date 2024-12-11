@@ -5,22 +5,17 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
-			"type": "node",
+			"name": "(lldb) Launch",
+			"type": "cppdbg",
 			"request": "launch",
-			"name": "init",
-			"skipFiles": [
-				"<node_internals>/**"
-			],
-			"program": "${workspaceFolder}/out/main.js",
-			"sourceMaps": true,
-			"outFiles": [
-				"${workspaceFolder}/out/*.js"
-			],
-			"preLaunchTask": "npm: debug",
-			"args": [
-				"init",
-				"./std"
-			]
+			"program": "${workspaceFolder}/out/${fileBasenameNoExtension}",
+			"args": [],
+			"stopAtEntry": false,
+			"cwd": "${fileDirname}",
+			"environment": [],
+			"externalConsole": false,
+			"MIMode": "lldb",
+			"preLaunchTask": "build"
 		},
 		{
 			"type": "node",

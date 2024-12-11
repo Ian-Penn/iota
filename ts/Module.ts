@@ -1,5 +1,6 @@
 import fs from "fs";
 import { join as joinPath, dirname, basename, relative as relativePath } from "path";
+import { fileURLToPath } from 'url';
 
 import logger, { LogType } from "./logger.js";
 import { Report, getIndicatorText, Indicator, removeDuplicateErrors } from "./report.js";
@@ -132,8 +133,14 @@ let bytecodeGen: WebAssemblyInterface<{
 	bytecodeGen: (string: number, stringLength: number) => number,
 }> | null = null;
 
+let virtualMachine: WebAssemblyInterface<{
+	runVirtualMachine: (bytecode: number, bytecodeSize: number) => number,
+}> | null = null;
+
 export async function setupWebAssembly() {
-	bytecodeGen = await WebAssemblyInterface.fromBytes(fs.readFileSync("out/bytecodeGen.wasm"));
+	const dir = dirname(fileURLToPath(import.meta.url));
+	bytecodeGen = await WebAssemblyInterface.fromBytes(fs.readFileSync(joinPath(dir, "bytecodeGen.wasm")));
+	virtualMachine = await WebAssemblyInterface.fromBytes(fs.readFileSync(joinPath(dir, "virtualMachine.wasm")));
 }
 
 export class Module {
@@ -179,10 +186,11 @@ export class Module {
 			unreachable();
 		}
 		
-		const text = bytecode_makeTextFormat(AST);
+		// const text = bytecode_makeTextFormat(AST);
+		const text = "(f32_new)";
 		console.log("\nmakeBytecodeTextFormat:\n" + text + "\n");
 		
-		debugger;
+		bytecodeGen.freeAll();
 		const fillStringOut = bytecodeGen.fillString(text);
 		const outputPtr = bytecodeGen.exports.bytecodeGen(fillStringOut.ptr, fillStringOut.size);
 		console.log("outputPtr", outputPtr);
@@ -202,8 +210,6 @@ export class Module {
 			bytecodeSize,
 		);
 		console.log("bytecode", bytecode);
-		
-		bytecodeGen.freeAll();
 		
 		// const bytecode = bytecode_compileTextFormat(text);
 		// console.log("\nbytecode:\n" + bytecode_debug(bytecode) + "\n");

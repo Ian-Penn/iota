@@ -1,3 +1,5 @@
+#include "wasm.c"
+
 typedef enum Instruction {
 	Instruction_nop = 0x00,
 	
@@ -25,3 +27,31 @@ typedef enum Instruction {
 	Instruction_f32_mul, // () [right: f32, left: f32]
 	Instruction_f32_div, // () [right: f32, left: f32]
 } Instruction;
+
+#define test(name_) (memcmp(#name_, instructionName, min(instructionName_length, strlen(#name_))) == 0) return Instruction_##name_;
+Instruction instructionNameToByte(char *instructionName, int instructionName_length) {
+	if test(nop)
+	
+	else if test(func_new)
+	else if test(func_call)
+	
+	else if test(local_get)
+	else if test(local_set)
+	
+	else if test(type_new)
+	
+	else if test(table_new)
+	else if test(table_set)
+	else if test(table_get)
+	
+	else if test(f32_new)
+	else if test(f32_add)
+	else if test(f32_sub)
+	else if test(f32_mul)
+	else if test(f32_div)
+	
+	else {
+		return Instruction_nop;
+	}
+}
+#undef test
