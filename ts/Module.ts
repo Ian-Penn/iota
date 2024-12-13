@@ -129,19 +129,19 @@ export class ModulePath {
 // 	}
 // }
 
-let bytecodeGen: WebAssemblyInterface<{
-	bytecodeGen: (string: number, string_length: number) => number,
-}> | null = null;
+// let bytecodeGen: WebAssemblyInterface<{
+// 	bytecodeGen: (string: number, string_length: number) => number,
+// }> | null = null;
 
-let virtualMachine: WebAssemblyInterface<{
-	runVirtualMachine: (bytecode: number, bytecodeSize: number) => number,
-}> | null = null;
+// let virtualMachine: WebAssemblyInterface<{
+// 	runVirtualMachine: (bytecode: number, bytecodeSize: number) => number,
+// }> | null = null;
 
-export async function setupWebAssembly() {
-	const dir = dirname(fileURLToPath(import.meta.url));
-	bytecodeGen = await WebAssemblyInterface.fromBytes(fs.readFileSync(joinPath(dir, "bytecodeGen.wasm")));
-	virtualMachine = await WebAssemblyInterface.fromBytes(fs.readFileSync(joinPath(dir, "virtualMachine.wasm")));
-}
+// export async function setupWebAssembly() {
+// 	const dir = dirname(fileURLToPath(import.meta.url));
+// 	bytecodeGen = await WebAssemblyInterface.fromBytes(fs.readFileSync(joinPath(dir, "bytecodeGen.wasm")));
+// 	virtualMachine = await WebAssemblyInterface.fromBytes(fs.readFileSync(joinPath(dir, "virtualMachine.wasm")));
+// }
 
 export class Module {
 	topLevelEvaluations: Indicator[] = [];
@@ -182,34 +182,9 @@ export class Module {
 	}
 	
 	addAST(AST: ASTnode[]) {
-		if (bytecodeGen == null) {
-			unreachable();
-		}
-		
 		const text = bytecode_makeTextFormat(AST);
 		// const text = "(f32_new)";
 		console.log("\nmakeBytecodeTextFormat:\n" + text + "\n");
-		
-		bytecodeGen.freeAll();
-		const fillStringOut = bytecodeGen.fillString(text);
-		const outputPtr = bytecodeGen.exports.bytecodeGen(fillStringOut.ptr, fillStringOut.size);
-		console.log("outputPtr", outputPtr);
-		
-		if (outputPtr == 0) {
-			unreachable("outputPtr is NULL");
-		}
-		
-		const bytecodeSize = new DataView(
-			bytecodeGen.exports.memory.buffer,
-		).getUint32(outputPtr, true);
-		console.log("bytecodeSize", bytecodeSize);
-		
-		const bytecode = new Uint8Array(
-			bytecodeGen.exports.memory.buffer,
-			outputPtr + 4,
-			bytecodeSize,
-		);
-		console.log("bytecode", bytecode);
 		
 		// const bytecode = bytecode_compileTextFormat(text);
 		// console.log("\nbytecode:\n" + bytecode_debug(bytecode) + "\n");

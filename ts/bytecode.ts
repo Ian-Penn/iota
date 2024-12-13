@@ -2,38 +2,40 @@
 
 // The text format exists largely because I don't want to cashe binary data. (That sounds hard to debug.)
 
-import { ASTnode, ASTnode_alias, ASTnode_function, ASTnode_identifier, ASTnode_number, ASTnode_object, ASTnode_operator } from "./ASTnodes.js";
+import { ASTnode, ASTnode_alias, ASTnode_function, ASTnode_identifier, ASTnode_if, ASTnode_number, ASTnode_object, ASTnode_operator } from "./ASTnodes.js";
 import { getClassName, TODO, unreachable } from "./utilities.js";
 
 // In () means arguments to the instruction
 // In [] means on the stack. (top is on the left)
-// export enum Instruction {
-// 	nop = 0x00,
+export enum Instruction {
+	nop = 0x00,
 	
-// 	func_new, // () [argType] -> [func]
-// 	func_call,
+	func_start, // () [argType] -> [func]
+	func_end,
+	func_call,
 	
-// 	local_get,
-// 	local_set,
+	local_get,
+	local_set,
 	
-// 	type_new,
+	type_new,
 	
-// 	table_new,
-// 	table_set, // (size: u8 name: char[size]) [value, table] -> [table]
-// 	table_get,
+	table_new,
+	table_set, // (size: u8 name: char[size]) [value, table] -> [table]
+	table_get,
 	
-// 	// i32_add,
-// 	// i32_sub,
-// 	// i32_mul,
-// 	// i32_div,
+	// i32_new,
+	// i32_add,
+	// i32_sub,
+	// i32_mul,
+	// i32_div,
 	
-// 	// same as JavaScript "number"
-// 	f32_new, // (value: f32) []
-// 	f32_add, // () [right: f32, left: f32]
-// 	f32_sub, // () [right: f32, left: f32]
-// 	f32_mul, // () [right: f32, left: f32]
-// 	f32_div, // () [right: f32, left: f32]
-// }
+	// same as JavaScript "number"
+	f32_new, // (value: f32) []
+	f32_add, // () [right: f32, left: f32]
+	f32_sub, // () [right: f32, left: f32]
+	f32_mul, // () [right: f32, left: f32]
+	f32_div, // () [right: f32, left: f32]
+}
 
 export function bytecode_makeTextFormat(topAST: ASTnode[]): string {
 	function joinBody(body: string[]): string {
@@ -55,12 +57,15 @@ export function bytecode_makeTextFormat(topAST: ASTnode[]): string {
 			// }
 			const members = joinBody(printAST(node.members));
 			return `(table_new)${members}`;
+		} else if (node instanceof ASTnode_if) {
+			const condition = print(node.condition);
+			const trueBody = joinBody(printAST(node.trueBody));
+			const falseBody = joinBody(printAST(node.falseBody));
+			// return `(if) ${trueBody} ${falseBody}`;
+			return `${condition}\n(func_start)${trueBody}\n\t(func_end)\n(func_start)${falseBody}\n\t(func_end)\n(if)`;
 		} else if (node instanceof ASTnode_function) {
 			const body = joinBody(printAST(node.body));
-			// return `(func ((arg "${node.arg.name}" ${print(node.arg.type)})) (${body}))`;
-			// return `(func ("${node.arg.name}" ${print(node.arg.type)}) (${body} + "\n"))`;
-			// return `${print(node.arg.type)}\n(func (${body + "\n"}))`;
-			return `${print(node.arg.type)}\n(func_start)${body}\n\t(func_end)`;
+			return `(func_start)${body}\n\t(func_end)`;
 		} else if (node instanceof ASTnode_operator) {
 			const left = print(node.left);
 			const right = print(node.right);

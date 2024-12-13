@@ -1,48 +1,50 @@
 // builtin = #import "builtin"
 // builtin
 
+// How do you get the argument type a function?
+
 test = @bool(Bool)
 	if bool then
 		1
 	else
 		2
 
-/*
 // routine_start (inputCount, localCount, outputCount) [] -> []
+// (routine_start) ; test
+// 	; typecheck arg
+// 	(local_getType 0)
+// 	(type bool)
+// 	(equal)
+// 	(assert)
+	
+// 	; typecheck if
+// 	; typeof 1 == typeof 2
+// 	; f32 == f32
+// 	; true
+// 	(bool 0)
+// 	(if 1 2)
+// 	(getType)
+// 	(bool 1)
+// 	(if 1 2)
+// 	(getType)
+// 	(equal)
+// 	(assert)
+	
+// 	; run if
+// 	(local_getType 0)
+// 	(if 1 2)
+// 	(routine_end)
+// (set_quick 0)
 
-(routines (
-	(routine_start 1 1) ; 0 (test)
-		; typecheck arg
-		(local_getType 0)
-		(type bool)
-		(assert_equal)
-		
-		; run if
-		(local_getType 0)
-		(if 1 2)
-		
-		; typecheck if
-		; typeof 1 == typeof 2
-		; f32 == f32
-		; true
-		(bool 0)
-		(if 1 2)
-		(getType)
-		(bool 1)
-		(if 1 2)
-		(getType)
-		(assert_equal)
-		(routine_end)
-	
-	(routine_start 1 1) ; 1 (test_then)
-		(f32 1)
-		(routine_end)
-	
-	(routine_start 1 1) ; 2 (test_else)
-		(f32 2)
-		(routine_end)
-))
-*/
+// (routine_start) ; test_then
+// 	(f32 1)
+// 	(routine_end)
+// (set_quick 1)
+
+// (routine_start) ; test_else
+// 	(f32 2)
+// 	(routine_end)
+// (set_quick 2)
 
 // a = 1
 
