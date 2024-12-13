@@ -4,6 +4,7 @@ import { Token, TokenKind } from "./lexer.js";
 import {
 	ASTnode,
 	ASTnode_alias,
+	ASTnode_atom,
 	ASTnode_bool,
 	ASTnode_identifier,
 	ASTnode_memberAccess,
@@ -339,7 +340,7 @@ export function parse(context: ParserContext, mode: ParserMode, indentation: num
 				}
 				
 				else if (token.text == "@") {
-					debugger;
+					ASTnodes.push(new ASTnode_atom(token.location));
 				}
 				
 				else {

@@ -292,6 +292,14 @@ export class ASTnode_string extends ASTnode {
 	}
 }
 
+export class ASTnode_atom extends ASTnode {
+	constructor(
+		location: SourceLocation,
+	) {
+		super(location);
+	}
+}
+
 //#endregion
 
 //#region other
