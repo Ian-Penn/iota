@@ -1,0 +1,17 @@
+// true, false, unknown
+
+// animals = []
+// cats = []
+
+// // A cat that exists is implicitly an animal.
+// #existing(thing) -> {
+// 	thing in cats -> thing in animals
+// }
+
+// myCat = @
+// true -> myCat in cats
+
+// myCat in cats // -> true
+// myCat in animals // -> true
+
+myCat = @

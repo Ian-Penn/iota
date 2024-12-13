@@ -1,9 +1,8 @@
 import { HashCache, readFile, TODO_addError } from "./utilities.js";
 import logger from "./logger.js";
-import { Module } from "./Module.js";
-import { setUpBuiltins } from "./builtin.js";
-import { startREPL } from "./REPL.js";
-import { ASTnode, ASTnode_number, ASTnode_object } from "./ASTnodes.js";
+import { lex } from "./lexer.js";
+import { parse, ParserMode } from "./parser.js";
+import { Report } from "./report.js";
 
 function nextArg(): string {
 	return process.argv[i++];
@@ -19,8 +18,6 @@ modes:
   start <modulePath>
 `;
 
-setUpBuiltins();
-
 let i = 2;
 
 if (process.argv[i] == undefined) {
@@ -29,7 +26,36 @@ if (process.argv[i] == undefined) {
 	main();
 }
 
-async function main() {
+function runFile(filePath: string) {
+	const text = readFile(filePath);
+	if (text == null) TODO_addError();
+	
+	let tokens;
+	let AST;
+	try {
+		const lexStart = Date.now();
+		tokens = lex(filePath, text);
+		logger.addTime("lexing", Date.now() - lexStart);
+		
+		const parseStart = Date.now();
+		AST = parse({
+			tokens: tokens,
+			i: 0,
+		}, ParserMode.normal, 0, null);
+		logger.addTime("parsing", Date.now() - parseStart);
+		// console.log(`AST:\n${printAST(new CodeGenContext(), AST).join("\n")}\n`);
+		
+		console.log("AST", AST);
+	} catch (error) {
+		if (error instanceof Report) {
+			TODO_addError();
+		} else {
+			throw error;
+		}
+	}
+}
+
+function main() {
 	while (process.argv[i].startsWith("-")) {
 		const flag = nextArg();
 		if (flag == "-log") {
@@ -42,52 +68,15 @@ async function main() {
 	const mode = nextArg();
 	
 	switch (mode) {
-		// case "init": {
-		// 	const modulePath = nextArg();
-		// 	const basePath = path.dirname(modulePath);
-		// 	const name = path.basename(modulePath);
-			
-		// 	const module = new Module(basePath, name);
-		// 	module.saveToFileSystem();
-		// 	break;
-		// }
-		
 		case "runFile": {
-			// const modulePath = nextArg();
-			// const basePath = path.dirname(modulePath);
-			// const name = path.basename(modulePath);
-			
 			const filePath = nextArg();
+			runFile(filePath);
 			
-			const module = new Module("", "runFileMain", new ASTnode_object("builtin", null, []));
-			
-			// module.loadFromFileSystem();
-			const text = readFile(filePath);
-			if (text == null) TODO_addError();
-			module.addText(filePath, text);
-			// module.runEvalQueue();
-			module.outputErrorsAndEvaluations(true);
-			module.dumpDebug();
-			// module.saveToFileSystem();
 			break;
 		}
-		
-		// case "start": {
-		// 	const modulePath = nextArg();
-		// 	const basePath = path.dirname(modulePath);
-		// 	const name = path.basename(modulePath);
-			
-		// 	const module = new Module(basePath, name);
-		// 	module.loadFromFileSystem();
-		// 	startREPL(module);
-		// 	break;
-		// }
 	
 		default: {
 			TODO_addError();
 		}
 	}
 }
-
-// logger.printFileAccessLogs();
-// logger.printTimes();

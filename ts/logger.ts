@@ -1,3 +1,5 @@
+// TODO: Convert this to using a ts namespace.
+
 type ReadFile = {
 	path: string,
 	byteSize: number,
