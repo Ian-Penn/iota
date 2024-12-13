@@ -1,8 +1,0 @@
-// compOut
-// line:7 -> 1
-// line:8 -> 2
-
-TRUE = @x(builtin.Float64) @y(builtin.Float64) x
-FALSE = @x(builtin.Float64) @y(builtin.Float64) y
-TRUE 1 2
-FALSE 1 2

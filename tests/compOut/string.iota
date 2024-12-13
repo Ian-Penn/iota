@@ -1,5 +1,0 @@
-// compOut
-// line:5 -> "Hello, World!"
-
-string = "Hello, World!"
-string

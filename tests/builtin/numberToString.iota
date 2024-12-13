@@ -1,4 +1,0 @@
-// compOut
-// line:4 -> "4"
-
-builtin.numberToString 4

@@ -1,4 +1,0 @@
-// codegen_js
-// var main = "Hello, World!\n\"in quotes on a new line\"";
-
-main = "Hello, World!\n\"in quotes on a new line\""

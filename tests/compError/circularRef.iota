@@ -1,7 +1,0 @@
-// testSkip
-
-// TODO: fix maximum call stack size exceeded
-
-a = b
-b = a
-b

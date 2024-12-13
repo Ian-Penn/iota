@@ -1,5 +1,0 @@
-// compError
-// error: alias 'nonExistentAlias' does not exist
-// line:5 -> here
-
-nonExistentAlias

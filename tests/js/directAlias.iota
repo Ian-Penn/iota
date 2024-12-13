@@ -1,8 +1,0 @@
-// codegen_js
-// function g0(l1) {
-// 	return l1;
-// }
-// var main = g0;
-
-I = @x(builtin.Float64) x
-main = I

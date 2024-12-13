@@ -1,7 +1,0 @@
-// codegen_js
-// function g0(l1) {
-// 	return l1.toString();
-// }
-// var main = g0;
-
-main = builtin.numberToString

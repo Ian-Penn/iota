@@ -1,8 +1,0 @@
-// compOut
-// line:5 -> "Hello!"
-
-bool = true
-if bool then
-	"Hello!"
-else
-	"World!"

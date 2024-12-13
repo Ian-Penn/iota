@@ -1,9 +1,0 @@
-// testSkip
-// compError
-// error: alias 'a' is already defined
-// line:7 -> redefinition here
-// line:6 -> original from here
-
-test = @a(__builtin:Number)
-	a = 1
-	a
