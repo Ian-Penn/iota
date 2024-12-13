@@ -1,6 +1,4 @@
 import { Hash, TODO, TODO_addError, unreachable } from "./utilities.js";
-import { Report } from "./report.js";
-import { isOperator } from "./lexer.js";
 import logger, { LogType } from "./logger.js";
 
 export type SourceLocation = "builtin" | {
@@ -289,6 +287,14 @@ export class ASTnode_string extends ASTnode {
 	
 	_print(context = new CodeGenContext()): string {
 		return `"${this.value.replaceAll("\n", "\\n").replaceAll("\"", "\\\"")}"`;
+	}
+}
+
+export class ASTnode_set extends ASTnode {
+	constructor(
+		location: SourceLocation,
+	) {
+		super(location);
 	}
 }
 

@@ -1,17 +1,19 @@
 import { SourceLocation } from "./ASTnodes.js";
 
-export function isOperator(text: string) {
-	return text == '+' ||
-	text == '-' ||
-	text == '*' ||
-	text == '/' ||
-	text == '%' ||
-	text == '==' ||
-	text == '>' ||
-	text == '<' ||
-	text == '>=' ||
-	text == '<=';
-}
+// export function isOperator(text: string) {
+// 	return text == '+' ||
+// 	text == '-' ||
+// 	text == '*' ||
+// 	text == '/' ||
+// 	text == '%' ||
+// 	text == '==' ||
+// 	text == '>' ||
+// 	text == '<' ||
+// 	text == '>=' ||
+// 	text == '<=';
+// }
+
+export const aliasOperator = "is";
 
 export enum TokenKind {
 	command,
@@ -58,7 +60,7 @@ function oneCharacterOperator(text: string, i: number): boolean {
 }
 
 function twoCharacterOperator(text: string, i: number): boolean {
-	return text[i] == '=' && text[i+1] == '=' ||
+	return text[i] == 'i' && text[i+1] == 's' ||
 	text[i] == '!' && text[i+1] == '=' ||
 	text[i] == '<' && text[i+1] == '=' ||
 	text[i] == '>' && text[i+1] == '=' ||

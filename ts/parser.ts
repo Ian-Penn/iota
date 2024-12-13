@@ -1,6 +1,6 @@
 import * as utilities from "./utilities.js";
 import { Report } from "./report.js";
-import { Token, TokenKind } from "./lexer.js";
+import { aliasOperator, Token, TokenKind } from "./lexer.js";
 import {
 	ASTnode,
 	ASTnode_alias,
@@ -10,6 +10,7 @@ import {
 	ASTnode_memberAccess,
 	ASTnode_number,
 	ASTnode_operator,
+	ASTnode_set,
 	ASTnode_string,
 } from "./ASTnodes.js";
 
@@ -36,7 +37,7 @@ function getIndentation(token: Token): number {
 }
 
 function getOperatorPrecedence(operatorText: string): number {
-	if (operatorText == "=") {
+	if (operatorText == "is") {
 		return 1;
 	}
 	
@@ -74,12 +75,8 @@ function getOperatorPrecedence(operatorText: string): number {
 		return 6;
 	}
 	
-	else if (operatorText == "as") {
-		return 7;
-	}
-	
 	else if (operatorText == ".") {
-		return 8;
+		return 7;
 	}
 	
 	else {
@@ -154,7 +151,7 @@ function parseOperators(context: ParserContext, left: ASTnode, lastPrecedence: n
 			let right: ASTnode;
 			context.i++;
 			let mode;
-			if (nextOperator.text == "=") {
+			if (nextOperator.text == aliasOperator) {
 				mode = ParserMode.single;
 			} else if (nextOperator.text == ".") {
 				mode = ParserMode.singleNoContinue;
@@ -168,7 +165,7 @@ function parseOperators(context: ParserContext, left: ASTnode, lastPrecedence: n
 			}
 			right = parseOperators(context, _r, nextPrecedence);
 			
-			if (nextOperator.text == "=") {
+			if (nextOperator.text == aliasOperator) {
 				return new ASTnode_alias(nextOperator.location, left, right);
 			} else if (nextOperator.text == ".") {
 				if (!(right instanceof ASTnode_identifier)) {
@@ -336,7 +333,7 @@ export function parse(context: ParserContext, mode: ParserMode, indentation: num
 				else if (token.text == "[") {
 					const elements = parse(context, ParserMode.comma, nextIndentation, "]");
 					
-					debugger;
+					ASTnodes.push(new ASTnode_set(token.location));
 				}
 				
 				else if (token.text == "@") {
@@ -389,7 +386,7 @@ export function parse(context: ParserContext, mode: ParserMode, indentation: num
 		}
 		
 		if (context.tokens[context.i] && getNext(context).kind == TokenKind.operator) {
-			if (mode == ParserMode.singleNoEqualsOperatorContinue && getNext(context).text == "=") {
+			if (mode == ParserMode.singleNoEqualsOperatorContinue && getNext(context).text == aliasOperator) {
 				earlyReturn();
 				return ASTnodes;
 			}

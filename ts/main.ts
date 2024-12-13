@@ -3,6 +3,7 @@ import logger from "./logger.js";
 import { lex } from "./lexer.js";
 import { parse, ParserMode } from "./parser.js";
 import { Report } from "./report.js";
+import { codegen } from "./codegen.js";
 
 function nextArg(): string {
 	return process.argv[i++];
@@ -45,7 +46,9 @@ function runFile(filePath: string) {
 		logger.addTime("parsing", Date.now() - parseStart);
 		// console.log(`AST:\n${printAST(new CodeGenContext(), AST).join("\n")}\n`);
 		
-		console.log("AST", AST);
+		// console.log("AST", AST);
+		const outputText = codegen(AST);
+		console.log("outputText:\n" + outputText);
 	} catch (error) {
 		if (error instanceof Report) {
 			TODO_addError();
