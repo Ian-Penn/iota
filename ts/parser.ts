@@ -41,22 +41,22 @@ function getOperatorPrecedence(operatorText: string): number {
 		return 1;
 	}
 	
-	else if (operatorText == "||") {
-		return 2;
-	}
-	
-	else if (operatorText == "&&") {
-		return 3;
-	}
-	
 	else if (
-		operatorText == "==" ||
+		operatorText == "=" ||
 		operatorText == "!=" ||
 		operatorText == ">" ||
 		operatorText == "<" ||
 		operatorText == ">=" ||
 		operatorText == "<="
 	) {
+		return 2;
+	}
+	
+	else if (operatorText == "|") {
+		return 3;
+	}
+	
+	else if (operatorText == "&") {
 		return 4;
 	}
 	
@@ -75,11 +75,11 @@ function getOperatorPrecedence(operatorText: string): number {
 		return 6;
 	}
 	
-	else if (operatorText == ".") {
+	else if (operatorText == inSetOperator) {
 		return 7;
 	}
 	
-	else if (operatorText == inSetOperator) {
+	else if (operatorText == ".") {
 		return 8;
 	}
 	
@@ -155,7 +155,7 @@ function parseOperators(context: ParserContext, left: ASTnode, lastPrecedence: n
 			let right: ASTnode;
 			context.i++;
 			let mode;
-			if (nextOperator.text == aliasOperator) {
+			if (nextOperator.text == aliasOperator || nextOperator.text == "->") {
 				mode = ParserMode.single;
 			} else if (nextOperator.text == ".") {
 				mode = ParserMode.singleNoContinue;
@@ -168,6 +168,12 @@ function parseOperators(context: ParserContext, left: ASTnode, lastPrecedence: n
 				throw new Report("nothing on right side of operator").indicator(nextOperator.location, "here");
 			}
 			right = parseOperators(context, _r, nextPrecedence);
+			
+			while (right instanceof ASTnode_operator && getNext(context).kind == TokenKind.operator) {
+				const newRight = parseOperators(context, right, nextPrecedence);
+				if (newRight == right) break;
+				right = newRight;
+			}
 			
 			if (nextOperator.text == aliasOperator) {
 				return new ASTnode_alias(nextOperator.location, left, right);
@@ -342,6 +348,10 @@ export function parse(context: ParserContext, mode: ParserMode, indentation: num
 				
 				else if (token.text == "@") {
 					ASTnodes.push(new ASTnode_atom(token.location));
+				}
+				
+				else if (token.text == "#") {
+					// ASTnodes.push(new ASTnode_event(token.location, ));
 				}
 				
 				else {

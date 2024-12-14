@@ -4,8 +4,10 @@ import {
 	ASTnode_atom,
 	ASTnode_bool,
 	ASTnode_identifier,
+	ASTnode_memberAccess,
 	ASTnode_operator,
-	ASTnode_set
+	ASTnode_set,
+	ASTnode_string
 } from "./ASTnodes.js";
 import { inSetOperator } from "./lexer.js";
 import { getClassName, unreachable } from "./utilities.js";
@@ -26,6 +28,10 @@ export function codegen(inputAST: ASTnode[]): string {
 			} else {
 				return "false";
 			}
+		}
+		
+		else if (node instanceof ASTnode_string) {
+			return `"${node.value.replaceAll("\"", "\\\"").replaceAll("\n", "\\n")}"`;
 		}
 		
 		else if (node instanceof ASTnode_identifier) {
@@ -68,13 +74,41 @@ export function codegen(inputAST: ASTnode[]): string {
 				}
 			}
 			
+			else if (node.operatorText == "&") {
+				const left = print(node.left);
+				const right = print(node.right);
+				
+				if (mode == Mode.interrogative) {
+					return `${left} && ${right}`;
+				} else {
+					return `${left}; ${right}`;
+				}
+			}
+			
+			else if (node.operatorText == "=") {
+				const left = print(node.left);
+				const right = print(node.right);
+				
+				if (mode == Mode.interrogative) {
+					return `${left} == ${right}`;
+				} else {
+					return `${left} = ${right}`;
+				}
+			}
+			
 			else {
-				return `__TODO_operator__(${node.operatorText})`;
+				return `__TODO_operator__("${node.operatorText}")`;
 			}
 		}
 		
+		else if (node instanceof ASTnode_memberAccess) {
+			const left = print(node.left);
+			
+			return `${left}.${node.name}`;
+		}
+		
 		else {
-			return `__TODO__(${getClassName(node)})`;
+			return `__TODO__("${getClassName(node)}")`;
 		}
 	}
 	

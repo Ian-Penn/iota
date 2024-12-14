@@ -1,21 +1,28 @@
+UiElement is []
+
+uiRoot is [] // @[]
+
+test is @
+true -> test in UiElement & test.type = "text" & test.text = "testing"
+// true -> last(uiRoot)
+
+test
+
+//--------
 // true, false, unknown
 
-// animals = []
-// cats = []
+// animals is []
+// cats is []
 
-// // A cat that exists is implicitly an animal.
-// #existing(thing) -> {
-// 	thing in cats -> thing in animals
-// }
+// // #existing(thing)
+// // 	thing in cats -> thing in animals
 
-// myCat = @
+// // defEvent #existing(thing: Any)
+// // 	thing in cats -> thing in animals
+
+// myCat is @
 // true -> myCat in cats
+// myCat in cats -> myCat in animals
 
-// myCat in cats // -> true
-// myCat in animals // -> true
-
-cats is []
-myCat is @
-true -> myCat in cats
-
-myCat in cats
+// myCat in cats
+// myCat in animals

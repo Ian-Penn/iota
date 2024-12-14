@@ -296,6 +296,10 @@ export class ASTnode_set extends ASTnode {
 	) {
 		super(location);
 	}
+	
+	_print(context = new CodeGenContext()): string {
+		return `[]`;
+	}
 }
 
 export class ASTnode_atom extends ASTnode {
@@ -304,6 +308,22 @@ export class ASTnode_atom extends ASTnode {
 	) {
 		super(location);
 	}
+	
+	_print(context = new CodeGenContext()): string {
+		return `@`;
+	}
+}
+
+export class ASTnode_event extends ASTnode {
+	constructor(
+		location: SourceLocation,
+		public name: string,
+		public args: ASTnode[],
+	) {
+		super(location);
+	}
+	
+	
 }
 
 //#endregion

@@ -4,6 +4,7 @@ import { lex } from "./lexer.js";
 import { parse, ParserMode } from "./parser.js";
 import { Report } from "./report.js";
 import { codegen } from "./codegen.js";
+import { CodeGenContext, printAST } from "./ASTnodes.js";
 
 function nextArg(): string {
 	return process.argv[i++];
@@ -46,7 +47,7 @@ function runFile(filePath: string) {
 		logger.addTime("parsing", Date.now() - parseStart);
 		// console.log(`AST:\n${printAST(new CodeGenContext(), AST).join("\n")}\n`);
 		
-		// console.log("AST", AST);
+		// console.log("AST", printAST(new CodeGenContext(), AST).join("\n"));
 		const outputText = codegen(AST);
 		console.log("outputText:\n" + outputText);
 		

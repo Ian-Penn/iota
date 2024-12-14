@@ -37,7 +37,7 @@ export type Token = {
 };
 
 function wordStart(text: string, i: number): boolean {
-	return (text[i] >= 'a' && text[i] <= 'z') || (text[i] >= 'A' && text[i] <= 'Z') || text[i] == '_' || text[i] == '#';
+	return (text[i] >= 'a' && text[i] <= 'z') || (text[i] >= 'A' && text[i] <= 'Z') || text[i] == '_';
 }
 
 function wordContinue(text: string, i: number): boolean {
@@ -57,7 +57,8 @@ function oneCharacterOperator(text: string, i: number): boolean {
 	text[i] == '*' ||
 	text[i] == '/' ||
 	text[i] == '%' ||
-	text[i] == '.';
+	text[i] == '.' ||
+	text[i] == '&';
 }
 
 function twoCharacterOperator(text: string, i: number): boolean {
@@ -68,7 +69,6 @@ function twoCharacterOperator(text: string, i: number): boolean {
 	text[i] == '!' && text[i+1] == '=' ||
 	text[i] == '<' && text[i+1] == '=' ||
 	text[i] == '>' && text[i+1] == '=' ||
-	text[i] == '&' && text[i+1] == '&' ||
 	text[i] == '|' && text[i+1] == '|' ||
 	text[i] == '-' && text[i+1] == '>';
 }
@@ -83,8 +83,7 @@ function separator(text: string, i: number): boolean {
 	text[i] == ';' ||
 	text[i] == ',' ||
 	text[i] == '@' ||
-	// text[i] == '#' ||
-	text[i] == '&' ||
+	text[i] == '#' ||
 	text[i] == ':' ||
 	text[i] == '\\';
 }
