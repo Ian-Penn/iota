@@ -16,3 +16,6 @@
 
 cats is []
 myCat is @
+true -> myCat in cats
+
+myCat in cats

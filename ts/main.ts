@@ -49,6 +49,9 @@ function runFile(filePath: string) {
 		// console.log("AST", AST);
 		const outputText = codegen(AST);
 		console.log("outputText:\n" + outputText);
+		
+		console.log("\nruning...\n");
+		new Function(outputText)();
 	} catch (error) {
 		if (error instanceof Report) {
 			TODO_addError();

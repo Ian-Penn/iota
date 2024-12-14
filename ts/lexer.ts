@@ -14,6 +14,7 @@ import { SourceLocation } from "./ASTnodes.js";
 // }
 
 export const aliasOperator = "is";
+export const inSetOperator = "in";
 
 export enum TokenKind {
 	command,
@@ -60,7 +61,10 @@ function oneCharacterOperator(text: string, i: number): boolean {
 }
 
 function twoCharacterOperator(text: string, i: number): boolean {
-	return text[i] == 'i' && text[i+1] == 's' ||
+	const op = text[i] + text[i+1];
+	
+	return op == aliasOperator ||
+	op === inSetOperator ||
 	text[i] == '!' && text[i+1] == '=' ||
 	text[i] == '<' && text[i+1] == '=' ||
 	text[i] == '>' && text[i+1] == '=' ||

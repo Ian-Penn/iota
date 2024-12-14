@@ -1,6 +1,6 @@
 import * as utilities from "./utilities.js";
 import { Report } from "./report.js";
-import { aliasOperator, Token, TokenKind } from "./lexer.js";
+import { aliasOperator, inSetOperator, Token, TokenKind } from "./lexer.js";
 import {
 	ASTnode,
 	ASTnode_alias,
@@ -37,7 +37,7 @@ function getIndentation(token: Token): number {
 }
 
 function getOperatorPrecedence(operatorText: string): number {
-	if (operatorText == "is") {
+	if (operatorText == aliasOperator || operatorText == "->") {
 		return 1;
 	}
 	
@@ -77,6 +77,10 @@ function getOperatorPrecedence(operatorText: string): number {
 	
 	else if (operatorText == ".") {
 		return 7;
+	}
+	
+	else if (operatorText == inSetOperator) {
+		return 8;
 	}
 	
 	else {
@@ -355,13 +359,9 @@ export function parse(context: ParserContext, mode: ParserMode, indentation: num
 				if (left == undefined) {
 					ASTnodes.push(new ASTnode_identifier(token.location, token.text));
 				} else {
-					if (token.text == "->") {
-						utilities.TODO();
-					} else {
-						context.i--;
-						ASTnodes.pop();
-						ASTnodes.push(parseOperators(context, left, 0));
-					}
+					context.i--;
+					ASTnodes.pop();
+					ASTnodes.push(parseOperators(context, left, 0));
 				}
 				break;
 			}
