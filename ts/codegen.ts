@@ -3,6 +3,8 @@ import {
 	ASTnode_alias,
 	ASTnode_atom,
 	ASTnode_bool,
+	ASTnode_event,
+	ASTnode_field,
 	ASTnode_identifier,
 	ASTnode_memberAccess,
 	ASTnode_operator,
@@ -12,13 +14,17 @@ import {
 import { inSetOperator } from "./lexer.js";
 import { getClassName, unreachable } from "./utilities.js";
 
-// type Mode = "interrogative" | "declarative";
 enum Mode {
 	interrogative,
 	declarative,
 }
 
-export function codegen(inputAST: ASTnode[]): string {
+export class CodegenSettings {
+	eventPrefix = "event_";
+	allowArbitraryCodeExecution = false;
+}
+
+export function codegen(inputAST: ASTnode[], settings: CodegenSettings): string {
 	let mode = Mode.interrogative;
 	
 	function print(node: ASTnode): string {
@@ -107,6 +113,11 @@ export function codegen(inputAST: ASTnode[]): string {
 			return `${left}.${node.name}`;
 		}
 		
+		else if (node instanceof ASTnode_event) {
+			const args = printList(node.args).join(", ");
+			return `${settings.eventPrefix}${node.name}(${args})`;
+		}
+		
 		else {
 			return `__TODO__("${getClassName(node)}")`;
 		}
@@ -119,17 +130,39 @@ export function codegen(inputAST: ASTnode[]): string {
 			const node = AST[i];
 			const text = print(node);
 			
-			if (top == true && !(node instanceof ASTnode_alias)) {
-				if (node instanceof ASTnode_operator && node.operatorText == "->") {
-					list.push(text);
-				} else {
-					// list.push(`console.log(${text});`);
-					if (node.location == "builtin") unreachable();
-					list.push(`console.log(${node.location.line}, ${text});`);
-				}
-			} else {
-				list.push(text);
+			if (
+				top == true &&
+				!(node instanceof ASTnode_alias) &&
+				!(node instanceof ASTnode_operator && node.operatorText == "->")
+			) {
+				if (node.location == "builtin") unreachable();
+				list.push(`console.log(${node.location.line}, ${text});`);
+				continue;
 			}
+			
+			if (node instanceof ASTnode_operator && node.operatorText == "->") {
+				if (node.left instanceof ASTnode_event) {
+					const args: string[] = node.left.args.map((arg) => {
+						if (arg instanceof ASTnode_identifier) {
+							return arg.name;
+						} else if (arg instanceof ASTnode_field) {
+							return arg.name;
+						} else {
+							unreachable();
+						}
+					});
+					
+					const oldMode = mode;
+					mode = Mode.declarative;
+					const right = print(node.right);
+					mode = oldMode;
+					
+					list.push(`function ${settings.eventPrefix}${node.left.name}(${args.join(", ")}) {${right}}`);
+					continue;
+				}
+			}
+			
+			list.push(text);
 		}
 		
 		return list;

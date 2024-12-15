@@ -3,7 +3,7 @@ import logger from "./logger.js";
 import { lex } from "./lexer.js";
 import { parse, ParserMode } from "./parser.js";
 import { Report } from "./report.js";
-import { codegen } from "./codegen.js";
+import { codegen, CodegenSettings } from "./codegen.js";
 import { CodeGenContext, printAST } from "./ASTnodes.js";
 
 function nextArg(): string {
@@ -28,7 +28,7 @@ if (process.argv[i] == undefined) {
 	main();
 }
 
-function runFile(filePath: string) {
+function genFile(filePath: string): string | null {
 	const text = readFile(filePath);
 	if (text == null) TODO_addError();
 	
@@ -45,17 +45,17 @@ function runFile(filePath: string) {
 			i: 0,
 		}, ParserMode.normal, 0, null);
 		logger.addTime("parsing", Date.now() - parseStart);
-		// console.log(`AST:\n${printAST(new CodeGenContext(), AST).join("\n")}\n`);
+		console.log(`AST:\n${printAST(new CodeGenContext(), AST).join("\n")}\n`);
+		debugger;
 		
-		// console.log("AST", printAST(new CodeGenContext(), AST).join("\n"));
-		const outputText = codegen(AST);
+		const outputText = codegen(AST, new CodegenSettings());
 		console.log("outputText:\n" + outputText);
 		
-		console.log("\nruning...\n");
-		new Function(outputText)();
+		return outputText;
 	} catch (error) {
 		if (error instanceof Report) {
-			TODO_addError();
+			console.error(error.getText("error: ", true, true));
+			return null;
 		} else {
 			throw error;
 		}
@@ -77,7 +77,10 @@ function main() {
 	switch (mode) {
 		case "runFile": {
 			const filePath = nextArg();
-			runFile(filePath);
+			const outputText = genFile(filePath);
+			if (outputText == null) return;
+			console.log("\nruning...\n");
+			new Function(outputText)();
 			
 			break;
 		}

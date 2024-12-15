@@ -1,11 +1,15 @@
 UiElement is []
-
 uiRoot is [] // @[]
+#click(target: UiElement) -> target.text = "click"
 
 test is @
-true -> test in UiElement & test.type = "text" & test.text = "testing"
+true -> test in UiElement &
+	test.type = "text" &
+	test.text = "testing"
 // true -> last(uiRoot)
 
+test
+true -> #click(test)
 test
 
 //--------

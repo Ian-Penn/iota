@@ -323,7 +323,9 @@ export class ASTnode_event extends ASTnode {
 		super(location);
 	}
 	
-	
+	_print(context = new CodeGenContext()): string {
+		return `#${this.name}(${printAST(context, this.args).join(", ")})`;
+	}
 }
 
 //#endregion
@@ -408,6 +410,11 @@ export class ASTnode_field extends ASTnode {
 		readonly type: ASTnode,
 	) {
 		super(location);
+	}
+	
+	_print(context = new CodeGenContext()): string {
+		const type = this.type.print(context);
+		return `${this.name}: ${type}`;
 	}
 }
 

@@ -1,4 +1,3 @@
-import * as utilities from "./utilities.js";
 import { Report } from "./report.js";
 import { aliasOperator, inSetOperator, Token, TokenKind } from "./lexer.js";
 import {
@@ -6,6 +5,8 @@ import {
 	ASTnode_alias,
 	ASTnode_atom,
 	ASTnode_bool,
+	ASTnode_event,
+	ASTnode_field,
 	ASTnode_identifier,
 	ASTnode_memberAccess,
 	ASTnode_number,
@@ -13,6 +14,7 @@ import {
 	ASTnode_set,
 	ASTnode_string,
 } from "./ASTnodes.js";
+import { TODO, TODO_addError, unreachable } from "./utilities.js";
 
 export type ParserContext = {
 	tokens: Token[],
@@ -31,7 +33,7 @@ export enum ParserMode {
 
 function getIndentation(token: Token): number {
 	if (token.location == "builtin") {
-		utilities.unreachable();
+		unreachable();
 	}
 	return token.location.indentation;
 }
@@ -84,7 +86,7 @@ function getOperatorPrecedence(operatorText: string): number {
 	}
 	
 	else {
-		utilities.unreachable();
+		unreachable();
 	}
 }
 
@@ -179,7 +181,7 @@ function parseOperators(context: ParserContext, left: ASTnode, lastPrecedence: n
 				return new ASTnode_alias(nextOperator.location, left, right);
 			} else if (nextOperator.text == ".") {
 				if (!(right instanceof ASTnode_identifier)) {
-					utilities.TODO_addError();
+					TODO_addError();
 				}
 				return new ASTnode_memberAccess(nextOperator.location, left, right.name);
 			} else {
@@ -215,7 +217,7 @@ function parseType(context: ParserContext, separatingText: string): ASTnode | nu
 
 function getLine(input: ASTnode | Token): number {
 	if (typeof input.location == "string") {
-		utilities.unreachable();
+		unreachable();
 	}
 	
 	return input.location.line;
@@ -229,7 +231,7 @@ export function parse(context: ParserContext, mode: ParserMode, indentation: num
 			if (getNext(context).text == endAt) {
 				forward(context);
 			} else {
-				utilities.TODO();
+				TODO();
 			}
 		}
 	}
@@ -239,7 +241,7 @@ export function parse(context: ParserContext, mode: ParserMode, indentation: num
 		if (lastT) {
 			const nextT = getNext(context);
 			if (typeof lastT.location == "string" || typeof nextT.location == "string") {
-				utilities.unreachable();
+				unreachable();
 			}
 			
 			if (lastT.location.line == nextT.location.line) {
@@ -271,12 +273,12 @@ export function parse(context: ParserContext, mode: ParserMode, indentation: num
 			}
 		}
 		
-		if (getNext(context).kind == TokenKind.word) {
-			const nextWord = getNext(context).text;
-			if (nextWord == "then" || nextWord == "else") {
-				return ASTnodes;
-			}
-		}
+		// if (getNext(context).kind == TokenKind.word) {
+		// 	const nextWord = getNext(context).text;
+		// 	if (nextWord == "then" || nextWord == "else") {
+		// 		return ASTnodes;
+		// 	}
+		// }
 		
 		// indentation canceling
 		if (doIndentationCancel()) {
@@ -332,9 +334,9 @@ export function parse(context: ParserContext, mode: ParserMode, indentation: num
 				if (token.text == "(") {
 					const elements = parse(context, ParserMode.comma, nextIndentation, ")");
 					if (elements.length == 0) {
-						utilities.TODO();
+						TODO();
 					} else if (elements.length > 1) {
-						utilities.TODO_addError();
+						TODO_addError();
 					} else {
 						ASTnodes.push(elements[0]);
 					}
@@ -350,8 +352,37 @@ export function parse(context: ParserContext, mode: ParserMode, indentation: num
 					ASTnodes.push(new ASTnode_atom(token.location));
 				}
 				
+				else if (token.text == ":") {
+					const left = ASTnodes.pop();
+					if (left == undefined) {
+						TODO_addError();
+					}
+					if (!(left instanceof ASTnode_identifier)) {
+						TODO_addError();
+					}
+					
+					const right = parse(context, ParserMode.single, nextIndentation, null)[0];
+					if (right == undefined) {
+						TODO_addError();
+					}
+					
+					ASTnodes.push(new ASTnode_field(token.location, left.name, right));
+				}
+				
 				else if (token.text == "#") {
-					// ASTnodes.push(new ASTnode_event(token.location, ));
+					const name = forward(context);
+					if (name.kind != TokenKind.word) {
+						throw new Report("expected name").indicator(name.location, "here");
+					}
+					
+					const openingParentheses = forward(context);
+					if (openingParentheses.kind != TokenKind.separator || openingParentheses.text != "(") {
+						throw new Report("expected openingParentheses").indicator(openingParentheses.location, "here");
+					}
+					
+					const args = parse(context, ParserMode.comma, nextIndentation, ")");
+					
+					ASTnodes.push(new ASTnode_event(token.location, name.text, args));
 				}
 				
 				else {
@@ -381,7 +412,7 @@ export function parse(context: ParserContext, mode: ParserMode, indentation: num
 			}
 		
 			default: {
-				utilities.unreachable();
+				unreachable();
 			}
 		}
 		
