@@ -142,7 +142,7 @@ export function codegen(inputAST: ASTnode[], settings: CodegenSettings): string 
 			
 			if (node instanceof ASTnode_operator && node.operatorText == "->") {
 				if (node.left instanceof ASTnode_event) {
-					const args: string[] = node.left.args.map((arg) => {
+					const argNames: string[] = node.left.args.map((arg) => {
 						if (arg instanceof ASTnode_identifier) {
 							return arg.name;
 						} else if (arg instanceof ASTnode_field) {
@@ -157,7 +157,7 @@ export function codegen(inputAST: ASTnode[], settings: CodegenSettings): string 
 					const right = print(node.right);
 					mode = oldMode;
 					
-					list.push(`function ${settings.eventPrefix}${node.left.name}(${args.join(", ")}) {${right}}`);
+					list.push(`function ${settings.eventPrefix}${node.left.name}(${argNames.join(", ")}) {${right}}`);
 					continue;
 				}
 			}

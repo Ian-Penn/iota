@@ -1,32 +1,75 @@
-UiElement is []
-uiRoot is [] // @[]
-#click(target: UiElement) -> target.text = "click"
+animals is []
+cats is []
 
-test is @
-true -> test in UiElement &
-	test.type = "text" &
-	test.text = "testing"
-// true -> last(uiRoot)
+myCat is @
+myCat in cats -> myCat in animals
+myCat in cats
 
-test
-true -> #click(test)
-test
+// #onStart() -> {
+// 	#log(myCat in cats)
+// 	#log(myCat in animals)
+// }
+
+// #onStart() -> #log(myCat in cats)
 
 //--------
-// true, false, unknown
+
+// UiElement is []
+// uiRoot is [] // @[]
+// #click(target: UiElement) -> target.text = "click"
+
+// test is @
+// true -> test in UiElement
+
+// #onStart() -> {
+// 	test.type = "text"
+// 	test.text = "testing"
+	
+// 	#log(test)
+// 	#click(test)
+// 	#log(test)
+// }
+
+//--------
+
+// todos is []//[title: String, body: String, visible: Bool]
+// todosUi is []//[type: "text", text: String]
+
+// always -> todos =>(todo) todo & @(title: capitalize(todo))
+
+// always -> todosUi
+// 	= todos
+// 	~>(todo) todo.visible = true
+// 	=>(todo) @(
+// 		type: "text",
+// 		text: todo.title + "\n" + todo.body
+// 	)
+
+// setupTodo(title: String, body: String, visible: Bool) ->(output) {
+// 	true -> output = @(
+// 		title: title, body: body, visible: visible
+// 	)
+// }
+
+// capitalize(text) -> (output) {
+// 	//...
+// }
+
+// todo is @
+// // true -> setupTodo(todo, "test", "testing", true)
+// todo = setupTodo("test", "testing", true)
+
+//--------
 
 // animals is []
 // cats is []
 
-// // #existing(thing)
-// // 	thing in cats -> thing in animals
-
-// // defEvent #existing(thing: Any)
-// // 	thing in cats -> thing in animals
+// for(Any) -->(thing) {
+// 	thing in cats -> thing in animals
+// }
 
 // myCat is @
 // true -> myCat in cats
-// myCat in cats -> myCat in animals
 
 // myCat in cats
 // myCat in animals

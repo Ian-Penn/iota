@@ -3,8 +3,7 @@ import logger from "./logger.js";
 import { lex } from "./lexer.js";
 import { parse, ParserMode } from "./parser.js";
 import { Report } from "./report.js";
-import { codegen, CodegenSettings } from "./codegen.js";
-import { CodeGenContext, printAST } from "./ASTnodes.js";
+import { buildAST, BuilderSettings } from "./build.js";
 
 function nextArg(): string {
 	return process.argv[i++];
@@ -45,10 +44,12 @@ function genFile(filePath: string): string | null {
 			i: 0,
 		}, ParserMode.normal, 0, null);
 		logger.addTime("parsing", Date.now() - parseStart);
-		console.log(`AST:\n${printAST(new CodeGenContext(), AST).join("\n")}\n`);
-		debugger;
+		// console.log(`AST:\n${printAST(new CodeGenContext(), AST).join("\n")}\n`);
 		
-		const outputText = codegen(AST, new CodegenSettings());
+		// const outputText = codegen(AST, new CodegenSettings());
+		// console.log("outputText:\n" + outputText);
+		
+		const outputText = buildAST(AST, new BuilderSettings());
 		console.log("outputText:\n" + outputText);
 		
 		return outputText;
