@@ -1,4 +1,14 @@
-import { ASTnode, ASTnode_alias, ASTnode_bool, ASTnode_event, ASTnode_field, ASTnode_identifier, ASTnode_number, ASTnode_operator, ASTnode_string } from "./ASTnodes.js";
+import {
+	ASTnode,
+	ASTnode_alias,
+	ASTnode_bool,
+	ASTnode_event,
+	ASTnode_field,
+	ASTnode_identifier,
+	ASTnode_number,
+	ASTnode_operator,
+	ASTnode_string
+} from "./ASTnodes.js";
 import { getClassName, TODO, TODO_addError, unreachable } from "./utilities.js";
 
 export class BuilderSettings {

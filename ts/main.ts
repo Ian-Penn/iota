@@ -3,7 +3,7 @@ import logger from "./logger.js";
 import { lex } from "./lexer.js";
 import { parse, ParserMode } from "./parser.js";
 import { Report } from "./report.js";
-import { buildAST, BuilderSettings } from "./build.js";
+import { buildAST, BuilderSettings } from "./builder.js";
 
 function nextArg(): string {
 	return process.argv[i++];
