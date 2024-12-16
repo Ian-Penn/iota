@@ -13,8 +13,15 @@ import {
 } from "./ASTnodes.js";
 import { getClassName, Hash, TODO, TODO_addError, unreachable } from "./utilities.js";
 
+enum OptLevel {
+	none,
+	basic,
+}
+
 export class BuilderSettings {
 	allowArbitraryCodeExecution = false;
+	
+	opt = OptLevel.basic;
 }
 
 class AliasData {
@@ -27,13 +34,16 @@ enum Mode {
 }
 
 enum BinaryOperator {
+	inSet,
+	addToSet,
+	
+	and,
+	or,
+	
 	add,
 	subtract,
 	multiply,
 	divide,
-	
-	inSet,
-	addToSet,
 }
 
 // Makes it a little easier to generate something other than js later.
@@ -74,7 +84,19 @@ class Js {
 			return `${right}.add(${left})`;
 		}
 		
+		if (op == BinaryOperator.and) {
+			return `${left} && ${right}`;
+		}
+		
+		if (op == BinaryOperator.or) {
+			return `${left} || ${right}`;
+		}
+		
 		TODO();
+	}
+	
+	doubleStatement(left: string, right: string) {
+		return `${left}; ${right}`;
 	}
 	
 	if(condition: string, body: string): string {
@@ -218,18 +240,34 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 						}
 						
 						const uses = getDependencies(node);
+						console.log(uses, post);
 						uses.forEach((use) => {
 							console.log("use:", use.print());
 							// const oldMode = mode;
 							// mode = Mode.declarative;
 							const text = build(use, post, request);
 							// mode = oldMode;
+							if (settings.opt > OptLevel.none && post.includes(text)) {
+								return;
+							}
 							post.push(text);
 						});
 					}
 					op = BinaryOperator.addToSet;
 				}
-			} else {
+			}
+			
+			else if (node.operatorText == "&") {
+				if (mode == Mode.interrogative) {
+					op = BinaryOperator.and;
+				} else {
+					const left = build(node.left, post, request);
+					const right = build(node.right, post, request);
+					return js.doubleStatement(left, right);
+				}
+			}
+			
+			else {
 				TODO(node.operatorText);
 			}
 			
