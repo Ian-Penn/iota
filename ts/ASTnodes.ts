@@ -197,6 +197,36 @@ export class ASTnode {
 	}
 	
 	/**
+	 * callBack returns true when done
+	 */
+	analyze(callBack: (node: ASTnode) => boolean) {
+		if (callBack(this) == true) {
+			return;
+		}
+		
+		Object.keys(this).forEach(key => {
+			if (key == "prototype" || key == "location" || key == "__cashedHash__") {
+				return;
+			}
+			
+			const value = (this as any)[key];
+			
+			// for ASTnode_builtinTask
+			if (value instanceof ASTnode) {
+				value.analyze(callBack);
+			}
+			
+			if (value instanceof Array) {
+				value.forEach((element) => {
+					if (element instanceof ASTnode) {
+						element.analyze(callBack);
+					}
+				})
+			}
+		});
+	}
+	
+	/**
 	 * Should not be over written by a subclass!
 	 */
 	print(context = new CodeGenContext()): string {
