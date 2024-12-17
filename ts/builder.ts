@@ -24,6 +24,7 @@ export class BuilderSettings {
 	allowArbitraryCodeExecution = false;
 	
 	opt = OptLevel.basic;
+	logging = true;
 }
 
 class AliasData {
@@ -33,6 +34,10 @@ class AliasData {
 enum Mode {
 	interrogative,
 	declarative,
+}
+
+enum UnaryOperator {
+	not,
 }
 
 enum BinaryOperator {
@@ -79,6 +84,14 @@ class Js {
 		return `function ${name}(${argNames.join(", ")}) {${body}\n}`;
 	}
 	
+	unaryOperator(op: UnaryOperator, input: string): string {
+		if (op == UnaryOperator.not) {
+			return `!${input}`;
+		}
+		
+		TODO();
+	}
+	
 	binaryOperator(op: BinaryOperator, left: string, right: string): string {
 		if (op == BinaryOperator.inSet) {
 			return `${right}.has(${left})`;
@@ -111,8 +124,12 @@ class Js {
 		return `${left}; ${right}`;
 	}
 	
-	if(condition: string, body: string): string {
-		return `if (${condition}) {${body}}`;
+	if(condition: string, body: string[]): string {
+		if (body.length == 1) {
+			return `if (${condition}) ${body[0]}`;
+		} else {
+			return `if (${condition}) {${joinBody(body)}\n}`;
+		}
 	}
 	
 	codeBlock(body: string[]): string {
@@ -121,6 +138,10 @@ class Js {
 	
 	assert(condition: string, message: string) {
 		return `if (${condition}) throw ${this.string(message)}`;
+	}
+	
+	log(message: string) {
+		return `console.log(${this.string(message)})`;
 	}
 };
 const js = new Js();
@@ -252,7 +273,24 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 				const left = build(node.left, post, request);
 				mode = oldMode;
 				const right = build(node.right, post, request);
-				return js.if(left, right);
+				
+				const body = [
+					right
+				];
+				
+				if (settings.logging) {
+					const oldMode = mode;
+					mode = Mode.interrogative;
+					const interrogativeRight = build(node.right, post, null);
+					mode = oldMode;
+					
+					// Print what is now true if it was not true a moment ago
+					body.unshift(
+						js.if(js.unaryOperator(UnaryOperator.not, interrogativeRight), [js.log(node.right.print())])
+					);
+				}
+				
+				return js.if(left, body);
 			}
 			
 			// When something is changed all of the dependencies need to be reevaluated.
