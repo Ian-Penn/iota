@@ -39,6 +39,7 @@ enum BinaryOperator {
 	inSet,
 	notInSet,
 	addToSet,
+	removeFromSet,
 	
 	and,
 	or,
@@ -87,6 +88,10 @@ class Js {
 			return `!${right}.has(${left})`;
 		}
 		
+		if (op == BinaryOperator.removeFromSet) {
+			return `${right}.delete(${left})`;
+		}
+		
 		if (op == BinaryOperator.addToSet) {
 			return `${right}.add(${left})`;
 		}
@@ -131,8 +136,6 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 	
 	const topAliases = new Map<number, AliasData>();
 	
-	let alwaysFunction: string[] = [];
-	
 	// function getUses(name: string): ASTnode[] {
 	// 	const output: ASTnode[] = [];
 		
@@ -163,8 +166,11 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 	
 	/**
 	 * Get operators that need to be reevaluated when `name` changes
+	 * TODO: This algorithm is surprisingly effective, but I think it fails with operator anagrams.
 	 */
 	function getDependencies(operator: ASTnode_operator): ASTnode[] {
+		console.log("getDependencies", operator.print());
+		
 		const output: ASTnode[] = [];
 		
 		const operatorHash = operator.getHash();
@@ -249,29 +255,36 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 				return js.if(left, right);
 			}
 			
+			// When something is changed all of the dependencies need to be reevaluated.
+			if (
+				node.operatorText == inSetOperator ||
+				node.operatorText == notInSetOperator
+			) {
+				if (request == null && mode == Mode.declarative) {
+					if (!(node.right instanceof ASTnode_identifier)) {
+						TODO();
+					}
+					
+					const dependencies = getDependencies(node);
+					dependencies.forEach((dependency) => {
+						// console.log("use:", use.print());
+						// const oldMode = mode;
+						// mode = Mode.declarative;
+						const text = build(dependency, post, request);
+						// mode = oldMode;
+						if (settings.opt > OptLevel.none && post.includes(text)) {
+							return;
+						}
+						post.push(text + " // dependency");
+					});
+				}
+			}
+			
 			let op: BinaryOperator;
 			if (node.operatorText == inSetOperator) {
 				if (mode == Mode.interrogative) {
 					op = BinaryOperator.inSet;
 				} else {
-					if (request == null) {
-						if (!(node.right instanceof ASTnode_identifier)) {
-							TODO();
-						}
-						
-						const uses = getDependencies(node);
-						uses.forEach((use) => {
-							console.log("use:", use.print());
-							// const oldMode = mode;
-							// mode = Mode.declarative;
-							const text = build(use, post, request);
-							// mode = oldMode;
-							if (settings.opt > OptLevel.none && post.includes(text)) {
-								return;
-							}
-							post.push(text + " // added!");
-						});
-					}
 					op = BinaryOperator.addToSet;
 				}
 			}
@@ -283,16 +296,19 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 					// const left = build(node.left, post, request);
 					// const right = build(node.right, post, request);
 					// js.binaryOperator(BinaryOperator.inSet, left, right)
-					const oldMode = mode;
-					mode = Mode.interrogative;
-					const condition = build(new ASTnode_operator(
-						"builtin",
-						inSetOperator,
-						node.left,
-						node.right,
-					), post, request);
-					mode = oldMode;
-					return js.assert(condition, "BAD");
+					
+					// const oldMode = mode;
+					// mode = Mode.interrogative;
+					// const condition = build(new ASTnode_operator(
+					// 	"builtin",
+					// 	inSetOperator,
+					// 	node.left,
+					// 	node.right,
+					// ), post, request);
+					// mode = oldMode;
+					// return js.assert(condition, "BAD");
+					
+					op = BinaryOperator.removeFromSet;
 				}
 			}
 			
@@ -366,13 +382,7 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 			
 			const text = build(node, post, null);
 			
-			// if (top == true) {
-			// 	alwaysFunction.push(text);
-			// } else {
-			// 	list.push(text);
-			// }
 			list.push(text);
-			
 			list.push(...post);
 		}
 		
@@ -384,7 +394,6 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 	let topText = "";
 	
 	const mainText = buildList(topAST, true);
-	// topText += js.func("always", [], joinBody(alwaysFunction));
 	topText += mainText.join("\n");
 	topText += "\ndebugger;";
 	

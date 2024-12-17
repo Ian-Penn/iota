@@ -28,12 +28,16 @@ cats is []
 frogs is []
 
 myCat is @
+
 myCat in cats -> myCat !in frogs
+myCat !in cats -> myCat in frogs
+
 // myCat in cats -> myCat in animals
+myCat in frogs -> myCat in animals
 
 {
-	myCat in frogs
-	myCat in cats
+	// myCat in cats
+	// myCat !in cats
 }
 
 // #onStart() -> {
