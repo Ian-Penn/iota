@@ -250,7 +250,7 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 							if (settings.opt > OptLevel.none && post.includes(text)) {
 								return;
 							}
-							post.push(text);
+							post.push(text + " // added!");
 						});
 					}
 					op = BinaryOperator.addToSet;

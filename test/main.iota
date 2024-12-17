@@ -8,18 +8,17 @@ croaks is []
 eatsFlies is []
 frogs is []
 green is []
+poisonSkin is []
+doNotTouch is []
 
 X is @
 
-// X in croaks & X in eatsFlies
-
-// X in croaks & X in eatsFlies -> X in frogs
-// X in frogs -> X in green
-
 X in croaks & X in eatsFlies
 
+X in poisonSkin -> X in doNotTouch
+
 X in frogs -> X in green
-X in croaks & X in eatsFlies -> X in frogs
+X in croaks & X in eatsFlies -> X in frogs & X in poisonSkin
 
 //--------
 
