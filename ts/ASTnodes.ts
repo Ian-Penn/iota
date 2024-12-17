@@ -448,6 +448,20 @@ export class ASTnode_field extends ASTnode {
 	}
 }
 
+export class ASTnode_codeBlock extends ASTnode {
+	constructor(
+		location: SourceLocation,
+		readonly body: ASTnode[],
+	) {
+		super(location);
+	}
+	
+	_print(context = new CodeGenContext()): string {
+		const body = printAST(context, this.body);
+		return `{${body}\n}`;
+	}
+}
+
 export class ASTnode_match extends ASTnode {
 	constructor(
 		location: SourceLocation,

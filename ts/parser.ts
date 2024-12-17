@@ -5,6 +5,7 @@ import {
 	ASTnode_alias,
 	ASTnode_atom,
 	ASTnode_bool,
+	ASTnode_codeBlock,
 	ASTnode_event,
 	ASTnode_field,
 	ASTnode_identifier,
@@ -344,8 +345,15 @@ export function parse(context: ParserContext, mode: ParserMode, indentation: num
 				
 				else if (token.text == "[") {
 					const elements = parse(context, ParserMode.comma, nextIndentation, "]");
+					if (elements.length != 0) TODO();
 					
 					ASTnodes.push(new ASTnode_set(token.location));
+				}
+				
+				else if (token.text == "{") {
+					const body = parse(context, ParserMode.normal, nextIndentation, "}");
+					
+					ASTnodes.push(new ASTnode_codeBlock(token.location, body));
 				}
 				
 				else if (token.text == "@") {

@@ -3,6 +3,7 @@ import {
 	ASTnode_alias,
 	ASTnode_atom,
 	ASTnode_bool,
+	ASTnode_codeBlock,
 	ASTnode_event,
 	ASTnode_field,
 	ASTnode_identifier,
@@ -102,6 +103,10 @@ class Js {
 	if(condition: string, body: string): string {
 		return `if (${condition}) {${body}}`;
 	}
+	
+	codeBlock(body: string[]): string {
+		return `{${joinBody(body)}\n}`;
+	}
 };
 const js = new Js();
 
@@ -144,6 +149,8 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 	// 	return output;
 	// }
 	
+	const scopes: ASTnode[][] = [];
+	
 	/**
 	 * Get operators that need to be reevaluated when `name` changes
 	 */
@@ -152,36 +159,39 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 		
 		const operatorHash = operator.getHash();
 		
-		for (let i = 0; i < topAST.length; i++) {
-			const topNode = topAST[i];
-			
-			// if (operatorHash.equals(topNode.getHash())) {
-			// 	output.push(topNode);
-			// }
-			
-			// if (topNode instanceof ASTnode_alias) {
-			// 	continue; // TODO: ?
-			// }
-			
-			const request: BuildRequest = {
-				type: "hasInterrogativeUseOfHash",
-				hash: operatorHash,
-				output: false,
+		for (let scopeI = 0; scopeI < scopes.length; scopeI++) {
+			const scope = scopes[scopeI];
+			for (let i = 0; i < scope.length; i++) {
+				const node = scope[i];
+				
+				// if (operatorHash.equals(topNode.getHash())) {
+				// 	output.push(topNode);
+				// }
+				
+				if (!(node instanceof ASTnode_operator)) {
+					continue;
+				}
+				
+				const request: BuildRequest = {
+					type: "hasInterrogativeUseOfHash",
+					hash: operatorHash,
+					output: false,
+				}
+				build(node, [], request);
+				if (request.output) {
+					output.push(node);
+				}
+				
+				// if (topNode instanceof ASTnode_operator) {
+				// 	topNode.analyze((node) => {
+				// 		if (operatorHash.equals(node.getHash())) {
+				// 			output.push(topNode);
+				// 			return true;
+				// 		}
+				// 		return false;
+				// 	});
+				// }
 			}
-			build(topNode, [], request);
-			if (request.output) {
-				output.push(topNode);
-			}
-			
-			// if (topNode instanceof ASTnode_operator) {
-			// 	topNode.analyze((node) => {
-			// 		if (operatorHash.equals(node.getHash())) {
-			// 			output.push(topNode);
-			// 			return true;
-			// 		}
-			// 		return false;
-			// 	});
-			// }
 		}
 		
 		return output;
@@ -240,7 +250,6 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 						}
 						
 						const uses = getDependencies(node);
-						console.log(uses, post);
 						uses.forEach((use) => {
 							console.log("use:", use.print());
 							// const oldMode = mode;
@@ -284,6 +293,11 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 			return `let ${node.left.name} = ${right};`;
 		}
 		
+		else if (node instanceof ASTnode_codeBlock) {
+			const body = buildList(node.body);
+			return js.codeBlock(body);
+		}
+		
 		else {
 			TODO(getClassName(node));
 		}
@@ -291,6 +305,8 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 	
 	function buildList(AST: ASTnode[], top?: boolean): string[] {
 		const list: string[] = [];
+		
+		scopes.push(AST);
 		
 		for (let i = 0; i < AST.length; i++) {
 			const node = AST[i];
@@ -330,15 +346,9 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 			list.push(...post);
 		}
 		
+		scopes.pop();
+		
 		return list;
-	}
-	
-	function indent(text: string): string {
-		return text.replaceAll("\n", "\n\t");
-	}
-	function joinBody(body: string[]): string {
-		if (body.length == 0) return "";
-		return indent("\n" + body.join("\n"));
 	}
 	
 	let topText = "";
@@ -349,4 +359,12 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 	topText += "\ndebugger;";
 	
 	return topText;
+}
+
+function indent(text: string): string {
+	return text.replaceAll("\n", "\n\t");
+}
+function joinBody(body: string[]): string {
+	if (body.length == 0) return "";
+	return indent("\n" + body.join("\n"));
 }

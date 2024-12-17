@@ -4,30 +4,34 @@
 // If X is a frog - Then X is green
 // If X is a canary - Then X is blue
 
-croaks is []
-eatsFlies is []
-frogs is []
-green is []
-poisonSkin is []
-doNotTouch is []
+// croaks is []
+// eatsFlies is []
+// frogs is []
+// green is []
+// poisonSkin is []
+// doNotTouch is []
 
-X is @
+// X is @
 
-X in croaks & X in eatsFlies
+// X in croaks & X in eatsFlies
 
-X in poisonSkin -> X in doNotTouch
+// X in poisonSkin -> X in doNotTouch
 
-X in frogs -> X in green
-X in croaks & X in eatsFlies -> X in frogs & X in poisonSkin
+// X in frogs -> X in green
+// X in croaks & X in eatsFlies -> X in frogs
+// X in frogs & X in green -> X in poisonSkin
 
 //--------
 
-// animals is []
-// cats is []
+animals is []
+cats is []
 
-// myCat is @
-// myCat in cats -> myCat in animals
-// myCat in cats
+myCat is @
+myCat in cats -> myCat in animals
+
+{
+	myCat in cats
+}
 
 // #onStart() -> {
 // 	#log(myCat in cats)
