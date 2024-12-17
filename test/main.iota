@@ -25,11 +25,14 @@
 
 animals is []
 cats is []
+frogs is []
 
 myCat is @
-myCat in cats -> myCat in animals
+myCat in cats -> myCat !in frogs
+// myCat in cats -> myCat in animals
 
 {
+	myCat in frogs
 	myCat in cats
 }
 

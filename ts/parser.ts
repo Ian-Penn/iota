@@ -1,5 +1,5 @@
 import { Report } from "./report.js";
-import { aliasOperator, inSetOperator, Token, TokenKind } from "./lexer.js";
+import { aliasOperator, inSetOperator, notInSetOperator, Token, TokenKind } from "./lexer.js";
 import {
 	ASTnode,
 	ASTnode_alias,
@@ -78,7 +78,7 @@ function getOperatorPrecedence(operatorText: string): number {
 		return 6;
 	}
 	
-	else if (operatorText == inSetOperator) {
+	else if (operatorText == inSetOperator || operatorText == notInSetOperator) {
 		return 7;
 	}
 	

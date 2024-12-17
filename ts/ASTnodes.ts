@@ -457,7 +457,7 @@ export class ASTnode_codeBlock extends ASTnode {
 	}
 	
 	_print(context = new CodeGenContext()): string {
-		const body = printAST(context, this.body);
+		const body = joinBody(printAST(context, this.body));
 		return `{${body}\n}`;
 	}
 }

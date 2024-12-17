@@ -12,6 +12,7 @@ import {
 	ASTnode_set,
 	ASTnode_string
 } from "./ASTnodes.js";
+import { inSetOperator, notInSetOperator } from "./lexer.js";
 import { getClassName, Hash, TODO, TODO_addError, unreachable } from "./utilities.js";
 
 enum OptLevel {
@@ -36,6 +37,7 @@ enum Mode {
 
 enum BinaryOperator {
 	inSet,
+	notInSet,
 	addToSet,
 	
 	and,
@@ -81,6 +83,10 @@ class Js {
 			return `${right}.has(${left})`;
 		}
 		
+		if (op == BinaryOperator.notInSet) {
+			return `!${right}.has(${left})`;
+		}
+		
 		if (op == BinaryOperator.addToSet) {
 			return `${right}.add(${left})`;
 		}
@@ -106,6 +112,10 @@ class Js {
 	
 	codeBlock(body: string[]): string {
 		return `{${joinBody(body)}\n}`;
+	}
+	
+	assert(condition: string, message: string) {
+		return `if (${condition}) throw ${this.string(message)}`;
 	}
 };
 const js = new Js();
@@ -240,7 +250,7 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 			}
 			
 			let op: BinaryOperator;
-			if (node.operatorText == "in") {
+			if (node.operatorText == inSetOperator) {
 				if (mode == Mode.interrogative) {
 					op = BinaryOperator.inSet;
 				} else {
@@ -263,6 +273,26 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 						});
 					}
 					op = BinaryOperator.addToSet;
+				}
+			}
+			
+			else if (node.operatorText == notInSetOperator) {
+				if (mode == Mode.interrogative) {
+					op = BinaryOperator.notInSet;
+				} else {
+					// const left = build(node.left, post, request);
+					// const right = build(node.right, post, request);
+					// js.binaryOperator(BinaryOperator.inSet, left, right)
+					const oldMode = mode;
+					mode = Mode.interrogative;
+					const condition = build(new ASTnode_operator(
+						"builtin",
+						inSetOperator,
+						node.left,
+						node.right,
+					), post, request);
+					mode = oldMode;
+					return js.assert(condition, "BAD");
 				}
 			}
 			

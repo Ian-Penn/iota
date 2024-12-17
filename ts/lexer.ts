@@ -15,6 +15,7 @@ import { SourceLocation } from "./ASTnodes.js";
 
 export const aliasOperator = "is";
 export const inSetOperator = "in";
+export const notInSetOperator = "!in";
 
 export enum TokenKind {
 	command,
@@ -48,29 +49,43 @@ function base10Number(text: string, i: number): boolean {
 	return text[i] >= '0' && text[i] <= '9';
 }
 
-function oneCharacterOperator(text: string, i: number): boolean {
-	return text[i] == '>' ||
-	text[i] == '<' ||
-	text[i] == '=' ||
-	text[i] == '+' ||
-	text[i] == '-' ||
-	text[i] == '*' ||
-	text[i] == '/' ||
-	text[i] == '%' ||
-	text[i] == '.' ||
-	text[i] == '&';
-}
-
-function twoCharacterOperator(text: string, i: number): boolean {
-	const op = text[i] + text[i+1];
+function operator(text: string, i: number): string | null {
+	const three = text[i] + text[i+1] + text[i+2];
+	if (
+		three == notInSetOperator
+	) {
+		return three;
+	}
 	
-	return op == aliasOperator ||
-	op === inSetOperator ||
-	text[i] == '!' && text[i+1] == '=' ||
-	text[i] == '<' && text[i+1] == '=' ||
-	text[i] == '>' && text[i+1] == '=' ||
-	text[i] == '|' && text[i+1] == '|' ||
-	text[i] == '-' && text[i+1] == '>';
+	const two = text[i] + text[i+1];
+	if (
+		two == aliasOperator ||
+		two === inSetOperator ||
+		text[i] == '!' && text[i+1] == '=' ||
+		text[i] == '<' && text[i+1] == '=' ||
+		text[i] == '>' && text[i+1] == '=' ||
+		text[i] == '|' && text[i+1] == '|' ||
+		text[i] == '-' && text[i+1] == '>'
+	) {
+		return two;
+	}
+	
+	if (
+		text[i] == '>' ||
+		text[i] == '<' ||
+		text[i] == '=' ||
+		text[i] == '+' ||
+		text[i] == '-' ||
+		text[i] == '*' ||
+		text[i] == '/' ||
+		text[i] == '%' ||
+		text[i] == '.' ||
+		text[i] == '&'
+	) {
+		return text[i];
+	}
+	
+	return null;
 }
 
 function separator(text: string, i: number): boolean {
@@ -201,27 +216,40 @@ export function lex(filePath: string, text: string): Token[] {
 			};
 		}
 		
-		else if (twoCharacterOperator(text, i)) {
-			i++;
-			type = TokenKind.operator;
-			str = text[i-1] + text[i];
-			location = {
-				path: filePath,
-				line: line,
-				startColumn: startColumn,
-				endColumn: startColumn + 1,
-				indentation: indentation,
-			};
-		}
+		// else if (twoCharacterOperator(text, i)) {
+		// 	i++;
+		// 	type = TokenKind.operator;
+		// 	str = text[i-1] + text[i];
+		// 	location = {
+		// 		path: filePath,
+		// 		line: line,
+		// 		startColumn: startColumn,
+		// 		endColumn: startColumn + 1,
+		// 		indentation: indentation,
+		// 	};
+		// }
 		
-		else if (oneCharacterOperator(text, i)) {
+		// else if (oneCharacterOperator(text, i)) {
+		// 	type = TokenKind.operator;
+		// 	str = text[i];
+		// 	location = {
+		// 		path: filePath,
+		// 		line: line,
+		// 		startColumn: startColumn,
+		// 		endColumn: startColumn,
+		// 		indentation: indentation,
+		// 	};
+		// }
+		
+		else if (operator(text, i) != null) {
+			str = operator(text, i)!;
+			i += str.length - 1;
 			type = TokenKind.operator;
-			str = text[i];
 			location = {
 				path: filePath,
 				line: line,
 				startColumn: startColumn,
-				endColumn: startColumn,
+				endColumn: startColumn + str.length - 1,
 				indentation: indentation,
 			};
 		}
