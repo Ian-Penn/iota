@@ -418,6 +418,20 @@ export class ASTnode_operator extends ASTnode {
 	}
 }
 
+export class ASTnode_for extends ASTnode {
+	constructor(
+		location: SourceLocation,
+		readonly elementName: string,
+		readonly set: ASTnode,
+	) {
+		super(location);
+	}
+	
+	_print(context = new CodeGenContext()): string {
+		return `for ${this.elementName} in ${this.set.print(context)}`;
+	}
+}
+
 export class ASTnode_memberAccess extends ASTnode {
 	constructor(
 		location: SourceLocation,

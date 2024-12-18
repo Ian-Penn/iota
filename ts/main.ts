@@ -69,6 +69,8 @@ function genFile(filePath: string, builderSettingsChanges: BuilderSettingsChange
 }
 
 function main() {
+	const builderSettingsChanges: BuilderSettingsChanges = {};
+	
 	while (process.argv[i].startsWith("-")) {
 		const flag = nextArg();
 		if (flag == "-log") {
@@ -83,9 +85,7 @@ function main() {
 	switch (mode) {
 		case "runFile": {
 			const filePath = nextArg();
-			const outputText = genFile(filePath, {
-				// addDebugger: false,
-			});
+			const outputText = genFile(filePath, builderSettingsChanges);
 			if (outputText == null) return;
 			console.log("\nruning...\n");
 			new Function(outputText)();

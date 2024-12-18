@@ -8,6 +8,7 @@ import {
 	ASTnode_codeBlock,
 	ASTnode_event,
 	ASTnode_field,
+	ASTnode_for,
 	ASTnode_identifier,
 	ASTnode_memberAccess,
 	ASTnode_number,
@@ -324,7 +325,7 @@ export function parse(context: ParserContext, mode: ParserMode, indentation: num
 					ASTnodes.push(new ASTnode_bool(token.location, token.text == "true"));
 				}
 				
-				if (token.text == "let") {
+				else if (token.text == "let") {
 					const left = parse(context, ParserMode.singleNoOperatorContinue, nextIndentation, null)[0];
 					if (left == undefined) TODO_addError();
 					
@@ -337,6 +338,23 @@ export function parse(context: ParserContext, mode: ParserMode, indentation: num
 					if (value == undefined) TODO_addError();
 					
 					ASTnodes.push(new ASTnode_alias(token.location, left, value));
+				}
+				
+				else if (token.text == "for") {
+					const name = forward(context);
+					if (name.kind != TokenKind.word) {
+						throw new Report("expected name").indicator(name.location, "here");
+					}
+					
+					const inOperator = forward(context);
+					if (inOperator.kind != TokenKind.operator || inOperator.text != "in") {
+						throw new Report("expected 'in' for 'for'").indicator(inOperator.location, "here");
+					}
+					
+					const set = parse(context, ParserMode.singleNoContinue, nextIndentation, null)[0];
+					if (set == undefined) TODO_addError();
+					
+					ASTnodes.push(new ASTnode_for(token.location, name.text, set));
 				}
 				
 				else {

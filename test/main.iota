@@ -1,7 +1,21 @@
-let x = 100
-x < 5
+let animals = []
+let cats = []
 
-// y: @
+let a = @
+a in cats
+let b = @
+b in cats
+let c = @
+c !in cats
+
+for X in cats -> X in animals
+
+// Number
+
+// let x: Number
+// x < 5
+
+// let y = Number
 // y = -1
 // y > 0
 
