@@ -46,13 +46,19 @@ enum BinaryOperator {
 	addToSet,
 	removeFromSet,
 	
-	and,
-	or,
-	
 	add,
 	subtract,
 	multiply,
 	divide,
+	
+	and,
+	or,
+	
+	shallowEquals,
+	setVar,
+	
+	lessThan,
+	greaterThan,
 }
 
 // Makes it a little easier to generate something other than js later.
@@ -96,25 +102,41 @@ class Js {
 		if (op == BinaryOperator.inSet) {
 			return `${right}.has(${left})`;
 		}
-		
 		if (op == BinaryOperator.notInSet) {
 			return `!${right}.has(${left})`;
 		}
-		
 		if (op == BinaryOperator.removeFromSet) {
 			return `${right}.delete(${left})`;
 		}
-		
 		if (op == BinaryOperator.addToSet) {
 			return `${right}.add(${left})`;
+		}
+		
+		if (op == BinaryOperator.add) {
+			return `${left} + ${right}`;
+		}
+		if (op == BinaryOperator.subtract) {
+			return `${left} - ${right}`;
 		}
 		
 		if (op == BinaryOperator.and) {
 			return `${left} && ${right}`;
 		}
-		
 		if (op == BinaryOperator.or) {
 			return `${left} || ${right}`;
+		}
+		
+		if (op == BinaryOperator.shallowEquals) {
+			return `${left} == ${right}`;
+		}
+		if (op == BinaryOperator.setVar) {
+			return `${left} = ${right}`;
+		}
+		if (op == BinaryOperator.lessThan) {
+			return `${left} < ${right}`;
+		}
+		if (op == BinaryOperator.greaterThan) {
+			return `${left} > ${right}`;
 		}
 		
 		TODO();
@@ -142,6 +164,14 @@ class Js {
 	
 	log(message: string) {
 		return `console.log(${this.string(message)})`;
+	}
+	
+	min(a: string, b: string): string {
+		return `${a} = Math.min(${a}, ${b}) - 1`;
+	}
+	
+	max(a: string, b: string): string {
+		return `${a} = Math.max(${a}, ${b}) + 1`;
 	}
 };
 const js = new Js();
@@ -318,6 +348,9 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 				}
 			}
 			
+			const left = build(node.left, post, request);
+			const right = build(node.right, post, request);
+			
 			let op: BinaryOperator;
 			if (node.operatorText == inSetOperator) {
 				if (mode == Mode.interrogative) {
@@ -326,7 +359,6 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 					op = BinaryOperator.addToSet;
 				}
 			}
-			
 			else if (node.operatorText == notInSetOperator) {
 				if (mode == Mode.interrogative) {
 					op = BinaryOperator.notInSet;
@@ -350,6 +382,13 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 				}
 			}
 			
+			else if (node.operatorText == "+") {
+				op = BinaryOperator.add;
+			}
+			else if (node.operatorText == "-") {
+				op = BinaryOperator.add;
+			}
+			
 			else if (node.operatorText == "&") {
 				if (mode == Mode.interrogative) {
 					op = BinaryOperator.and;
@@ -360,21 +399,47 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 				}
 			}
 			
+			else if (node.operatorText == "=") {
+				if (mode == Mode.interrogative) {
+					op = BinaryOperator.shallowEquals;
+				} else {
+					op = BinaryOperator.setVar;
+				}
+			}
+			
+			else if (node.operatorText == "<") {
+				if (mode == Mode.interrogative) {
+					op = BinaryOperator.lessThan;
+				} else {
+					return js.min(left, right);
+				}
+			}
+			
+			else if (node.operatorText == ">") {
+				if (mode == Mode.interrogative) {
+					op = BinaryOperator.greaterThan;
+				} else {
+					return js.max(left, right);
+				}
+			}
+			
 			else {
 				TODO(node.operatorText);
 			}
 			
-			const left = build(node.left, post, request);
-			const right = build(node.right, post, request);
 			return js.binaryOperator(op, left, right);
 		}
 		
-		else if (node instanceof ASTnode_alias) {
-			if (!(node.left instanceof ASTnode_identifier)) {
-				TODO();
-			}
-			const right = build(node.value, [], request);
-			return `let ${node.left.name} = ${right};`;
+		// else if (node instanceof ASTnode_alias) {
+		// 	if (!(node.left instanceof ASTnode_identifier)) {
+		// 		TODO();
+		// 	}
+		// 	const right = build(node.value, [], request);
+		// 	return `let ${node.left.name} = ${right};`;
+		// }
+		else if (node instanceof ASTnode_field) {
+			const right = build(node.type, [], request);
+			return `let ${node.name} = ${right};`;
 		}
 		
 		else if (node instanceof ASTnode_codeBlock) {
@@ -432,6 +497,7 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 	let topText = "";
 	
 	const mainText = buildList(topAST, true);
+	topText += "debugger;\n";
 	topText += mainText.join("\n");
 	topText += "\ndebugger;";
 	

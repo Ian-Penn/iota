@@ -1,3 +1,13 @@
+x: @
+x = 100
+x < 5
+
+y: @
+y = -1
+y > 0
+
+// #log(x)
+
 // from https://en.wikipedia.org/wiki/Forward_chaining
 // If X croaks and X eats flies - Then X is a frog
 // If X chirps and X sings - Then X is a canary
@@ -23,22 +33,26 @@
 
 //--------
 
-animals is []
-cats is []
-frogs is []
+// animals: []
+// cats: []
+// frogs: []
 
-myCat is @
+// myCat: @
 
-myCat in cats -> myCat !in frogs
-myCat !in cats -> myCat in frogs
+// myCat in cats -> myCat !in frogs
+// myCat in frogs -> myCat !in cats
 
 // myCat in cats -> myCat in animals
-myCat in frogs -> myCat in animals
+// myCat in frogs -> myCat in animals
 
-{
-	// myCat in cats
-	// myCat !in cats
-}
+// {
+// 	myCat in cats
+// 	myCat in frogs
+// }
+
+// {
+// 	myCat in frogs
+// }
 
 // #onStart() -> {
 // 	#log(myCat in cats)

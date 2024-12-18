@@ -19,10 +19,11 @@ export function assert(condition: boolean, msg?: string): asserts condition {
 	}
 }
 
-export function TODO(msg?: string): never {
+export function TODO(...data: any[]): never {
 	debugger;
+	console.error(...data);
 	console.trace();
-	throw `TODO reached: ${msg}`;
+	throw `TODO reached`;
 }
 
 export function TODO_addError(): never {
