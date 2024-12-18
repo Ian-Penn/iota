@@ -25,6 +25,7 @@ export class BuilderSettings {
 	
 	opt = OptLevel.basic;
 	logging = true;
+	addDebugger = true;
 }
 
 class AliasData {
@@ -159,7 +160,7 @@ class Js {
 	}
 	
 	assert(condition: string, message: string) {
-		return `if (${condition}) throw ${this.string(message)}`;
+		return `if (${condition}) throw ${this.string(message)};`;
 	}
 	
 	log(message: string) {
@@ -167,11 +168,11 @@ class Js {
 	}
 	
 	min(a: string, b: string): string {
-		return `${a} = Math.min(${a}, ${b}) - 1`;
+		return `${a} = Math.min(${a}, ${b}) - 1;`;
 	}
 	
 	max(a: string, b: string): string {
-		return `${a} = Math.max(${a}, ${b}) + 1`;
+		return `${a} = Math.max(${a}, ${b}) + 1;`;
 	}
 };
 const js = new Js();
@@ -497,9 +498,9 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 	let topText = "";
 	
 	const mainText = buildList(topAST, true);
-	topText += "debugger;\n";
+	if (settings.addDebugger) topText += "debugger;\n";
 	topText += mainText.join("\n");
-	topText += "\ndebugger;";
+	if (settings.addDebugger) topText += "\ndebugger;";
 	
 	return topText;
 }

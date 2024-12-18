@@ -28,7 +28,11 @@ if (process.argv[i] == undefined) {
 	main();
 }
 
-function genFile(filePath: string): string | null {
+type BuilderSettingsChanges = {
+	[Property in keyof BuilderSettings]?: BuilderSettings[Property]
+};
+
+function genFile(filePath: string, builderSettingsChanges: BuilderSettingsChanges): string | null {
 	const text = readFile(filePath);
 	if (text == null) TODO_addError();
 	
@@ -50,7 +54,7 @@ function genFile(filePath: string): string | null {
 		// const outputText = codegen(AST, new CodegenSettings());
 		// console.log("outputText:\n" + outputText);
 		
-		const outputText = buildAST(AST, new BuilderSettings());
+		const outputText = buildAST(AST, Object.assign(new BuilderSettings(), builderSettingsChanges));
 		console.log("outputText:\n" + outputText);
 		
 		return outputText;
@@ -79,7 +83,9 @@ function main() {
 	switch (mode) {
 		case "runFile": {
 			const filePath = nextArg();
-			const outputText = genFile(filePath);
+			const outputText = genFile(filePath, {
+				// addDebugger: false,
+			});
 			if (outputText == null) return;
 			console.log("\nruning...\n");
 			new Function(outputText)();
