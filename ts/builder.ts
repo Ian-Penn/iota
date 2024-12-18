@@ -430,17 +430,17 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 			return js.binaryOperator(op, left, right);
 		}
 		
-		// else if (node instanceof ASTnode_alias) {
-		// 	if (!(node.left instanceof ASTnode_identifier)) {
-		// 		TODO();
-		// 	}
-		// 	const right = build(node.value, [], request);
-		// 	return `let ${node.left.name} = ${right};`;
-		// }
-		else if (node instanceof ASTnode_field) {
-			const right = build(node.type, [], request);
-			return `let ${node.name} = ${right};`;
+		else if (node instanceof ASTnode_alias) {
+			if (!(node.left instanceof ASTnode_identifier)) {
+				TODO();
+			}
+			const right = build(node.value, [], request);
+			return `let ${node.left.name} = ${right};`;
 		}
+		// else if (node instanceof ASTnode_field) {
+		// 	const right = build(node.type, [], request);
+		// 	return `let ${node.name} = ${right};`;
+		// }
 		
 		else if (node instanceof ASTnode_codeBlock) {
 			const body = buildList(node.body);

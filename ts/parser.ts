@@ -179,7 +179,7 @@ function parseOperators(context: ParserContext, left: ASTnode, lastPrecedence: n
 			}
 			
 			if (nextOperator.text == aliasOperator) {
-				return new ASTnode_alias(nextOperator.location, left, right);
+				return new ASTnode_alias(nextOperator.location, left, right); // TODO: rm?
 			} else if (nextOperator.text == ".") {
 				if (!(right instanceof ASTnode_identifier)) {
 					TODO_addError();
@@ -322,7 +322,24 @@ export function parse(context: ParserContext, mode: ParserMode, indentation: num
 			case TokenKind.word: {
 				if (token.text == "true" || token.text == "false") {
 					ASTnodes.push(new ASTnode_bool(token.location, token.text == "true"));
-				} else {
+				}
+				
+				if (token.text == "let") {
+					const left = parse(context, ParserMode.singleNoOperatorContinue, nextIndentation, null)[0];
+					if (left == undefined) TODO_addError();
+					
+					const equals = forward(context);
+					if (equals.kind != TokenKind.operator || equals.text != "=") {
+						throw new Report("expected equals").indicator(equals.location, "here");
+					}
+					
+					const value = parse(context, ParserMode.single, nextIndentation, null)[0];
+					if (value == undefined) TODO_addError();
+					
+					ASTnodes.push(new ASTnode_alias(token.location, left, value));
+				}
+				
+				else {
 					ASTnodes.push(new ASTnode_identifier(token.location, token.text));
 				}
 				break;
