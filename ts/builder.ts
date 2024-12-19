@@ -26,12 +26,8 @@ export class BuilderSettings {
 	allowArbitraryCodeExecution = false;
 	
 	opt = OptLevel.basic;
-	logging = true;
-	addDebugger = true;
-}
-
-class AliasData {
-	useCount = 0;
+	logging = false;
+	addDebugger = false;
 }
 
 enum Mode {
@@ -88,6 +84,10 @@ class Js {
 	
 	use(name: string): string {
 		return js.varPrefix + name;
+	}
+	
+	alias(name: string, value: string): string {
+		return `let ${js.varPrefix + name} = ${value};`
 	}
 	
 	iterateSet(set: string, elementName: string, codeBlock: string[]): string {
@@ -151,7 +151,7 @@ class Js {
 	}
 	
 	doubleStatement(left: string, right: string) {
-		return `${left}; ${right}`;
+		return `${left};\n${right};`;
 	}
 	
 	if(condition: string, body: string[]): string {
@@ -196,14 +196,18 @@ class Js {
 const js = new Js();
 
 type BuildRequest = {
-	type: "hasInterrogativeUseOfHash",
-	hash: Hash,
+	type: "hasInterrogativeUseOfIdentifier",
+	name: string,
 	output: boolean,
 };
+// {
+// 	type: "hasInterrogativeUseOfHash",
+// 	hash: Hash,
+// 	output: boolean,
+// }
 
 export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 	const builtinAST = getBuiltinScope();
-	let mode = Mode.declarative;
 	const scopes: ASTnode[][] = [builtinAST];
 	
 	// function getUses(name: string): ASTnode[] {
@@ -258,34 +262,71 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 		
 		const output: ASTnode[] = [];
 		
-		const operatorHash = operator.getHash();
-		for (let scopeI = 0; scopeI < scopes.length; scopeI++) {
-			const scope = scopes[scopeI];
-			for (let i = 0; i < scope.length; i++) {
-				const node = scope[i];
+		// const operatorHash = operator.getHash();
+		// for (let scopeI = 0; scopeI < scopes.length; scopeI++) {
+		// 	const scope = scopes[scopeI];
+		// 	for (let i = 0; i < scope.length; i++) {
+		// 		const node = scope[i];
 				
-				if (!(node instanceof ASTnode_operator)) {
-					continue;
-				}
+		// 		if (!(node instanceof ASTnode_operator)) {
+		// 			continue;
+		// 		}
 				
-				const request: BuildRequest = {
-					type: "hasInterrogativeUseOfHash",
-					hash: operatorHash,
-					output: false,
-				}
-				build(node, [], request);
-				if (request.output) {
-					output.push(node);
+		// 		const request: BuildRequest = {
+		// 			type: "hasInterrogativeUseOfHash",
+		// 			hash: operatorHash,
+		// 			output: false,
+		// 		}
+		// 		build(node, [], request);
+		// 		if (request.output) {
+		// 			output.push(node);
+		// 		}
+		// 	}
+		// }
+		
+		const identifiers: string[] = [];
+		
+		operator.analyze((identifier) => {
+			if (!(identifier instanceof ASTnode_identifier)) return false;
+			
+			console.log("operator.analyze", identifier);
+			
+			if (!identifiers.includes(identifier.name)) {
+				identifiers.push(identifier.name);
+			}
+			
+			return false;
+		});
+		
+		identifiers.forEach((identifier) => {
+			for (let scopeI = 0; scopeI < scopes.length; scopeI++) {
+				const scope = scopes[scopeI];
+				for (let i = 0; i < scope.length; i++) {
+					const node = scope[i];
+					
+					if (!(node instanceof ASTnode_operator)) {
+						continue;
+					}
+					
+					const request: BuildRequest = {
+						type: "hasInterrogativeUseOfIdentifier",
+						name: identifier,
+						output: false,
+					}
+					build(node, [], request, Mode.declarative);
+					if (request.output) {
+						output.push(node);
+					}
 				}
 			}
-		}
+		});
 		
 		return output;
 	}
 	
-	function build(node: ASTnode, post: string[], request: BuildRequest | null): string {
-		if (request && request.type == "hasInterrogativeUseOfHash") {
-			if (mode == Mode.interrogative && request.hash.equals(node.getHash())) {
+	function build(node: ASTnode, post: string[], request: BuildRequest | null, mode: Mode): string {
+		if (request && request.type == "hasInterrogativeUseOfIdentifier") {
+			if (mode == Mode.interrogative && node instanceof ASTnode_identifier && node.name == request.name) {
 				request.output = true;
 				return "BuildRequestDone";
 			}
@@ -312,41 +353,28 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 		}
 		
 		else if (node instanceof ASTnode_identifier) {
-			const value = unalias(node.name);
-			console.log("ASTnode_identifier", node.name, value);
+			// const value = unalias(node.name);
+			// console.log("ASTnode_identifier", node.name, value);
 			
 			return js.use(node.name);
 		}
 		
 		else if (node instanceof ASTnode_operator) {
 			if (node.operatorText == "->") {
+				if (mode != Mode.declarative) TODO_addError();
+				
 				if (node.left instanceof ASTnode_for) {
-					const set = build(node.left.set, post, request);
-					const right = build(node.right, post, request);
+					const set = build(node.left.set, post, request, Mode.interrogative);
+					const right = build(node.right, post, request, Mode.declarative);
 					return js.iterateSet(set, node.left.elementName, [right]);
 				}
 				
-				const oldMode = mode;
-				mode = Mode.interrogative;
-				const left = build(node.left, post, request);
-				mode = oldMode;
-				const right = build(node.right, post, request);
+				const left = build(node.left, post, request, Mode.interrogative);
+				const right = build(node.right, post, request, Mode.declarative);
 				
 				const body = [
 					right
 				];
-				
-				if (settings.logging) {
-					const oldMode = mode;
-					mode = Mode.interrogative;
-					const interrogativeRight = build(node.right, post, null);
-					mode = oldMode;
-					
-					// Print what is now true if it was not true a moment ago
-					body.unshift(
-						js.if(js.unaryOperator(UnaryOperator.not, interrogativeRight), [js.log(node.right.print())])
-					);
-				}
 				
 				return js.if(left, body);
 			}
@@ -364,11 +392,7 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 					
 					const dependencies = getDependencies(node);
 					dependencies.forEach((dependency) => {
-						// console.log("use:", use.print());
-						// const oldMode = mode;
-						// mode = Mode.declarative;
-						const text = build(dependency, post, request);
-						// mode = oldMode;
+						const text = build(dependency, post, request, Mode.declarative);
 						if (settings.opt > OptLevel.none && post.includes(text)) {
 							return;
 						}
@@ -377,8 +401,8 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 				}
 			}
 			
-			const left = build(node.left, post, request);
-			const right = build(node.right, post, request);
+			const left = build(node.left, post, request, mode);
+			const right = build(node.right, post, request, mode);
 			
 			let op: BinaryOperator;
 			if (node.operatorText == inSetOperator) {
@@ -422,8 +446,8 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 				if (mode == Mode.interrogative) {
 					op = BinaryOperator.and;
 				} else {
-					const left = build(node.left, post, request);
-					const right = build(node.right, post, request);
+					const left = build(node.left, post, request, mode);
+					const right = build(node.right, post, request, mode);
 					return js.doubleStatement(left, right);
 				}
 			}
@@ -456,15 +480,26 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 				TODO(node.operatorText);
 			}
 			
-			return js.binaryOperator(op, left, right);
+			if (mode == Mode.declarative && settings.logging) {
+				const interrogativeThis = build(node, post, null, Mode.interrogative);
+				
+				// Print what is now true if it was not true a moment ago
+				return js.doubleStatement(
+					js.if(js.unaryOperator(UnaryOperator.not, interrogativeThis), [js.log(node.print())]),
+					js.binaryOperator(op, left, right)
+				);
+			} else {
+				return js.binaryOperator(op, left, right);
+			}
 		}
 		
 		else if (node instanceof ASTnode_alias) {
 			if (!(node.left instanceof ASTnode_identifier)) {
 				TODO();
 			}
-			const right = build(node.value, [], request);
-			return `let ${js.varPrefix + node.left.name} = ${right};`;
+			const right = build(node.value, [], request, Mode.interrogative);
+			
+			return js.alias(node.left.name, right);
 		}
 		// else if (node instanceof ASTnode_field) {
 		// 	const right = build(node.type, [], request);
@@ -472,7 +507,7 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 		// }
 		
 		else if (node instanceof ASTnode_codeBlock) {
-			const body = buildList(node.body);
+			const body = buildList(node.body, Mode.declarative);
 			return js.codeBlock(body);
 		}
 		
@@ -481,7 +516,7 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 		}
 	}
 	
-	function buildList(AST: ASTnode[], top?: boolean): string[] {
+	function buildList(AST: ASTnode[], mode: Mode): string[] {
 		const list: string[] = [];
 		
 		scopes.push(AST);
@@ -491,28 +526,28 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 			
 			const post: string[] = [];
 			
-			if (node instanceof ASTnode_operator && node.operatorText == "->") {
-				if (node.left instanceof ASTnode_event) {
-					if (top != true) TODO_addError();
+			// if (node instanceof ASTnode_operator && node.operatorText == "->") {
+			// 	if (node.left instanceof ASTnode_event) {
+			// 		if (top != true) TODO_addError();
 					
-					const argNames: string[] = node.left.args.map((arg) => {
-						if (arg instanceof ASTnode_identifier) {
-							return arg.name;
-						} else if (arg instanceof ASTnode_field) {
-							return arg.name;
-						} else {
-							unreachable();
-						}
-					});
+			// 		const argNames: string[] = node.left.args.map((arg) => {
+			// 			if (arg instanceof ASTnode_identifier) {
+			// 				return arg.name;
+			// 			} else if (arg instanceof ASTnode_field) {
+			// 				return arg.name;
+			// 			} else {
+			// 				unreachable();
+			// 			}
+			// 		});
 					
-					const right = build(node.right, post, null);
+			// 		const right = build(node.right, post, null);
 					
-					list.push(js.func(node.left.name, argNames, right));
-					continue;
-				}
-			}
+			// 		list.push(js.func(node.left.name, argNames, right));
+			// 		continue;
+			// 	}
+			// }
 			
-			const text = build(node, post, null);
+			const text = build(node, post, null, mode);
 			
 			list.push(text);
 			list.push(...post);
@@ -525,8 +560,8 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 	
 	let topText = "";
 	
-	const builtinText = buildList(builtinAST, true);
-	const mainText = buildList(topAST, true);
+	const builtinText = buildList(builtinAST, Mode.declarative);
+	const mainText = buildList(topAST, Mode.declarative);
 	
 	if (settings.addDebugger) topText += "debugger;\n";
 	topText += builtinText.join("\n") + "\n";

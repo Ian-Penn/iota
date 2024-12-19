@@ -1,14 +1,14 @@
 let animals = []
 let cats = []
 
+for X in cats -> X in animals
+
 let a = @
 a in cats
 let b = @
 b in cats
 let c = @
 c !in cats
-
-for X in cats -> X in animals
 
 // Number
 

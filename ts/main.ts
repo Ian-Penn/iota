@@ -70,12 +70,21 @@ function genFile(filePath: string, builderSettingsChanges: BuilderSettingsChange
 
 function main() {
 	const builderSettingsChanges: BuilderSettingsChanges = {};
+	builderSettingsChanges.addDebugger = true;
+	builderSettingsChanges.logging = true;
 	
 	while (process.argv[i].startsWith("-")) {
 		const flag = nextArg();
 		if (flag == "-log") {
 			logger.enableLogs();
-		} else {
+		}
+		
+		else if (flag == "-g") {
+			builderSettingsChanges.addDebugger = true;
+			builderSettingsChanges.logging = true;
+		}
+		
+		else {
 			TODO_addError();
 		}
 	}
