@@ -28,6 +28,10 @@ export class BuilderSettings {
 	opt = OptLevel.basic;
 	logging = false;
 	addDebugger = false;
+	
+	languageSettings: {
+		[key: string]: any;
+	} = {};
 }
 
 enum Mode {
@@ -66,6 +70,21 @@ class Js {
 	varPrefix = "var_";
 	allowArbitraryCodeExecution = false;
 	
+	languageSettings: {
+		logFnName: string;
+		[key: string]: any;
+	};
+	
+	constructor(
+		languageSettings: {
+			[key: string]: any;
+		}
+	) {
+		this.languageSettings = Object.assign({
+			logFnName: "console.log",
+		}, languageSettings);
+	}
+	
 	bool(value: boolean): string {
 		if (value) {
 			return "true";
@@ -83,19 +102,23 @@ class Js {
 	}
 	
 	use(name: string): string {
-		return js.varPrefix + name;
+		return this.varPrefix + name;
 	}
 	
 	alias(name: string, value: string): string {
-		return `let ${js.varPrefix + name} = ${value};`
+		return `let ${this.varPrefix + name} = ${value};`
 	}
 	
 	iterateSet(set: string, elementName: string, codeBlock: string[]): string {
 		return `${set}.forEach(${this.use(elementName)} => ${this.codeBlock(codeBlock)})`;
 	}
 	
-	func(name: string, argNames: string[], body: string): string {
-		return `function ${name}(${argNames.join(", ")}) {${body}\n}`;
+	func(name: string, argNames: string[], body: string[]): string {
+		return `function ${this.eventPrefix + name}(${argNames.join(", ")}) {${joinBody(body)}\n}`;
+	}
+	
+	call(name: string, args: string[]): string {
+		return `${this.eventPrefix + name}(${args.join(", ")})`;
 	}
 	
 	unaryOperator(op: UnaryOperator, input: string): string {
@@ -171,14 +194,18 @@ class Js {
 	}
 	
 	log(message: string) {
-		return `console.log(${this.string(message)})`;
+		return `${this.languageSettings.logFnName}(${this.string(message)});`;
 	}
 	
-	min(a: string, b: string): string {
+	logList(list: string[]) {
+		return `${this.languageSettings.logFnName}(${list.join(", ")});`;
+	}
+	
+	makeMin(a: string, b: string): string {
 		return `${a} = Math.min(${a}, ${b}) - 1;`;
 	}
 	
-	max(a: string, b: string): string {
+	makeMax(a: string, b: string): string {
 		return `${a} = Math.max(${a}, ${b}) + 1;`;
 	}
 	
@@ -193,7 +220,6 @@ class Js {
 		return output;
 	}
 };
-const js = new Js();
 
 type BuildRequest = {
 	type: "hasInterrogativeUseOfIdentifier",
@@ -207,6 +233,7 @@ type BuildRequest = {
 // }
 
 export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
+	const js = new Js(settings.languageSettings);
 	const builtinAST = getBuiltinScope();
 	const scopes: ASTnode[][] = [builtinAST];
 	
@@ -258,7 +285,7 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 	 * TODO: operator anagrams
 	 */
 	function getDependencies(operator: ASTnode_operator): ASTnode[] {
-		console.log("getDependencies", operator.print());
+		// console.log("getDependencies", operator.print());
 		
 		const output: ASTnode[] = [];
 		
@@ -289,7 +316,7 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 		operator.analyze((identifier) => {
 			if (!(identifier instanceof ASTnode_identifier)) return false;
 			
-			console.log("operator.analyze", identifier);
+			// console.log("operator.analyze", identifier);
 			
 			if (!identifiers.includes(identifier.name)) {
 				identifiers.push(identifier.name);
@@ -464,7 +491,7 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 				if (mode == Mode.interrogative) {
 					op = BinaryOperator.lessThan;
 				} else {
-					return js.min(left, right);
+					return js.makeMin(left, right);
 				}
 			}
 			
@@ -472,7 +499,7 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 				if (mode == Mode.interrogative) {
 					op = BinaryOperator.greaterThan;
 				} else {
-					return js.max(left, right);
+					return js.makeMax(left, right);
 				}
 			}
 			
@@ -511,6 +538,28 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 			return js.codeBlock(body);
 		}
 		
+		else if (node instanceof ASTnode_event) {
+			if (mode == Mode.interrogative) {
+				return `TODO`;
+			} else {
+				if (node.name == "__rawEval__") {
+					if (settings.allowArbitraryCodeExecution) {
+						const stringNode = node.args[0];
+						if (!(stringNode instanceof ASTnode_string)) {
+							TODO_addError();
+						}
+						return stringNode.value;
+					} else {
+						return "nope allowArbitraryCodeExecution";
+					}
+				} else if (node.name == "_log") {
+					return js.logList(buildList(node.args, Mode.interrogative));
+				}
+				const args = buildList(node.args, Mode.interrogative);
+				return js.call(node.name, args);
+			}
+		}
+		
 		else {
 			TODO(getClassName(node));
 		}
@@ -526,26 +575,24 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 			
 			const post: string[] = [];
 			
-			// if (node instanceof ASTnode_operator && node.operatorText == "->") {
-			// 	if (node.left instanceof ASTnode_event) {
-			// 		if (top != true) TODO_addError();
+			if (node instanceof ASTnode_operator && node.operatorText == "->") {
+				if (node.left instanceof ASTnode_event) {
+					const argNames: string[] = node.left.args.map((arg) => {
+						if (arg instanceof ASTnode_identifier) {
+							return arg.name;
+						} else if (arg instanceof ASTnode_field) {
+							return arg.name;
+						} else {
+							unreachable();
+						}
+					});
 					
-			// 		const argNames: string[] = node.left.args.map((arg) => {
-			// 			if (arg instanceof ASTnode_identifier) {
-			// 				return arg.name;
-			// 			} else if (arg instanceof ASTnode_field) {
-			// 				return arg.name;
-			// 			} else {
-			// 				unreachable();
-			// 			}
-			// 		});
+					const right = build(node.right, post, null, Mode.declarative);
 					
-			// 		const right = build(node.right, post, null);
-					
-			// 		list.push(js.func(node.left.name, argNames, right));
-			// 		continue;
-			// 	}
-			// }
+					list.push(js.func(node.left.name, argNames, [right]));
+					continue;
+				}
+			}
 			
 			const text = build(node, post, null, mode);
 			
