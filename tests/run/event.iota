@@ -1,0 +1,9 @@
+// runLog
+// ["a","b"]
+
+#myEvent() -> {
+	#_log("a")
+	#_log("b")
+}
+
+#myEvent()

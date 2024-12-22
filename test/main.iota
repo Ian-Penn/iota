@@ -1,22 +1,3 @@
-let animals = []
-let cats = []
-
-for X in cats -> X in animals
-
-let a = @
-a in cats
-#_log(a in cats)
-
-let b = @
-b in cats
-#_log(b in cats)
-
-let c = @
-c !in cats
-#_log(c in cats)
-
-// Number
-
 // let x: Number
 // x < 5
 
