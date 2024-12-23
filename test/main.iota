@@ -1,3 +1,26 @@
+let animals = []
+let cats = []
+let frogs = []
+
+let myCat = @
+
+myCat in cats
+myCat in frogs
+myCat in cats -> myCat !in frogs
+// myCat in frogs -> myCat !in cats
+
+// myCat in cats -> myCat in animals
+// myCat in frogs -> myCat in animals
+
+// {
+// 	myCat in cats
+// 	myCat in frogs
+// }
+
+// {
+// 	myCat in frogs
+// }
+
 // let x: Number
 // x < 5
 
@@ -29,36 +52,6 @@
 // X in frogs -> X in green
 // X in croaks & X in eatsFlies -> X in frogs
 // X in frogs & X in green -> X in poisonSkin
-
-//--------
-
-// animals: []
-// cats: []
-// frogs: []
-
-// myCat: @
-
-// myCat in cats -> myCat !in frogs
-// myCat in frogs -> myCat !in cats
-
-// myCat in cats -> myCat in animals
-// myCat in frogs -> myCat in animals
-
-// {
-// 	myCat in cats
-// 	myCat in frogs
-// }
-
-// {
-// 	myCat in frogs
-// }
-
-// #onStart() -> {
-// 	#log(myCat in cats)
-// 	#log(myCat in animals)
-// }
-
-// #onStart() -> #log(myCat in cats)
 
 //--------
 
