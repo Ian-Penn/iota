@@ -15,7 +15,7 @@ import {
 } from "./ASTnodes.js";
 import { getBuiltinScope } from "./builtin.js";
 import { inSetOperator, notInSetOperator } from "./lexer.js";
-import { getClassName, Hash, TODO, TODO_addError, unreachable } from "./utilities.js";
+import { getClassName, getUniqueInArray, Hash, TODO, TODO_addError, unreachable } from "./utilities.js";
 
 enum OptLevel {
 	none,
@@ -237,6 +237,12 @@ type BuildRequest = {
 // 	output: boolean,
 // }
 
+class UpContext {
+	pre: string[] = [];
+	post: string[] = [];
+	breakout: string[] | null = null;
+};
+
 export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 	const js = new Js(settings.languageSettings);
 	const builtinAST = getBuiltinScope();
@@ -310,7 +316,7 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 						name: identifier,
 						output: false,
 					}
-					build(node, [[], []], request, Mode.declarative);
+					build(node, new UpContext(), request, Mode.declarative);
 					if (request.output) {
 						output.push(node);
 					}
@@ -321,7 +327,7 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 		return output;
 	}
 	
-	function build(node: ASTnode, prePost: [string[], string[]], request: BuildRequest | null, mode: Mode): string {
+	function build(node: ASTnode, upContext: UpContext, request: BuildRequest | null, mode: Mode): string {
 		if (request && request.type == "hasInterrogativeUseOfIdentifier") {
 			if (mode == Mode.interrogative && node instanceof ASTnode_identifier && node.name == request.name) {
 				request.output = true;
@@ -361,17 +367,23 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 				if (mode != Mode.declarative) TODO_addError();
 				
 				if (node.left instanceof ASTnode_for) {
-					const set = build(node.left.set, prePost, request, Mode.interrogative);
-					const right = build(node.right, prePost, request, Mode.declarative);
-					return js.iterateSet(set, node.left.elementName, [right]);
+					const set = build(node.left.set, upContext, request, Mode.interrogative);
+					
+					const newUpContext = new UpContext();
+					const right = build(node.right, newUpContext, request, Mode.declarative);
+					return js.iterateSet(set, node.left.elementName, [...newUpContext.pre, right, ...newUpContext.post]);
 				}
 				
-				const left = build(node.left, prePost, request, Mode.interrogative);
+				const left = build(node.left, upContext, request, Mode.interrogative);
 				
-				const newPrePost: [string[], string[]] = [[], []];
-				const right = build(node.right, newPrePost, request, Mode.declarative);
+				const newUpContext = new UpContext();
+				const right = build(node.right, newUpContext, request, Mode.declarative);
+				if (newUpContext.breakout != null) {
+					debugger;
+					return js.codeBlock(newUpContext.breakout);
+				}
 				
-				const body = [...newPrePost[0], right, ...newPrePost[1]];
+				const body = [...newUpContext.pre, right, ...newUpContext.post];
 				
 				return js.if(left, body);
 			}
@@ -382,48 +394,76 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 			) {
 				// When something is changed (Mode.declarative)
 				// all of the dependencies need to be reevaluated.
-				if (request == null && mode == Mode.declarative && getBreakoutLoopOutId(node) == null) {
+				if (request == null && mode == Mode.declarative) {
 					if (!(node.right instanceof ASTnode_identifier)) {
 						TODO();
 					}
 					
-					const dependencies = getDependencies(node);
+					let dependencies = getDependencies(node);
+					dependencies = dependencies.filter(dependency => 
+						!dependencyStack.includes(dependency)
+					);
+					dependencies = getUniqueInArray(dependencies);
 					
-					dependencies.forEach((dependency) => {
-						if (dependencyStack.includes(dependency)) {
-							dependencyStack.push(node);
-							const breakoutId = nextBreakoutLoopId;
-							nextBreakoutLoopId++;
-							breakoutLoopMap.set(breakoutId, dependencyStack);
-							const breakoutLoopBody = buildList(dependencyStack, Mode.declarative);
-							breakoutLoopMap.delete(breakoutId);
-							dependencyStack.pop();
+					// dependencies.forEach((dependency) => {
+					// 	if (dependencyStack.includes(dependency)) {
+					// 		const breakoutLoopBodyList = [...dependencyStack];
 							
-							prePost[1].push(
-								js.alias(`breakoutId_${breakoutId}`, js.bool(true)),
-								js.while(js.use(`breakoutId_${breakoutId}`), [
-									js.binaryOperator(BinaryOperator.setVar, js.use(`breakoutId_${breakoutId}`), js.bool(false)),
-									...breakoutLoopBody,
-								])
-							);
+					// 		dependencyStack.push(node);
+					// 		const breakoutId = nextBreakoutLoopId;
+					// 		nextBreakoutLoopId++;
+					// 		breakoutLoopMap.set(breakoutId, dependencyStack);
+					// 		const breakoutLoopBody = buildList(breakoutLoopBodyList, Mode.declarative);
+					// 		breakoutLoopMap.delete(breakoutId);
+					// 		dependencyStack.pop();
 							
-							return;
-						}
+					// 		debugger;
+					// 		upContext.breakout = [
+					// 			js.alias(`breakoutId_${breakoutId}`, js.bool(true)),
+					// 			js.while(js.use(`breakoutId_${breakoutId}`), [
+					// 				js.binaryOperator(BinaryOperator.setVar, js.use(`breakoutId_${breakoutId}`), js.bool(false)),
+					// 				...breakoutLoopBody,
+					// 			])
+					// 		];
+							
+					// 		return;
+					// 	}
 						
-						dependencyStack.push(dependency);
-						const text = build(dependency, prePost, request, Mode.declarative);
-						dependencyStack.pop();
+					// 	dependencyStack.push(dependency);
+					// 	const text = build(dependency, upContext, request, Mode.declarative);
+					// 	dependencyStack.pop();
 						
-						if (settings.opt > OptLevel.none && prePost[1].includes(text)) {
-							return;
-						}
-						prePost[1].push(text + " // dependency");
-					});
+					// 	if (settings.opt > OptLevel.none && upContext.post.includes(text)) {
+					// 		return;
+					// 	}
+					// 	upContext.post.push(text + " // dependency");
+					// });
+					
+					if (dependencies.length > 0) {
+						debugger;
+						
+						const breakoutId = nextBreakoutLoopId;
+						nextBreakoutLoopId++;
+						
+						dependencyStack.push(...dependencies);
+						const breakoutLoopBody = buildList(dependencies, Mode.declarative);
+						dependencies.forEach(() => dependencyStack.pop());
+						
+						upContext.breakout = [
+							js.alias(`breakoutId_${breakoutId}`, js.bool(true)),
+							js.while(js.use(`breakoutId_${breakoutId}`), [
+								js.binaryOperator(BinaryOperator.setVar, js.use(`breakoutId_${breakoutId}`), js.bool(false)),
+								...breakoutLoopBody,
+							])
+						];
+					}
+					
+					// return "/**/";
 				}
 			}
 			
-			const left = build(node.left, prePost, request, mode);
-			const right = build(node.right, prePost, request, mode);
+			const left = build(node.left, upContext, request, mode);
+			const right = build(node.right, upContext, request, mode);
 			
 			let op: BinaryOperator;
 			if (node.operatorText == inSetOperator) {
@@ -467,8 +507,8 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 				if (mode == Mode.interrogative) {
 					op = BinaryOperator.and;
 				} else {
-					const left = build(node.left, prePost, request, mode);
-					const right = build(node.right, prePost, request, mode);
+					const left = build(node.left, upContext, request, mode);
+					const right = build(node.right, upContext, request, mode);
 					return js.multipleStatements([left, right]);
 				}
 			}
@@ -504,17 +544,17 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 			if (mode == Mode.declarative) {
 				// Print what is now true if it was not true a moment ago
 				if (settings.logging) {
-					const interrogativeThis = build(node, prePost, null, Mode.interrogative);
-					prePost[0].unshift(
+					const interrogativeThis = build(node, upContext, null, Mode.interrogative);
+					upContext.pre.push(
 						js.if(js.unaryOperator(UnaryOperator.not, interrogativeThis), [js.log(node.print())])
 					);
 				}
 			
 				const breakoutId = getBreakoutLoopOutId(node);
 				if (breakoutId != null) {
-					const interrogativeThis = build(node, prePost, null, Mode.interrogative);
+					const interrogativeThis = build(node, upContext, null, Mode.interrogative);
 					
-					prePost[0].push(
+					upContext.pre.push(
 						js.if(js.unaryOperator(UnaryOperator.not, interrogativeThis), [
 							js.binaryOperator(BinaryOperator.setVar, js.use(`breakoutId_${breakoutId}`), js.bool(true))
 						])
@@ -529,7 +569,7 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 			if (!(node.left instanceof ASTnode_identifier)) {
 				TODO();
 			}
-			const right = build(node.value, [[], []], request, Mode.interrogative);
+			const right = build(node.value, new UpContext(), request, Mode.interrogative);
 			
 			return js.alias(node.left.name, right);
 		}
@@ -579,7 +619,7 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 		for (let i = 0; i < AST.length; i++) {
 			const node = AST[i];
 			
-			const prePost: [string[], string[]] = [[], []];
+			const upContext = new UpContext();
 			
 			if (node instanceof ASTnode_operator && node.operatorText == "->") {
 				if (node.left instanceof ASTnode_event) {
@@ -593,16 +633,16 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 						}
 					});
 					
-					const right = build(node.right, prePost, null, Mode.declarative);
+					const right = build(node.right, upContext, null, Mode.declarative);
 					
 					list.push(js.func(node.left.name, argNames, [right]));
 					continue;
 				}
 			}
 			
-			const text = build(node, prePost, null, mode);
+			const text = build(node, upContext, null, mode);
 			
-			list.push(...prePost[0], text, ...prePost[1]);
+			list.push(...upContext.pre, text, ...upContext.post);
 		}
 		
 		scopes.pop();

@@ -121,6 +121,7 @@ function testFile(filePath: string) {
 			new Function("__testinglogFnName__", jsCode)(__testinglogFnName__);
 			const actualOutput = JSON.stringify(output);
 			
+			console.log(jsCode);
 			console.log(output);
 			
 			if (expectedOutput == actualOutput) {

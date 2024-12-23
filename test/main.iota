@@ -6,6 +6,8 @@ let myCat = @
 
 myCat in cats
 myCat in frogs
+
+// myCat in cats -> myCat !in cats
 myCat in cats -> myCat !in frogs
 myCat in frogs -> myCat !in cats
 

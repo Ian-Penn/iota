@@ -5,6 +5,10 @@ import crypto from "crypto";
 import logger from "./logger.js";
 import { Report } from "./report.js";
 
+export function getUniqueInArray<T>(array: T[]): T[] {
+	return [...new Set(array)];
+}
+
 export function unreachable(...data: any[]): never {
 	debugger;
 	console.error(...data);
