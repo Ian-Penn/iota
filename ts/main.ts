@@ -3,7 +3,7 @@ import logger from "./logger.js";
 import { lex } from "./lexer.js";
 import { parse, ParserMode } from "./parser.js";
 import { Report } from "./report.js";
-import { buildAST, BuilderSettings } from "./builder.js";
+import { buildAST, BuilderSettings, OptLevel } from "./builder.js";
 import { CodeGenContext, printAST } from "./ASTnodes.js";
 
 function nextArg(): string {

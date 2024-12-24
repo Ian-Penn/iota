@@ -4,24 +4,16 @@ let frogs = []
 
 let myCat = @
 
-myCat in cats
-myCat in frogs
-
-// myCat in cats -> myCat !in cats
 myCat in cats -> myCat !in frogs
 myCat in frogs -> myCat !in cats
 
-// myCat in cats -> myCat in animals
-// myCat in frogs -> myCat in animals
+myCat in cats -> myCat in animals
+myCat in frogs -> myCat in animals
 
-// {
-// 	myCat in cats
-// 	myCat in frogs
-// }
-
-// {
-// 	myCat in frogs
-// }
+{
+	myCat in cats
+	myCat in frogs
+}
 
 // let x: Number
 // x < 5

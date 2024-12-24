@@ -17,7 +17,7 @@ import { getBuiltinScope } from "./builtin.js";
 import { inSetOperator, notInSetOperator } from "./lexer.js";
 import { getClassName, getUniqueInArray, Hash, TODO, TODO_addError, unreachable } from "./utilities.js";
 
-enum OptLevel {
+export enum OptLevel {
 	none,
 	basic,
 }
@@ -379,7 +379,6 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 				const newUpContext = new UpContext();
 				const right = build(node.right, newUpContext, request, Mode.declarative);
 				if (newUpContext.breakout != null) {
-					debugger;
 					return js.codeBlock(newUpContext.breakout);
 				}
 				
@@ -388,78 +387,82 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 				return js.if(left, body);
 			}
 			
-			if (
-				node.operatorText == inSetOperator ||
-				node.operatorText == notInSetOperator
-			) {
-				// When something is changed (Mode.declarative)
-				// all of the dependencies need to be reevaluated.
-				if (request == null && mode == Mode.declarative) {
-					if (!(node.right instanceof ASTnode_identifier)) {
-						TODO();
-					}
-					
-					let dependencies = getDependencies(node);
-					dependencies = dependencies.filter(dependency => 
-						!dependencyStack.includes(dependency)
-					);
-					dependencies = getUniqueInArray(dependencies);
-					
-					// dependencies.forEach((dependency) => {
-					// 	if (dependencyStack.includes(dependency)) {
-					// 		const breakoutLoopBodyList = [...dependencyStack];
-							
-					// 		dependencyStack.push(node);
-					// 		const breakoutId = nextBreakoutLoopId;
-					// 		nextBreakoutLoopId++;
-					// 		breakoutLoopMap.set(breakoutId, dependencyStack);
-					// 		const breakoutLoopBody = buildList(breakoutLoopBodyList, Mode.declarative);
-					// 		breakoutLoopMap.delete(breakoutId);
-					// 		dependencyStack.pop();
-							
-					// 		debugger;
-					// 		upContext.breakout = [
-					// 			js.alias(`breakoutId_${breakoutId}`, js.bool(true)),
-					// 			js.while(js.use(`breakoutId_${breakoutId}`), [
-					// 				js.binaryOperator(BinaryOperator.setVar, js.use(`breakoutId_${breakoutId}`), js.bool(false)),
-					// 				...breakoutLoopBody,
-					// 			])
-					// 		];
-							
-					// 		return;
-					// 	}
-						
-					// 	dependencyStack.push(dependency);
-					// 	const text = build(dependency, upContext, request, Mode.declarative);
-					// 	dependencyStack.pop();
-						
-					// 	if (settings.opt > OptLevel.none && upContext.post.includes(text)) {
-					// 		return;
-					// 	}
-					// 	upContext.post.push(text + " // dependency");
-					// });
-					
-					if (dependencies.length > 0) {
-						debugger;
-						
-						const breakoutId = nextBreakoutLoopId;
-						nextBreakoutLoopId++;
-						
-						dependencyStack.push(...dependencies);
-						const breakoutLoopBody = buildList(dependencies, Mode.declarative);
-						dependencies.forEach(() => dependencyStack.pop());
-						
-						upContext.breakout = [
-							js.alias(`breakoutId_${breakoutId}`, js.bool(true)),
-							js.while(js.use(`breakoutId_${breakoutId}`), [
-								js.binaryOperator(BinaryOperator.setVar, js.use(`breakoutId_${breakoutId}`), js.bool(false)),
-								...breakoutLoopBody,
-							])
-						];
-					}
-					
-					// return "/**/";
+			// When something is changed (Mode.declarative)
+			// all of the dependencies need to be reevaluated.
+			if (request == null && mode == Mode.declarative) {
+				if (!(node.right instanceof ASTnode_identifier)) {
+					TODO();
 				}
+				
+				let dependencies = getDependencies(node);
+				dependencies = dependencies.filter(dependency => 
+					!dependencyStack.includes(dependency)
+				);
+				dependencies = getUniqueInArray(dependencies);
+				
+				// dependencies.forEach((dependency) => {
+				// 	if (dependencyStack.includes(dependency)) {
+				// 		const breakoutLoopBodyList = [...dependencyStack];
+						
+				// 		dependencyStack.push(node);
+				// 		const breakoutId = nextBreakoutLoopId;
+				// 		nextBreakoutLoopId++;
+				// 		breakoutLoopMap.set(breakoutId, dependencyStack);
+				// 		const breakoutLoopBody = buildList(breakoutLoopBodyList, Mode.declarative);
+				// 		breakoutLoopMap.delete(breakoutId);
+				// 		dependencyStack.pop();
+						
+				// 		debugger;
+				// 		upContext.breakout = [
+				// 			js.alias(`breakoutId_${breakoutId}`, js.bool(true)),
+				// 			js.while(js.use(`breakoutId_${breakoutId}`), [
+				// 				js.binaryOperator(BinaryOperator.setVar, js.use(`breakoutId_${breakoutId}`), js.bool(false)),
+				// 				...breakoutLoopBody,
+				// 			])
+				// 		];
+						
+				// 		return;
+				// 	}
+					
+				// 	dependencyStack.push(dependency);
+				// 	const text = build(dependency, upContext, request, Mode.declarative);
+				// 	dependencyStack.pop();
+					
+				// 	if (settings.opt > OptLevel.none && upContext.post.includes(text)) {
+				// 		return;
+				// 	}
+				// 	upContext.post.push(text + " // dependency");
+				// });
+				
+				if (dependencies.length == 1 && settings.opt > OptLevel.none) {
+					debugger;
+					dependencyStack.push(dependencies[0]);
+					const dependencyText = build(dependencies[0], upContext, request, Mode.declarative);
+					dependencyStack.pop();
+					
+					upContext.post.push(
+						dependencyText
+					);
+				} else if (dependencies.length > 0) {
+					debugger;
+					
+					const breakoutId = nextBreakoutLoopId;
+					nextBreakoutLoopId++;
+					
+					dependencyStack.push(...dependencies);
+					const breakoutLoopBody = buildList(dependencies, Mode.declarative);
+					dependencies.forEach(() => dependencyStack.pop());
+					
+					upContext.post.push(
+						js.alias(`breakoutId_${breakoutId}`, js.bool(true)),
+						js.while(js.use(`breakoutId_${breakoutId}`), [
+							js.binaryOperator(BinaryOperator.setVar, js.use(`breakoutId_${breakoutId}`), js.bool(false)),
+							...breakoutLoopBody,
+						])
+					);
+				}
+				
+				// return "/**/";
 			}
 			
 			const left = build(node.left, upContext, request, mode);
