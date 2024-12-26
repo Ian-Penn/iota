@@ -357,6 +357,16 @@ export function parse(context: ParserContext, mode: ParserMode, indentation: num
 					ASTnodes.push(new ASTnode_for(token.location, name.text, set));
 				}
 				
+				else if (token.text == "old") {
+					const identifier = parse(context, ParserMode.singleNoContinue, nextIndentation, null)[0];
+					if (!(identifier instanceof ASTnode_identifier)) {
+						TODO_addError();
+					}
+					
+					identifier.useOld = true;
+					ASTnodes.push(identifier);
+				}
+				
 				else {
 					ASTnodes.push(new ASTnode_identifier(token.location, token.text));
 				}

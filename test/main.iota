@@ -1,19 +1,33 @@
-let animals = []
-let cats = []
-let frogs = []
-
-let myCat = @
-
-myCat in cats -> myCat !in frogs
-myCat in frogs -> myCat !in cats
-
-myCat in cats -> myCat in animals
-myCat in frogs -> myCat in animals
+let x = 1
 
 {
-	myCat in cats
-	myCat in frogs
+	x = old x + 1
 }
+
+{
+	x = old x + 1
+}
+
+#_log(x)
+
+// let Vec2 = []
+
+// let animals = []
+// let cats = []
+// let frogs = []
+
+// let myCat = @
+
+// myCat in cats -> myCat !in frogs
+// myCat in frogs -> myCat !in cats
+
+// myCat in cats -> myCat in animals
+// myCat in frogs -> myCat in animals
+
+// {
+// 	myCat in cats
+// 	myCat in frogs
+// }
 
 // let x: Number
 // x < 5

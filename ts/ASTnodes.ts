@@ -385,6 +385,8 @@ export class ASTnode_alias extends ASTnode {
 }
 
 export class ASTnode_identifier extends ASTnode {
+	useOld = false;
+	
 	constructor(
 		location: SourceLocation,
 		readonly name: string,

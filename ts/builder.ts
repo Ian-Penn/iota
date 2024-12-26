@@ -123,7 +123,7 @@ class Js {
 	
 	unaryOperator(op: UnaryOperator, input: string): string {
 		if (op == UnaryOperator.not) {
-			return `!${input}`;
+			return `!(${input})`;
 		}
 		
 		TODO();
@@ -329,7 +329,12 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 	
 	function build(node: ASTnode, upContext: UpContext, request: BuildRequest | null, mode: Mode): string {
 		if (request && request.type == "hasInterrogativeUseOfIdentifier") {
-			if (mode == Mode.interrogative && node instanceof ASTnode_identifier && node.name == request.name) {
+			if (
+				mode == Mode.interrogative &&
+				node instanceof ASTnode_identifier &&
+				!node.useOld &&
+				node.name == request.name
+			) {
 				request.output = true;
 				return "BuildRequestDone";
 			}
@@ -390,9 +395,9 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 			// When something is changed (Mode.declarative)
 			// all of the dependencies need to be reevaluated.
 			if (request == null && mode == Mode.declarative) {
-				if (!(node.right instanceof ASTnode_identifier)) {
-					TODO();
-				}
+				// if (!(node.right instanceof ASTnode_identifier)) {
+				// 	TODO();
+				// }
 				
 				let dependencies = getDependencies(node);
 				dependencies = dependencies.filter(dependency => 
@@ -465,10 +470,23 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 				// return "/**/";
 			}
 			
+			let op: BinaryOperator;
+			
+			if (node.operatorText == "=") {
+				if (mode == Mode.interrogative) {
+					op = BinaryOperator.shallowEquals;
+				} else {
+					op = BinaryOperator.setVar;
+				}
+				
+				const left = build(node.left, upContext, request, Mode.declarative);
+				const right = build(node.right, upContext, request, Mode.interrogative);
+				return js.binaryOperator(op, left, right);
+			}
+			
 			const left = build(node.left, upContext, request, mode);
 			const right = build(node.right, upContext, request, mode);
 			
-			let op: BinaryOperator;
 			if (node.operatorText == inSetOperator) {
 				if (mode == Mode.interrogative) {
 					op = BinaryOperator.inSet;
@@ -513,14 +531,6 @@ export function buildAST(topAST: ASTnode[], settings: BuilderSettings): string {
 					const left = build(node.left, upContext, request, mode);
 					const right = build(node.right, upContext, request, mode);
 					return js.multipleStatements([left, right]);
-				}
-			}
-			
-			else if (node.operatorText == "=") {
-				if (mode == Mode.interrogative) {
-					op = BinaryOperator.shallowEquals;
-				} else {
-					op = BinaryOperator.setVar;
 				}
 			}
 			
